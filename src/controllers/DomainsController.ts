@@ -1,24 +1,44 @@
 import 'reflect-metadata';
 import {Get, JsonController, Param, QueryParams} from "routing-controllers"
-import {ArrayNotEmpty, IsArray, IsEnum, IsInt, IsNotEmpty, IsString, Max, Min} from "class-validator";
+import {
+    ArrayNotEmpty,
+    IsArray,
+    IsEnum,
+    IsInt,
+    IsNotEmpty,
+    IsObject, IsOptional,
+    IsString,
+    Max,
+    Min,
+    ValidateNested
+} from "class-validator";
+import {OpenAPI, ResponseSchema} from "routing-controllers-openapi";
 
 const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
 type Location = typeof DomainLocations[number];
 
-class DomainResponse {
-    meta: {
-        domain: string
-        owner: string | null
-        resolver: string | null
-        location: Location
-    } = {
-        domain: '',
-        owner: null,
-        resolver: null,
-        location: 'UNMINTED'
-    }
+class DomainMetadata {
+    @IsString()
+    domain!: string
 
-    records: Record<string, string> = {}
+    @IsOptional()
+    @IsString()
+    owner: string | null = null
+
+    @IsOptional()
+    @IsString()
+    resolver: string | null = null
+
+    @IsEnum(DomainLocations)
+    location!: Location
+}
+
+class DomainResponse {
+    @ValidateNested()
+    meta!: DomainMetadata
+
+    @IsObject()
+    records!: Record<string, string>
 }
 
 class DomainsListQuery {
@@ -45,24 +65,54 @@ class DomainsListQuery {
     perPage: number = 100;
 }
 
+class DomainAttributes {
+    @IsString()
+    id!: string;
+
+    @ValidateNested()
+    attributes!: DomainResponse
+}
+
 class DomainsListResponse {
-    data: Array<{
-        id: string,
-        attributes: DomainResponse
-    }> = []
+    data!: DomainAttributes[]
 }
 
 @JsonController()
 export class DomainsController {
     @Get('/domains/:domainName')
+    @ResponseSchema(DomainResponse)
     async getDomain(@Param('domainName') domainName: string): Promise<DomainResponse> {
         const emptyResponse = new DomainResponse();
         emptyResponse.meta.domain = domainName;
+        emptyResponse.meta.location = 'UNMINTED';
         return emptyResponse;
     }
 
     @Get('/domains')
+    @OpenAPI({
+        responses: {
+            '200': {
+                'content': {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                data: {
+                                    type: 'array',
+                                    items: {
+                                        '$ref': '#/components/schemas/DomainAttributes'
+                                    }
+                                }
+                            },
+                        }
+                    }
+                }
+            }
+        }
+    })
     async getDomainsList(@QueryParams() query: DomainsListQuery): Promise<DomainsListResponse> {
-        return new DomainsListResponse();
+        const response = new DomainsListResponse();
+        response.data = [];
+        return response;
     }
 }

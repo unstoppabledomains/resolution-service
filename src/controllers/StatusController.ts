@@ -1,22 +1,32 @@
 import {Get, JsonController} from "routing-controllers";
 import 'reflect-metadata';
+import {ResponseSchema} from "routing-controllers-openapi";
+import {IsNumber, ValidateNested} from "class-validator";
+
+class BlockchainStatus {
+    @IsNumber()
+    latestNetworkBlock: number = 0
+
+    @IsNumber()
+    latestMirroredBlock: number = 0
+}
 
 class StatusResponse {
-    CNS: {
-        latestNetworkBlock: number
-        latestMirroredBlock: number
-    } = {latestMirroredBlock: 0, latestNetworkBlock: 0};
+    @ValidateNested()
+    CNS!: BlockchainStatus;
 
-    ZNS: {
-        latestNetworkBlock: number
-        latestMirroredBlock: number
-    } = {latestMirroredBlock: 0, latestNetworkBlock: 0};
+    @ValidateNested()
+    ZNS!: BlockchainStatus;
 }
 
 @JsonController()
 export class StatusController {
     @Get('/status')
+    @ResponseSchema(StatusResponse)
     async getStatus(): Promise<StatusResponse> {
-        return new StatusResponse()
+        const statusResponse = new StatusResponse();
+        statusResponse.CNS = new BlockchainStatus();
+        statusResponse.ZNS = new BlockchainStatus();
+        return statusResponse;
     }
 }
