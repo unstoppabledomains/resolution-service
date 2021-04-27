@@ -2,6 +2,6 @@ import {logger} from "../logger";
 import {setIntervalAsync} from "set-interval-async/dynamic";
 
 setIntervalAsync(async () => {
-    // Cns polling logic is here
+    // todo Cns polling logic is here
     logger.info('CnsUpdater is pulling updates from Ethereum');
-}, 5000);
+}, 5000); // todo adjust intervals up to 10 minutes
