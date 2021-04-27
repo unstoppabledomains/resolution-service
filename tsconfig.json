@@ -3,11 +3,12 @@
   "compilerOptions": {
       "experimentalDecorators": true,
       "emitDecoratorMetadata": true,
-      "allowJs": true
+      "allowJs": true,
+      "outDir": "build",
   },
   "include": [
     "./src/**/*.ts",
     "./src/**/*.js",
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "build"]
 }
