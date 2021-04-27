@@ -1,0 +1,14 @@
+{
+  "extends": "@tsconfig/node14/tsconfig.json",
+  "compilerOptions": {
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true,
+      "allowJs": true,
+      "outDir": "build",
+  },
+  "include": [
+    "./src/**/*.ts",
+    "./src/**/*.js",
+  ],
+  "exclude": ["node_modules", "build"]
+}
