@@ -16,6 +16,7 @@ import {
 import connect from "../connect";
 import { Serialization, Serializer, Serialized } from "../services/Serializer";
 import { Attribute, Attributes, KeysOfType } from "../types/common";
+import ObjectInvalid from "../errors/ObjectInvalid";
 
 type ModelConstructor = {
   [P in keyof typeof Model]: typeof Model[P];
@@ -81,7 +82,7 @@ export default abstract class Model extends BaseEntity {
   static async serializeAll<T extends Model, U extends Serialization<T>>(
     this: ObjectType<T>,
     array: T[],
-    ...attributes: U[]
+    ...attributes: U
   ): Promise<Serialized<T, U>[]> {
     return Serializer.serializeAll(array, ...attributes) as any;
   }
@@ -182,7 +183,7 @@ export default abstract class Model extends BaseEntity {
   }
 
   async serialize<U extends Serialization<this>>(
-    ...attributes: U[]
+    ...attributes: U
   ): Promise<Serialized<this, U>[]> {
     return Serializer.serialize(this, ...attributes) as any;
   }
