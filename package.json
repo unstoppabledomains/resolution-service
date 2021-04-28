@@ -23,7 +23,8 @@
     "prettier:check": "prettier -l \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "prettier:fix": "prettier --write -l \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "eslint:check": "eslint --ext .ts,.js src",
-    "eslint:fix": "eslint --ext .ts,.js src --fix"
+    "eslint:fix": "eslint --ext .ts,.js src --fix",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@types/swagger-ui-express": "^4.1.2",
