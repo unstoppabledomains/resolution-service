@@ -5,7 +5,7 @@
       "emitDecoratorMetadata": true,
       "allowJs": true,
       "outDir": "build",
-  },
+    },
   "include": [
     "./src/**/*.ts",
     "./src/**/*.js",
