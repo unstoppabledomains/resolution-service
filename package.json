@@ -16,11 +16,18 @@
   },
   "scripts": {
     "test": "mocha",
-    "build": "tsc"
+    "build": "tsc",
+    "typeorm": "ts-node -T node_modules/.bin/typeorm",
+    "db:migration:sync": "yarn db:migration:pending && yarn typeorm migration:generate -n",
+    "db:migration:new": "yarn typeorm migration:create -n",
+    "db:migration:run": "yarn typeorm migration:run",
+    "db:migration:revert": "yarn typeorm migration:revert",
+    "db:migration:pending": "yarn typeorm migration:show | (! grep -E '\\[ \\]' )"
   },
   "dependencies": {
     "@types/lodash": "^4.14.168",
     "@types/swagger-ui-express": "^4.1.2",
+    "@unstoppabledomains/resolution": "^3.0.0",
     "body-parser": "^1.19.0",
     "class-transformer": "^0.4.0",
     "class-validator": "^0.13.1",
@@ -28,6 +35,7 @@
     "ethers": "^5.1.4",
     "express": "^4.17.1",
     "multer": "^1.4.2",
+    "pg": "^8.6.0",
     "reflect-metadata": "^0.1.13",
     "routing-controllers": "^0.9.0",
     "routing-controllers-openapi": "^3.0.0",

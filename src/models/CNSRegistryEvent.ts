@@ -27,7 +27,7 @@ type EventType = typeof EventTypes[any];
 
 @Entity({ name: "cns_registry_events" })
 @Index(["blockNumber", "logIndex"], { unique: true })
-export default class CnsEvent extends Model {
+export default class CnsRegistryEvent extends Model {
   static EventTypes = EventTypes;
   static DomainOperationTypes = DomainOperationTypes;
   static InitialBlock =
@@ -43,7 +43,7 @@ export default class CnsEvent extends Model {
   blockchainId: string | null = null;
 
   @IsNumber()
-  @ValidateWith<CNSEvent>("blockNumberIncreases")
+  @ValidateWith<CnsRegistryEvent>("blockNumberIncreases")
   @Column({ type: "int" })
   @Index()
   blockNumber: number = 0;
@@ -51,14 +51,14 @@ export default class CnsEvent extends Model {
   @IsOptional()
   @IsNumber()
   @Min(0)
-  @ValidateWith<CNSEvent>("logIndexForBlockIncreases")
+  @ValidateWith<CnsRegistryEvent>("logIndexForBlockIncreases")
   @Column({ type: "int", nullable: true })
   logIndex: number | null = null;
 
   @IsOptional()
   @IsString()
   @Matches(/0x[0-9a-f]+/)
-  @ValidateWith<CNSEvent>("consistentBlockNumberForHash")
+  @ValidateWith<CnsRegistryEvent>("consistentBlockNumberForHash")
   @Column({ type: "text", nullable: true })
   transactionHash: string | null = null;
 
@@ -75,10 +75,10 @@ export default class CnsEvent extends Model {
   node: string | null = null;
 
   static async latestBlock(): Promise<number> {
-    const event = await CNSEvent.findOne({
+    const event = await CnsRegistryEvent.findOne({
       order: { blockNumber: "DESC" },
     });
-    return event ? event.blockNumber : CNSEvent.InitialBlock;
+    return event ? event.blockNumber : CnsRegistryEvent.InitialBlock;
   }
 
   static tokenIdToNode(tokenId: BigNumber): string {
@@ -86,22 +86,22 @@ export default class CnsEvent extends Model {
     return "0x" + node.padStart(64, "0");
   }
 
-  constructor(attributes?: Attributes<CNSEvent>) {
+  constructor(attributes?: Attributes<CnsRegistryEvent>) {
     super();
-    this.attributes<CNSEvent>(attributes);
+    this.attributes<CnsRegistryEvent>(attributes);
   }
 
   async blockNumberIncreases(): Promise<boolean> {
     if (this.hasId()) {
       return true;
     }
-    return !(await CNSEvent.findOne({
+    return !(await CnsRegistryEvent.findOne({
       blockNumber: MoreThan(this.blockNumber),
     }));
   }
 
   async logIndexForBlockIncreases(): Promise<boolean> {
-    return !(await CNSEvent.findOne({
+    return !(await CnsRegistryEvent.findOne({
       blockNumber: this.blockNumber,
       logIndex: MoreThan(this.logIndex),
     }));
@@ -118,12 +118,12 @@ export default class CnsEvent extends Model {
   async beforeValidate() {
     const tokenId = this.tokenId();
     this.node = tokenId
-      ? CNSEvent.tokenIdToNode(BigNumber.from(tokenId))
+      ? CnsRegistryEvent.tokenIdToNode(BigNumber.from(tokenId))
       : null;
   }
 
   async consistentBlockNumberForHash(): Promise<boolean> {
-    const inconsistentEvent = await CNSEvent.findOne({
+    const inconsistentEvent = await CnsRegistryEvent.findOne({
       transactionHash: this.transactionHash,
       blockNumber: Not(this.blockNumber),
     });
