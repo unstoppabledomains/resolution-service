@@ -1,8 +1,8 @@
-import winston from "winston";
+import winston from 'winston';
 
 export const logger = winston.createLogger({
-  level: "info",
+  level: 'info',
   format: winston.format.cli(),
-  defaultMeta: { service: "resolution-service" },
+  defaultMeta: { service: 'resolution-service' },
   transports: [new winston.transports.Console()],
 });

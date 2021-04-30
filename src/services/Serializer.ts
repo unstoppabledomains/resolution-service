@@ -1,4 +1,4 @@
-import { UnwrapPromise, UnwrapArray } from "../types/common";
+import { UnwrapPromise, UnwrapArray } from '../types/common';
 
 type MethodReturnType<T> = T extends () => any ? ReturnType<T> : T;
 type UnwrapArgument<T> = UnwrapArray<
@@ -51,7 +51,7 @@ export class Serializer<T> {
     ...attributes: U
   ): Promise<Serialized<T, U>[]> {
     return Promise.all(
-      object.map((value) => this.serialize(value, ...attributes))
+      object.map((value) => this.serialize(value, ...attributes)),
     ) as any;
   }
 
@@ -62,17 +62,17 @@ export class Serializer<T> {
     const result: { [k: string]: any } = {};
 
     for (const attribute of attributes as readonly any[]) {
-      if (typeof attribute === "string") {
+      if (typeof attribute === 'string') {
         result[attribute] = await this.serializedPropertyValue(
           object,
-          attribute
+          attribute,
         );
       } else if (attribute instanceof Object) {
         for (const key in attribute) {
           let config: any = attribute[key];
           config = config instanceof Array ? config : [config];
           let value = await this.serializedPropertyValue(object, key);
-          if (config && value && typeof value === "object") {
+          if (config && value && typeof value === 'object') {
             value =
               value instanceof Array
                 ? await this.serializeAll(value, ...config)
@@ -89,7 +89,7 @@ export class Serializer<T> {
   private async serializedPropertyValue(object: any, property: string) {
     let value = object[property as string];
     value =
-      typeof value === "function" ? await value.apply(object) : await value;
+      typeof value === 'function' ? await value.apply(object) : await value;
     return value === undefined ? null : value;
   }
 }

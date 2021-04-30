@@ -1,5 +1,5 @@
-import { IsDate, IsNumber, IsOptional, validate } from "class-validator";
-import { logger } from "../logger";
+import { IsDate, IsNumber, IsOptional, validate } from 'class-validator';
+import { logger } from '../logger';
 import {
   BaseEntity,
   BeforeInsert,
@@ -12,11 +12,11 @@ import {
   Repository,
   UpdateDateColumn,
   SaveOptions,
-} from "typeorm";
-import connect from "../database/connect";
-import { Serialization, Serializer, Serialized } from "../services/Serializer";
-import { Attribute, Attributes, KeysOfType } from "../types/common";
-import ObjectInvalid from "../errors/ObjectInvalid";
+} from 'typeorm';
+import connect from '../database/connect';
+import { Serialization, Serializer, Serialized } from '../services/Serializer';
+import { Attribute, Attributes, KeysOfType } from '../types/common';
+import ObjectInvalid from '../errors/ObjectInvalid';
 
 type ModelConstructor = {
   [P in keyof typeof Model]: typeof Model[P];
@@ -42,14 +42,14 @@ export default abstract class Model extends BaseEntity {
 
   static async persist<T extends Model>(
     this: ObjectType<T>,
-    attributes: Attributes<T>
+    attributes: Attributes<T>,
   ) {
     return (await (this as any).create(attributes).save()) as T;
   }
 
   static async findOrBuild<T extends Model>(
     this: ObjectType<T>,
-    attributes: Attributes<T>
+    attributes: Attributes<T>,
   ): Promise<T> {
     const that = this as any;
     const where: any = {};
@@ -69,7 +69,7 @@ export default abstract class Model extends BaseEntity {
 
   static async findOrCreate<T extends Model>(
     this: ObjectType<T>,
-    attributes: Attributes<T>
+    attributes: Attributes<T>,
   ): Promise<T> {
     const that = this as any;
     const model = await that.findOrBuild(attributes);
@@ -94,7 +94,7 @@ export default abstract class Model extends BaseEntity {
 
   static getRepositoryForManager<T extends Model>(
     this: ObjectType<T> & ModelConstructor,
-    entityManager?: EntityManager
+    entityManager?: EntityManager,
   ): Repository<T> {
     const brr = {};
     for (const p in brr) {
@@ -111,18 +111,18 @@ export default abstract class Model extends BaseEntity {
   }
 
   static sqlIn(column: string, options: (string | number)[]): string {
-    const sql = options.map((o) => (typeof o === "number" ? o : `'${o}'`));
-    return options.length ? `${column} in (${sql.join(", ")})` : "1=1";
+    const sql = options.map((o) => (typeof o === 'number' ? o : `'${o}'`));
+    return options.length ? `${column} in (${sql.join(', ')})` : '1=1';
   }
 
   static async groupCount<T extends Model>(
     this: ObjectType<T>,
     column: Attribute<T>,
     {
-      operation = "count(*)",
-      where = "1=1",
+      operation = 'count(*)',
+      where = '1=1',
       options = [],
-    }: { operation?: string; where?: string; options?: string[] } = {}
+    }: { operation?: string; where?: string; options?: string[] } = {},
   ): Promise<Record<string, number>> {
     const that = this as typeof Model;
     const rows = (await that
@@ -131,12 +131,12 @@ export default abstract class Model extends BaseEntity {
       .andWhere(Model.sqlIn(column, options))
       .groupBy(column)
       .orderBy(column)
-      .select(column, "counter")
-      .addSelect(operation, "count")
+      .select(column, 'counter')
+      .addSelect(operation, 'count')
       .getRawMany()) as { counter: string; count: string }[];
     const data = rows.reduce(
       (r, v) => ({ ...r, [v.counter]: parseInt(v.count, 10) }),
-      {} as Record<string, number>
+      {} as Record<string, number>,
     );
     for (const key of options) {
       if (data[key] === undefined) {
@@ -193,7 +193,7 @@ export default abstract class Model extends BaseEntity {
     return this.save();
   }
 
-  async touch(timestamp: Touchable<this> = "updatedAt" as any): Promise<this> {
+  async touch(timestamp: Touchable<this> = 'updatedAt' as any): Promise<this> {
     (this as any)[timestamp] = new Date();
     return await this.save();
   }
@@ -203,7 +203,7 @@ export default abstract class Model extends BaseEntity {
   }
 
   logId(): string {
-    return `${this.constructor.name}#${this.id || "new"}`;
+    return `${this.constructor.name}#${this.id || 'new'}`;
   }
 
   async saveNew(options?: SaveOptions) {

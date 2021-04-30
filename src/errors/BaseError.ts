@@ -11,17 +11,17 @@ export default class BaseError extends Error {
     super(message);
     this.message = message;
     this.cause = cause;
-    const stack = this.stack || "";
+    const stack = this.stack || '';
     this.newStack = stack;
     if (cause) {
       const lines = (this.message.match(/\n/g) || []).length + 1;
       this.stack =
         stack
-          .split("\n")
+          .split('\n')
           .slice(0, lines + 1)
-          .join("\n") +
-        "\n" +
-        (cause.stack || "");
+          .join('\n') +
+        '\n' +
+        (cause.stack || '');
     }
   }
 }

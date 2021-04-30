@@ -9,7 +9,7 @@ export type KeysOfType<T, TProp> = NonNullable<
 export type AnyFunction = (...args: any[]) => any;
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-export type Constructed = Pick<Object, "constructor">;
+export type Constructed = Pick<Object, 'constructor'>;
 
 export type UnwrapArray<T> = T extends Array<infer U> ? U : T;
 export type UnwrapPromise<T> = T extends Promise<infer U> ? U : T;
@@ -33,7 +33,7 @@ export type ValidationProperty<T> = KeysOfType<
   ValidationMethod | ValidationBase
 >;
 export type ValidationCallback<T> = (
-  object: T
+  object: T,
 ) => PossiblePromise<ValidationBase>;
 
 export type Attributes<T> = Omit<

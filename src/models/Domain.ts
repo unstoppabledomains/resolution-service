@@ -5,50 +5,50 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-} from "typeorm";
+} from 'typeorm';
 import {
   IsObject,
   IsOptional,
   IsString,
   Matches,
   NotEquals,
-} from "class-validator";
-import ValidateWith from "../services/ValidateWith";
-import * as _ from "lodash";
-import { Resolution } from "@unstoppabledomains/resolution";
-import { Model } from ".";
+} from 'class-validator';
+import ValidateWith from '../services/ValidateWith';
+import * as _ from 'lodash';
+import { Resolution } from '@unstoppabledomains/resolution';
+import { Model } from '.';
 
-type DomainLocation = "CNS" | "ZNS" | "UNSL1" | "UNSL2" | "UNMINTED";
+type DomainLocation = 'CNS' | 'ZNS' | 'UNSL1' | 'UNSL2' | 'UNMINTED';
 
-@Entity({ name: "domains" })
+@Entity({ name: 'domains' })
 export default class Domain extends Model {
   static AddressRegex = /^0x[a-f0-9]{40}$/;
-  static NullAddress = "0x0000000000000000000000000000000000000000";
+  static NullAddress = '0x0000000000000000000000000000000000000000';
   private static Resolution = new Resolution();
 
   @IsString()
-  @ValidateWith<Domain>("nameMatchesNode", {
+  @ValidateWith<Domain>('nameMatchesNode', {
     message: "Node doesn't match the name",
   })
   @Index({ unique: true })
-  @Column("text")
+  @Column('text')
   name: string;
 
   @Matches(/^0x[a-f0-9]{64}$/)
   @Index({ unique: true })
-  @Column("text")
+  @Column('text')
   node: string;
 
   @Index()
   @IsOptional()
   @Matches(Domain.AddressRegex)
-  @Column("text", { nullable: true })
+  @Column('text', { nullable: true })
   ownerAddress: string | null = null;
 
   @IsOptional()
   @Matches(Domain.AddressRegex)
   @NotEquals(Domain.NullAddress)
-  @Column("text", { nullable: true })
+  @Column('text', { nullable: true })
   resolver: string | null = null;
 
   @IsOptional()
@@ -59,17 +59,17 @@ export default class Domain extends Model {
 
   @IsOptional()
   @IsObject()
-  @ValidateWith<Domain>("validResolution", {
-    message: "resolution does not match Record<string, string> type",
+  @ValidateWith<Domain>('validResolution', {
+    message: 'resolution does not match Record<string, string> type',
   })
-  @Column("jsonb", { default: {} })
+  @Column('jsonb', { default: {} })
   resolution: Record<string, string> = {};
 
   @OneToMany((type) => Domain, (domain) => domain.parent)
-  @JoinColumn({ name: "parent_id" })
+  @JoinColumn({ name: 'parent_id' })
   children: Promise<Domain[]>;
 
-  @Column("text")
+  @Column('text')
   location: DomainLocation;
 
   nameMatchesNode() {
@@ -79,7 +79,7 @@ export default class Domain extends Model {
   validResolution(): boolean {
     for (const property in this.resolution) {
       if (
-        !this.resolution.hasOwnProperty(property) ||
+        !Object.prototype.hasOwnProperty.call(this.resolution, property) ||
         false === _.isString(property) ||
         false === _.isString(this.resolution[property])
       ) {
@@ -93,15 +93,15 @@ export default class Domain extends Model {
   get label(): string {
     const splittedName = this.getSplittedName();
     splittedName.pop();
-    return splittedName.join(".");
+    return splittedName.join('.');
   }
 
   get extension(): string {
-    return this.getSplittedName().pop() || "";
+    return this.getSplittedName().pop() || '';
   }
 
   private getSplittedName(): string[] {
-    return this.name ? this.name.split(".") : [];
+    return this.name ? this.name.split('.') : [];
   }
 
   private correctNode() {

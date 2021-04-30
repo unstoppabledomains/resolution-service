@@ -2,16 +2,16 @@ import {
   registerDecorator,
   ValidationArguments,
   ValidationOptions,
-} from "class-validator";
+} from 'class-validator';
 import {
   ValidationProperty,
   ValidationCallback,
   Constructed,
-} from "../types/common";
+} from '../types/common';
 
 export default function ValidateWith<T extends Constructed>(
   method: ValidationCallback<T> | ValidationProperty<T>,
-  validationOptions?: ValidationOptions
+  validationOptions?: ValidationOptions,
 ) {
   return (object: T, propertyName: string) => {
     registerDecorator({
@@ -22,7 +22,7 @@ export default function ValidateWith<T extends Constructed>(
       options: validationOptions,
       validator: {
         validate(value: any, args: ValidationArguments) {
-          return typeof method === "string"
+          return typeof method === 'string'
             ? (args.object as any)[method as string]()
             : (method as ValidationCallback<T>)(object);
         },

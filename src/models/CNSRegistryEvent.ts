@@ -7,26 +7,26 @@ import {
   Min,
   ValidateIf,
   IsOptional,
-} from "class-validator";
-import { Column, Entity, Index, MoreThan, Not } from "typeorm";
-import { BigNumber } from "ethers";
-import ValidateWith from "../services/ValidateWith";
-import { Attributes } from "../types/common";
-import Model from "./Model";
-import { env } from "../env";
+} from 'class-validator';
+import { Column, Entity, Index, MoreThan, Not } from 'typeorm';
+import { BigNumber } from 'ethers';
+import ValidateWith from '../services/ValidateWith';
+import { Attributes } from '../types/common';
+import Model from './Model';
+import { env } from '../env';
 
-const DomainOperationTypes = ["Transfer", "Resolve", "NewURI", "Sync"] as const;
+const DomainOperationTypes = ['Transfer', 'Resolve', 'NewURI', 'Sync'] as const;
 const EventTypes = [
   ...DomainOperationTypes,
-  "Approval",
-  "ApprovalForAll",
-  "NewURIPrefix",
-  "FakeUpdateStatus",
+  'Approval',
+  'ApprovalForAll',
+  'NewURIPrefix',
+  'FakeUpdateStatus',
 ] as const;
 type EventType = typeof EventTypes[any];
 
-@Entity({ name: "cns_registry_events" })
-@Index(["blockNumber", "logIndex"], { unique: true })
+@Entity({ name: 'cns_registry_events' })
+@Index(['blockNumber', 'logIndex'], { unique: true })
 export default class CnsRegistryEvent extends Model {
   static EventTypes = EventTypes;
   static DomainOperationTypes = DomainOperationTypes;
@@ -34,56 +34,56 @@ export default class CnsRegistryEvent extends Model {
     env.APPLICATION.ETHEREUM.CNS_REGISTRY_EVENTS_STARTING_BLOCK;
 
   @IsEnum(EventTypes)
-  @Column({ type: "text" })
+  @Column({ type: 'text' })
   type: EventType;
 
   @IsOptional()
   @IsString()
-  @Column({ type: "text", nullable: true })
+  @Column({ type: 'text', nullable: true })
   blockchainId: string | null = null;
 
   @IsNumber()
-  @ValidateWith<CnsRegistryEvent>("blockNumberIncreases")
-  @Column({ type: "int" })
+  @ValidateWith<CnsRegistryEvent>('blockNumberIncreases')
+  @Column({ type: 'int' })
   @Index()
-  blockNumber: number = 0;
+  blockNumber = 0;
 
   @IsOptional()
   @IsNumber()
   @Min(0)
-  @ValidateWith<CnsRegistryEvent>("logIndexForBlockIncreases")
-  @Column({ type: "int", nullable: true })
+  @ValidateWith<CnsRegistryEvent>('logIndexForBlockIncreases')
+  @Column({ type: 'int', nullable: true })
   logIndex: number | null = null;
 
   @IsOptional()
   @IsString()
   @Matches(/0x[0-9a-f]+/)
-  @ValidateWith<CnsRegistryEvent>("consistentBlockNumberForHash")
-  @Column({ type: "text", nullable: true })
+  @ValidateWith<CnsRegistryEvent>('consistentBlockNumberForHash')
+  @Column({ type: 'text', nullable: true })
   transactionHash: string | null = null;
 
   @IsObject()
-  @Column({ type: "json" })
+  @Column({ type: 'json' })
   returnValues: Record<string, string> = {};
 
   @IsOptional()
   @ValidateIf((e) => e.domainOperation())
   @IsString()
   @Matches(/0x[0-9a-f]+/)
-  @Column({ type: "text", nullable: true })
+  @Column({ type: 'text', nullable: true })
   @Index()
   node: string | null = null;
 
   static async latestBlock(): Promise<number> {
     const event = await CnsRegistryEvent.findOne({
-      order: { blockNumber: "DESC" },
+      order: { blockNumber: 'DESC' },
     });
     return event ? event.blockNumber : CnsRegistryEvent.InitialBlock;
   }
 
   static tokenIdToNode(tokenId: BigNumber): string {
-    const node = tokenId.toHexString().replace(/^(0x)?/, "");
-    return "0x" + node.padStart(64, "0");
+    const node = tokenId.toHexString().replace(/^(0x)?/, '');
+    return '0x' + node.padStart(64, '0');
   }
 
   constructor(attributes?: Attributes<CnsRegistryEvent>) {
