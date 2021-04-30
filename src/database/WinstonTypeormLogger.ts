@@ -1,8 +1,8 @@
 import { Logger, QueryRunner } from "typeorm";
 import { highlight } from "cli-highlight";
 import chalk from "chalk";
-import { logger } from "./logger";
-import { env } from "./env";
+import { logger } from "../logger";
+import { env } from "../env";
 
 const SqlTheme = {
   keyword: chalk.blueBright,

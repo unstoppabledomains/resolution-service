@@ -1,6 +1,6 @@
 import { PostgresConnectionOptions } from "typeorm/driver/postgres/PostgresConnectionOptions";
-import { env } from "./src/env";
-import SnakeNamingStrategy from "./src/SnakeNamingStrategy";
+import { env } from "../env";
+import SnakeNamingStrategy from "./SnakeNamingStrategy";
 
 export = {
   ...env.TYPEORM,

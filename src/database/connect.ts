@@ -1,8 +1,8 @@
 import { getConnectionManager, getConnection } from "typeorm";
 import { WinstonTypeormLogger } from "./WinstonTypeormLogger";
 import SnakeNamingStrategy from "./SnakeNamingStrategy";
-import { logger } from "./logger";
-import { env } from "./env";
+import { logger } from "../logger";
+import { env } from "../env";
 
 process.env.TZ = "UTC";
 
@@ -25,8 +25,7 @@ export default async function connect() {
   }
 
   logger.info("Initiating a TypeORM connection...");
-  return await logger.info(
-    "TypeORM connection established",
-    connection.connect()
-  );
+  await connection.connect();
+  logger.info("TypeORM connection established");
+  return connection;
 }

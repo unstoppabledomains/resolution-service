@@ -16,9 +16,8 @@ export const env = {
     },
     name: "default",
     type: "postgres" as "postgres",
-    host: process.env.POSTGRESQL_HOST || "psql",
-    database: process.env.POSTGRESQL_DATABASE || "resolution-service",
-    username: process.env.POSTGRESQL_USERNAME || "postgres",
-    password: process.env.POSTGRESQL_PASSWORD || "",
+    url:
+      process.env.RESOLUTION_POSTGRES_URL ||
+      "postgresql://postgres:secret@localhost/resolutionservice",
   },
 };

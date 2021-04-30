@@ -13,7 +13,7 @@ import {
   UpdateDateColumn,
   SaveOptions,
 } from "typeorm";
-import connect from "../connect";
+import connect from "../database/connect";
 import { Serialization, Serializer, Serialized } from "../services/Serializer";
 import { Attribute, Attributes, KeysOfType } from "../types/common";
 import ObjectInvalid from "../errors/ObjectInvalid";

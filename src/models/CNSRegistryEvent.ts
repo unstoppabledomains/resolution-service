@@ -27,7 +27,7 @@ type EventType = typeof EventTypes[any];
 
 @Entity({ name: "cns_registry_events" })
 @Index(["blockNumber", "logIndex"], { unique: true })
-export default class CNSEvent extends Model {
+export default class CnsEvent extends Model {
   static EventTypes = EventTypes;
   static DomainOperationTypes = DomainOperationTypes;
   static InitialBlock =
