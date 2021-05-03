@@ -72,6 +72,7 @@ export default class Domain extends Model {
   children!: Promise<Domain[]>;
 
   @IsEnum(DomainLocations)
+  @Column('text')
   location!: Location;
 
   nameMatchesNode() {

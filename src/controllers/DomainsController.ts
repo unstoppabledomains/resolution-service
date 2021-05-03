@@ -125,7 +125,6 @@ export class DomainsController {
   ): Promise<DomainsListResponse> {
     validateOrReject(query);
     const ownersQuery = query.owners?.map((owner) => owner.toLowerCase());
-    console.log(await Domain.find());
     const domains = await Domain.find({
       ownerAddress: ownersQuery ? In(ownersQuery) : undefined,
       location: query.locations ? In(query.locations) : undefined,
