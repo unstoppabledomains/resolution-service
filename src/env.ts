@@ -16,7 +16,9 @@ export const env = {
     },
     type: 'postgres' as const,
     url:
-      process.env.RESOLUTION_POSTGRES_URL ||
-      'postgresql://postgres:secret@localhost/resolutionservice',
+      process.env.NODE_ENV === 'TEST'
+        ? 'postgresql://postgres:secret@localhost/resolution_service_test'
+        : process.env.RESOLUTION_POSTGRES_URL ||
+          'postgresql://postgres:secret@localhost/resolution_service',
   },
 };

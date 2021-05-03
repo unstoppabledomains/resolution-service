@@ -12,13 +12,15 @@ import {
   IsString,
   Matches,
   NotEquals,
+  IsEnum,
 } from 'class-validator';
 import ValidateWith from '../services/ValidateWith';
 import * as _ from 'lodash';
 import { Resolution } from '@unstoppabledomains/resolution';
 import { Model } from '.';
 
-type DomainLocation = 'CNS' | 'ZNS' | 'UNSL1' | 'UNSL2' | 'UNMINTED';
+const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
+type Location = typeof DomainLocations[number];
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
@@ -32,12 +34,12 @@ export default class Domain extends Model {
   })
   @Index({ unique: true })
   @Column('text')
-  name: string;
+  name!: string;
 
   @Matches(/^0x[a-f0-9]{64}$/)
   @Index({ unique: true })
   @Column('text')
-  node: string;
+  node!: string;
 
   @Index()
   @IsOptional()
@@ -55,7 +57,7 @@ export default class Domain extends Model {
   @Index()
   @ManyToOne((type) => Domain, { nullable: true })
   @JoinColumn()
-  parent: Promise<Domain | null>;
+  parent!: Promise<Domain | null>;
 
   @IsOptional()
   @IsObject()
@@ -67,10 +69,10 @@ export default class Domain extends Model {
 
   @OneToMany((type) => Domain, (domain) => domain.parent)
   @JoinColumn({ name: 'parent_id' })
-  children: Promise<Domain[]>;
+  children!: Promise<Domain[]>;
 
-  @Column('text')
-  location: DomainLocation;
+  @IsEnum(DomainLocations)
+  location!: Location;
 
   nameMatchesNode() {
     return this.correctNode() === this.node;

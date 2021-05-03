@@ -12,8 +12,11 @@ import {
   Max,
   Min,
   ValidateNested,
+  validateOrReject,
 } from 'class-validator';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
+import { Domain } from '../models';
+import { In } from 'typeorm';
 
 const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
 type Location = typeof DomainLocations[number];
@@ -120,8 +123,29 @@ export class DomainsController {
   async getDomainsList(
     @QueryParams() query: DomainsListQuery,
   ): Promise<DomainsListResponse> {
+    validateOrReject(query);
+    const ownersQuery = query.owners?.map((owner) => owner.toLowerCase());
+    console.log(await Domain.find());
+    const domains = await Domain.find({
+      ownerAddress: ownersQuery ? In(ownersQuery) : undefined,
+      location: query.locations ? In(query.locations) : undefined,
+    });
     const response = new DomainsListResponse();
     response.data = [];
+    for (const domain of domains) {
+      response.data.push({
+        id: domain.node,
+        attributes: {
+          meta: {
+            location: domain.location,
+            owner: domain.ownerAddress,
+            resolver: domain.resolver,
+            domain: domain.name,
+          },
+          records: domain.resolution,
+        },
+      });
+    }
     return response;
   }
 }

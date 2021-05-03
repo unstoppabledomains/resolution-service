@@ -14,7 +14,7 @@
     "src": "./src"
   },
   "scripts": {
-    "test": "mocha",
+    "test": "NODE_ENV=test mocha",
     "build": "tsc",
     "start:dev": "ts-node src/index.ts",
     "fix": "yarn prettier:fix && yarn eslint:fix",
