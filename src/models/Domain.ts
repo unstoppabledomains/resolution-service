@@ -75,7 +75,7 @@ export default class Domain extends Model {
   @Column('text')
   location!: Location;
 
-  nameMatchesNode() {
+  nameMatchesNode(): boolean {
     return this.correctNode() === this.node;
   }
 

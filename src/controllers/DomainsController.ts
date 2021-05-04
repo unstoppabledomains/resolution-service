@@ -127,7 +127,7 @@ export class DomainsController {
     const ownersQuery = query.owners?.map((owner) => owner.toLowerCase());
     const domains = await Domain.find({
       ownerAddress: ownersQuery ? In(ownersQuery) : undefined,
-      location: query.locations ? In(query.locations) : undefined,
+      location: In(query.locations),
     });
     const response = new DomainsListResponse();
     response.data = [];
