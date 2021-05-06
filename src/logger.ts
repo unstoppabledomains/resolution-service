@@ -13,7 +13,7 @@ export const logger = winston.createLogger({
     data: 6,
     help: 7,
     warn: 8,
-    error: 9
+    error: 9,
   },
   format: winston.format.cli(),
   defaultMeta: { service: 'resolution-service' },
