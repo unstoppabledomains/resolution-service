@@ -24,7 +24,7 @@ type Location = typeof DomainLocations[number];
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
-  static AddressRegex = /^0x[a-f0-9]{40}$/;
+  static AddressRegex = /^0x[a-fA-F0-9]{40}$/;
   static NullAddress = '0x0000000000000000000000000000000000000000';
 
   @IsString()
