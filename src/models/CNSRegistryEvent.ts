@@ -9,11 +9,11 @@ import {
   IsOptional,
 } from 'class-validator';
 import { Column, Entity, Index, MoreThan, Not } from 'typeorm';
-import { BigNumber } from 'ethers';
 import ValidateWith from '../services/ValidateWith';
 import { Attributes } from '../types/common';
 import Model from './Model';
 import { env } from '../env';
+import { BigNumber } from '@ethersproject/bignumber';
 
 const DomainOperationTypes = ['Transfer', 'Resolve', 'NewURI', 'Sync'] as const;
 const EventTypes = [
@@ -21,7 +21,6 @@ const EventTypes = [
   'Approval',
   'ApprovalForAll',
   'NewURIPrefix',
-  'FakeUpdateStatus',
 ] as const;
 type EventType = typeof EventTypes[any];
 
