@@ -25,6 +25,51 @@ describe('DomainsController', () => {
       });
       expect(res.status).eq(200);
     });
+
+    it('should return correct domain resolution for minted .crypto domain', async () => {
+      await Domain.findOrCreate({
+        name: 'brad.crypto',
+        ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+        node:
+          '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+        location: 'CNS',
+        resolution: {
+          'gundb.username.value':
+            '0x8912623832e174f2eb1f59cc3b587444d619376ad5bf10070e937e0dc22b9ffb2e3ae059e6ebf729f87746b2f71e5d88ec99c1fb3c7c49b8617e2520d474c48e1c',
+          'ipfs.html.value': 'QmdyBw5oTgCtTLQ18PbDvPL8iaLoEPhSyzD91q9XmgmAjb',
+          'ipfs.redirect_domain.value':
+            'https://abbfe6z95qov3d40hf6j30g7auo7afhp.mypinata.cloud/ipfs/Qme54oEzRkgooJbCDr78vzKAWcv6DDEZqRhhDyDtzgrZP6',
+          'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+          'gundb.public_key.value':
+            'pqeBHabDQdCHhbdivgNEc74QO-x8CPGXq4PKWgfIzhY.7WJR5cZFuSyh1bFwx0GWzjmrim0T5Y6Bp0SSK0im3nI',
+          'crypto.BTC.address': 'bc1q359khn0phg58xgezyqsuuaha28zkwx047c0c3y',
+        },
+        resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
+      });
+
+      const res = await supertest(api).get('/domains/brad.crypto').send();
+
+      expect(res.status).eq(200);
+      expect(res.body).containSubset({
+        meta: {
+          domain: 'brad.crypto',
+          owner: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+          resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
+          location: 'CNS',
+        },
+        records: {
+          'gundb.username.value':
+            '0x8912623832e174f2eb1f59cc3b587444d619376ad5bf10070e937e0dc22b9ffb2e3ae059e6ebf729f87746b2f71e5d88ec99c1fb3c7c49b8617e2520d474c48e1c',
+          'ipfs.html.value': 'QmdyBw5oTgCtTLQ18PbDvPL8iaLoEPhSyzD91q9XmgmAjb',
+          'ipfs.redirect_domain.value':
+            'https://abbfe6z95qov3d40hf6j30g7auo7afhp.mypinata.cloud/ipfs/Qme54oEzRkgooJbCDr78vzKAWcv6DDEZqRhhDyDtzgrZP6',
+          'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+          'gundb.public_key.value':
+            'pqeBHabDQdCHhbdivgNEc74QO-x8CPGXq4PKWgfIzhY.7WJR5cZFuSyh1bFwx0GWzjmrim0T5Y6Bp0SSK0im3nI',
+          'crypto.BTC.address': 'bc1q359khn0phg58xgezyqsuuaha28zkwx047c0c3y',
+        },
+      });
+    });
   });
 
   describe('GET /domains', () => {
