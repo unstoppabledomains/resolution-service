@@ -17,6 +17,7 @@ import {
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
 import { In } from 'typeorm';
+import { logger } from '../logger';
 
 const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
 type Location = typeof DomainLocations[number];
@@ -88,14 +89,29 @@ export class DomainsController {
   async getDomain(
     @Param('domainName') domainName: string,
   ): Promise<DomainResponse> {
-    const emptyResponse = new DomainResponse();
-    emptyResponse.meta = {
-      domain: domainName,
-      owner: null,
-      resolver: null,
-      location: 'UNMINTED',
+    logger.info(`Resolving ${domainName} via database`);
+    const domain = await Domain.findOne({ name: domainName });
+    if (domain) {
+      const response = new DomainResponse();
+      response.meta = {
+        domain: domainName,
+        location: domain.location,
+        owner: domain.ownerAddress,
+        resolver: domain.resolver,
+      };
+      response.records = domain.resolution;
+      logger.debug(response);
+      return response;
+    }
+    return {
+      meta: {
+        domain: domainName,
+        owner: null,
+        resolver: null,
+        location: 'UNMINTED',
+      },
+      records: {},
     };
-    return emptyResponse;
   }
 
   @Get('/domains')
