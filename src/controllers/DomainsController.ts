@@ -89,6 +89,7 @@ export class DomainsController {
   async getDomain(
     @Param('domainName') domainName: string,
   ): Promise<DomainResponse> {
+    domainName = domainName.toLowerCase();
     logger.info(`Resolving ${domainName} via database`);
     const domain = await Domain.findOne({ name: domainName });
     if (domain) {
