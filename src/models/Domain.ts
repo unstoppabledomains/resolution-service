@@ -31,12 +31,12 @@ export default class Domain extends Model {
   })
   @Index({ unique: true })
   @Column('text')
-  name: string;
+  name!: string;
 
   @Matches(/^0x[a-f0-9]{64}$/)
   @Index({ unique: true })
   @Column('text')
-  node: string;
+  node!: string;
 
   @Index()
   @IsOptional()
@@ -54,7 +54,7 @@ export default class Domain extends Model {
   @Index()
   @ManyToOne((type) => Domain, { nullable: true })
   @JoinColumn()
-  parent: Promise<Domain | null>;
+  parent!: Promise<Domain | null>;
 
   @IsOptional()
   @IsObject()
@@ -66,10 +66,10 @@ export default class Domain extends Model {
 
   @OneToMany((type) => Domain, (domain) => domain.parent)
   @JoinColumn({ name: 'parent_id' })
-  children: Promise<Domain[]>;
+  children!: Promise<Domain[]>;
 
   @Column('text')
-  location: DomainLocation;
+  location!: DomainLocation;
 
   nameMatchesNode() {
     return this.correctNode() === this.node;
