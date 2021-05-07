@@ -85,22 +85,6 @@ class DomainsListResponse {
 @JsonController()
 export class DomainsController {
   @Get('/domains/:domainName')
-  @OpenAPI({
-    responses: {
-      '200': {
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object',
-              properties: {
-                $ref: '#/components/schemas/DomainAttributes',
-              },
-            },
-          },
-        },
-      },
-    },
-  })
   @ResponseSchema(DomainResponse)
   async getDomain(
     @Param('domainName') domainName: string,
