@@ -5,10 +5,10 @@
       "emitDecoratorMetadata": true,
       "allowJs": true,
       "outDir": "build",
-  },
+    },
   "include": [
     "./src/**/*.ts",
-    "./src/**/*.js",
+    "./src/**/*.js", "ormconfig.ts",
   ],
   "exclude": ["node_modules", "build"]
 }
