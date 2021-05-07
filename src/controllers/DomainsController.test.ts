@@ -86,7 +86,7 @@ describe('DomainsController', () => {
     it('should return minted domain ending on .zil', async () => {
       await Domain.findOrCreate({
         name: 'sometestforzil.zil',
-        ownerAddress: 'zil1e63p7kn2lsgm8f80st5cd43m3vzsk6gsumjkgp',
+        ownerAddress: '0xcea21f5a6afc11b3a4ef82e986d63b8b050b6910',
         resolver: '0x34bbdee3404138430c76c2d1b2d4a2d223a896df',
         node:
           '0x8052ef7b6b4eee4bc0d7014f0e216db6270bf0055bcd3582368601f2de5e60f0',
@@ -100,7 +100,7 @@ describe('DomainsController', () => {
       expect(res.body).containSubset({
         meta: {
           domain: 'sometestforzil.zil',
-          owner: 'zil1e63p7kn2lsgm8f80st5cd43m3vzsk6gsumjkgp',
+          owner: '0xcea21f5a6afc11b3a4ef82e986d63b8b050b6910',
           resolver: '0x34bbdee3404138430c76c2d1b2d4a2d223a896df',
           location: 'ZNS',
         },
