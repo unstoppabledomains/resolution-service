@@ -1,4 +1,4 @@
-import { getConnectionManager, getConnection } from 'typeorm';
+import { getConnectionManager, getConnection, Connection } from 'typeorm';
 import { WinstonTypeormLogger } from './WinstonTypeormLogger';
 import SnakeNamingStrategy from './SnakeNamingStrategy';
 import { logger } from '../logger';
@@ -18,7 +18,7 @@ if (!manager.connections.length) {
   });
 }
 
-export default async function connect() {
+export default async function connect(): Promise<Connection> {
   const connection = getConnection();
   if (connection.isConnected) {
     return connection;

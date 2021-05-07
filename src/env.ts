@@ -1,3 +1,5 @@
+import * as path from 'path';
+
 export const env = {
   APPLICATION: {
     PORT: process.env.RESOLUTION_API_PORT || 3000,
@@ -16,7 +18,17 @@ export const env = {
     },
     type: 'postgres' as const,
     url:
-      process.env.RESOLUTION_POSTGRES_URL ||
-      'postgresql://postgres:secret@localhost/resolutionservice',
+      process.env.NODE_ENV === 'test'
+        ? 'postgresql://postgres:secret@localhost/resolution_service_test'
+        : process.env.RESOLUTION_POSTGRES_URL ||
+          'postgresql://postgres:secret@localhost/resolution_service',
+    entities: [
+      path.join(__dirname, './models/index.ts'),
+      path.join(__dirname, './models/index.js'),
+    ] as string[],
+    migrations: [
+      path.join(__dirname, './database/migrations/*.ts'),
+      path.join(__dirname, './database/migrations/*.js'),
+    ] as string[],
   },
 };
