@@ -16,8 +16,8 @@ import {
 } from 'class-validator';
 import ValidateWith from '../services/ValidateWith';
 import * as _ from 'lodash';
-import { Resolution } from '@unstoppabledomains/resolution';
 import { Model } from '.';
+import { eip137Namehash, znsNamehash } from '../utils/namehash';
 
 const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
 type Location = typeof DomainLocations[number];
@@ -26,7 +26,6 @@ type Location = typeof DomainLocations[number];
 export default class Domain extends Model {
   static AddressRegex = /^0x[a-f0-9]{40}$/;
   static NullAddress = '0x0000000000000000000000000000000000000000';
-  private static Resolution = new Resolution();
 
   @IsString()
   @ValidateWith<Domain>('nameMatchesNode', {
@@ -111,8 +110,9 @@ export default class Domain extends Model {
     if (!this.name || this.name !== this.name.toLowerCase()) {
       return undefined;
     }
-    return Domain.Resolution.isSupportedDomain(this.name)
-      ? Domain.Resolution.namehash(this.name)
-      : undefined;
+    if (this.location === 'ZNS') {
+      return znsNamehash(this.name);
+    }
+    return eip137Namehash(this.name);
   }
 }
