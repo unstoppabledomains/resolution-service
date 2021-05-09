@@ -70,18 +70,12 @@ export default class Domain extends Model {
   @JoinColumn({ name: 'parent_id' })
   children!: Promise<Domain[]>;
 
-  @ValidateWith<Domain>('validLocation', {
-    message: 'Location is invalid',
-  })
+  @IsEnum(DomainLocations)
   @Column('text')
   location!: Location;
 
   nameMatchesNode(): boolean {
     return this.correctNode() === this.node;
-  }
-
-  validLocation(): boolean {
-    return DomainLocations.includes(this.location);
   }
 
   validResolution(): boolean {
