@@ -9,8 +9,9 @@ exports.config = {
   /**
    * Array of application names.
    */
-  agent_enabled:
+  agent_enabled: Boolean(
     process.env.NEW_RELIC_APP_NAME && process.env.NEW_RELIC_LICENSE_KEY,
+  ),
   app_name: [process.env.NEW_RELIC_APP_NAME],
 
   /**
