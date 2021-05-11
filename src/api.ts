@@ -8,6 +8,7 @@ import { StatusController } from './controllers/StatusController';
 import swaggerUI from 'swagger-ui-express';
 import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
 import { routingControllersToSpec } from 'routing-controllers-openapi';
+import('newrelic');
 
 export const api = createExpressServer({
   classTransformer: true,
