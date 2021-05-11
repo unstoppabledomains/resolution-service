@@ -11,6 +11,7 @@ export const env = {
         process.env.CNS_REGISTRY_EVENTS_STARTING_BLOCK || 9080000
       ),
     },
+    BUGSNAG_API_KEY: process.env.BUGSNAG_API_KEY || '',
   },
   TYPEORM: {
     LOGGING: {
