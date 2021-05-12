@@ -72,7 +72,7 @@ export default class Domain extends Model {
   @Column('text')
   location!: DomainLocation;
 
-  nameMatchesNode() {
+  nameMatchesNode(): boolean {
     return this.correctNode() === this.node;
   }
 
@@ -104,7 +104,7 @@ export default class Domain extends Model {
     return this.name ? this.name.split('.') : [];
   }
 
-  private correctNode() {
+  private correctNode(): string | undefined {
     if (!this.name || this.name !== this.name.toLowerCase()) {
       return undefined;
     }

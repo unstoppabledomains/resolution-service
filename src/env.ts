@@ -10,8 +10,7 @@ export const env = {
       CNS_REGISTRY_EVENTS_STARTING_BLOCK: +(
         process.env.CNS_REGISTRY_EVENTS_STARTING_BLOCK || 9080000
       ),
-      JSON_RPC_API_URL:
-        process.env.ETHEREUM_JSON_RPC_API_URL,
+      JSON_RPC_API_URL: process.env.ETHEREUM_JSON_RPC_API_URL,
       CHAIN_ID: +(process.env.ETHEREUM_CHAIN_ID || 1),
       CNS_CONFIRMATION_BLOCKS: +(process.env.CNS_CONFIRMATION_BLOCKS || 3),
       CNS_BLOCK_FETCH_LIMIT: +(process.env.CNS_CONFIRMATION_BLOCKS || 10000),

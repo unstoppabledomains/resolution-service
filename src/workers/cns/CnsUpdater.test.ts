@@ -1,14 +1,14 @@
-import { Resolution } from '@unstoppabledomains/resolution';
 import { BigNumber, Contract } from 'ethers';
 import { randomBytes } from 'crypto';
-import { env } from '../env';
-import { CnsRegistryEvent, Domain } from '../models';
-import { provider } from '../utils/provider';
-import { EthereumTestsHelper } from '../utils/testing/EthereumTestsHelper';
-import { CryptoSmartContracts } from '../utils/testing/CryptoSmartContracts';
+import { env } from '../../env';
+import { CnsRegistryEvent, Domain } from '../../models';
+import { provider } from '../../utils/provider';
+import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
+import { CryptoSmartContracts } from '../../utils/testing/CryptoSmartContracts';
 import { CnsUpdater } from './CnsUpdater';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
+import { eip137Namehash } from '../../utils/namehash';
 
 describe('CnsUpdater', () => {
   let service: CnsUpdater;
@@ -44,7 +44,7 @@ describe('CnsUpdater', () => {
 
     testDomainLabel = randomBytes(16).toString('hex');
     testDomainName = `${testDomainLabel}.crypto`;
-    testDomainNode = BigNumber.from(new Resolution().namehash(testDomainName));
+    testDomainNode = BigNumber.from(eip137Namehash(testDomainName));
     testTokenId = BigNumber.from(testDomainNode);
     // await CryptoRegistryEventFactory.create({
     //   blockNumber: await provider.getBlockNumber(),

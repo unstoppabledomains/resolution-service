@@ -13,7 +13,7 @@ const RecordsPerPage = env.APPLICATION.ETHEREUM.CNS_RESOLVER_RECORDS_PER_PAGE;
 export class CnsResolver {
   private registry: Contract = CNS.Registry.getContract();
   private resolver: Contract = CNS.Resolver.getContract();
-  private static DefaultKeysHashes = _.keys(supportedKeysJson.keys).reduce(
+  private static DefaultKeysHashes = Object.keys(supportedKeysJson.keys).reduce(
     (a, v) => {
       a[BigNumber.from(ethers.utils.id(v)).toString()] = v;
       return a;
@@ -25,21 +25,6 @@ export class CnsResolver {
     return !CNS.Resolver.legacyAddresses.find(
       (x) => x.toLowerCase() === resolver.toLowerCase(),
     );
-  }
-
-  async getResolverAddress(node: string): Promise<string | null> {
-    try {
-      const resolverAddress = await this.registry.callStatic.resolverOf(node);
-      return Domain.normalizeResolver(resolverAddress);
-    } catch (error) {
-      if (
-        !error.message.includes(InvalidValuesError) ||
-        !error.message.includes(ExecutionRevertedError)
-      ) {
-        throw error;
-      }
-    }
-    return null;
   }
 
   private async getResolverEvents(
@@ -83,15 +68,17 @@ export class CnsResolver {
         filter,
         startingBlock,
       );
+
       if (domainNewKeyEvents.length > 0) {
         const domainKeys = domainNewKeyEvents.map((event: Event) => {
-          return event.args!.key;
+          return event.args?.key;
         });
-        return _.uniq(domainKeys);
+
+        return [...new Set(domainKeys)];
       }
     }
 
-    return _.keys(supportedKeysJson.keys);
+    return Object.keys(supportedKeysJson.keys);
   }
 
   private async findNewKeysStartingBlock(
@@ -107,58 +94,68 @@ export class CnsResolver {
         env.APPLICATION.ETHEREUM.CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK,
       );
 
-      const lastResetEvent = _.last(resetRecordsEvents)!;
-      if (lastResetEvent) {
-        return lastResetEvent.blockNumber!;
+      const lastResetEvent = resetRecordsEvents[resetRecordsEvents.length - 1];
+      if (lastResetEvent && lastResetEvent.blockNumber) {
+        return lastResetEvent.blockNumber;
       }
     }
 
     return env.APPLICATION.ETHEREUM.CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK;
   }
 
-  async getManyResolverRecords(
-    resolverAddress: string,
-    recordKeys: string[],
-    node: BigNumber,
-    recordsPerPage: number = RecordsPerPage,
-  ): Promise<Record<string, string>> {
-    const paginatedKeys = _.chunk(recordKeys, recordsPerPage);
-    const paginatedRecordValues = await Promise.all(
-      paginatedKeys.map(async (keys) => {
-        return this.resolver
-          .attach(resolverAddress)
-          .callStatic.getMany(keys, node);
-      }),
-    );
-    const recordValues = _.flatten(paginatedRecordValues);
-    const records = _.zipObject(recordKeys, recordValues);
-
-    return _.pickBy(records, (recordValue) => {
-      return _.isString(recordValue) && !_.isEmpty(recordValue);
-    });
+  async getResolverAddress(node: string): Promise<string | null> {
+    try {
+      const resolverAddress = await this.registry.callStatic.resolverOf(node);
+      return Domain.normalizeResolver(resolverAddress);
+    } catch (error) {
+      if (
+        !error.message.includes(InvalidValuesError) ||
+        !error.message.includes(ExecutionRevertedError)
+      ) {
+        throw error;
+      }
+    }
+    return null;
   }
 
   async getAllDomainRecords(
     resolverAddress: string,
     node: BigNumber,
-    recordsPerPage?: number,
+    recordsPerPage: number = RecordsPerPage,
   ): Promise<Record<string, string>> {
     const newKeysFromBlock = await this.findNewKeysStartingBlock(
       resolverAddress,
       node,
     );
+
     const domainKeys = await this.findDomainKeys(
       resolverAddress,
       node,
       newKeysFromBlock,
     );
 
-    return this.getManyResolverRecords(
-      resolverAddress,
-      domainKeys,
-      node,
-      recordsPerPage,
-    );
+    const recordsPromises: Promise<string[]>[] = [];
+    let i = 0;
+    //create paginated promises to fetch data
+    while (i < domainKeys.length) {
+      recordsPromises.push(
+        this.resolver
+          .attach(resolverAddress)
+          .callStatic.getMany(domainKeys.slice(i, i + recordsPerPage), node),
+      );
+      i += recordsPerPage;
+    }
+    const domainValues = (await Promise.all(recordsPromises)).flat();
+    //zip domain keys and values
+    const records = domainKeys.reduce((obj, key, i) => {
+      if (domainValues[i] && typeof domainValues[i] === 'string') {
+        return { ...obj, [key]: domainValues[i] };
+      } else {
+        return obj;
+      }
+    }, {} as Record<string, string>);
+
+    return records;
   }
 
   async getResolverRecordsByKeyHash(

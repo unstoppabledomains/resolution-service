@@ -216,7 +216,7 @@ export class CryptoSmartContracts {
           },
         },
       },
-    } as { [key: string]: { contracts: any } };
+    };
 
     return getCryptoConfig(
       env.APPLICATION.ETHEREUM.CHAIN_ID.toString(),

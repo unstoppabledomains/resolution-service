@@ -3,7 +3,6 @@ import { setIntervalAsync } from 'set-interval-async/dynamic';
 import { provider } from '../../utils/provider';
 import { CnsRegistryEvent, Domain } from '../../models';
 import { env } from '../../env';
-import * as _ from 'lodash';
 import { Contract, Event, BigNumber } from 'ethers';
 import { EntityManager, getConnection, Repository } from 'typeorm';
 import { CNS } from '../../contracts';
@@ -129,11 +128,17 @@ export class CnsUpdater {
     const domain = await Domain.findByNode(node, domainRepository);
     if (!domain) {
       throw new CnsUpdaterError(
-        `Sync event was not processed. Could not find domain for ${node}`,
+        `Sync event was not processed. Could not find domain for node: ${node}`,
       );
     }
 
-    const keyHash = event.args?.updateId!.toString();
+    if (event.args?.updateId) {
+      throw new CnsUpdaterError(
+        `Sync event was not processed. Update id not specified.`,
+      );
+    }
+
+    const keyHash = event.args?.updateId.toString();
     const resolverAddress = await this.resolver.getResolverAddress(node);
     if (keyHash === '0' || !resolverAddress) {
       domain.resolution = {};
@@ -170,8 +175,6 @@ export class CnsUpdater {
     await manager.getRepository(CnsRegistryEvent).save(
       new CnsRegistryEvent({
         type: event.event as CnsRegistryEvent['type'],
-        // Non-typed property that actually exists
-        blockchainId: (event as any).id as string,
         blockNumber: event.blockNumber,
         logIndex: event.logIndex,
         transactionHash: event.transactionHash,
@@ -220,7 +223,7 @@ export class CnsUpdater {
     }
   }
 
-  public async run() {
+  public async run(): Promise<void> {
     logger.info('CnsUpdater is pulling updates from Ethereum');
     const fromBlock = await this.getLatestMirroredBlock();
     const toBlock =
@@ -240,10 +243,10 @@ export class CnsUpdater {
     this.currentSyncBlock = fromBlock;
 
     while (this.currentSyncBlock < toBlock) {
-      const fetchBlock = _.min([
+      const fetchBlock = Math.min(
         this.currentSyncBlock + env.APPLICATION.ETHEREUM.CNS_BLOCK_FETCH_LIMIT,
         toBlock,
-      ])!;
+      );
 
       const events = await this.getRegistryEvents(
         this.currentSyncBlock + 1,
