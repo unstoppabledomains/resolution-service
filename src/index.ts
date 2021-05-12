@@ -5,6 +5,8 @@ import { env } from './env';
 import path from 'path';
 import { logger } from './logger';
 import connect from './database/connect';
+import('newrelic');
+
 const runningMode = env.APPLICATION.RUNNING_MODE;
 
 connect().then(() => {

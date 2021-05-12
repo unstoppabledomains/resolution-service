@@ -13,13 +13,15 @@ import {
   IsString,
   Matches,
   NotEquals,
+  IsEnum,
 } from 'class-validator';
 import ValidateWith from '../services/ValidateWith';
 import * as _ from 'lodash';
 import { Model } from '.';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 
-type DomainLocation = 'CNS' | 'ZNS' | 'UNSL1' | 'UNSL2' | 'UNMINTED';
+const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
+type Location = typeof DomainLocations[number];
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
@@ -69,8 +71,9 @@ export default class Domain extends Model {
   @JoinColumn({ name: 'parent_id' })
   children!: Promise<Domain[]>;
 
+  @IsEnum(DomainLocations)
   @Column('text')
-  location!: DomainLocation;
+  location!: Location;
 
   nameMatchesNode(): boolean {
     return this.correctNode() === this.node;

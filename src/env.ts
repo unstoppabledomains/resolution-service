@@ -19,6 +19,9 @@ export const env = {
       ),
       CNS_RESOLVER_RECORDS_PER_PAGE: +(process.env.CNS_RECORDS_PER_PAGE || 100),
     },
+    NEW_RELIC_LICENSE_KEY: process.env.NEW_RELIC_LICENSE_KEY || '',
+    NEW_RELIC_APP_NAME: process.env.NEW_RELIC_APP_NAME || '',
+    BUGSNAG_API_KEY: process.env.BUGSNAG_API_KEY || '',
   },
   TYPEORM: {
     LOGGING: {
