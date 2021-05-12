@@ -28,3 +28,15 @@ jobs:
       - run: yarn fix
       - run: yarn build
       - run: yarn test
+
+ test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:11.6
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        env:
+          POSTGRES_DB: resolution_service_test
+
