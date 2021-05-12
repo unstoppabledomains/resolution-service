@@ -12,15 +12,11 @@ import {
   Max,
   Min,
   ValidateNested,
-  validateOrReject,
 } from 'class-validator';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
 import { In } from 'typeorm';
-import { logger } from '../logger';
-
-const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
-type Location = typeof DomainLocations[number];
+import { DomainLocations, Location } from '../models/Domain';
 
 class DomainMetadata {
   @IsString()
@@ -90,7 +86,6 @@ export class DomainsController {
     @Param('domainName') domainName: string,
   ): Promise<DomainResponse> {
     domainName = domainName.toLowerCase();
-    logger.info(`Resolving ${domainName} via database`);
     const domain = await Domain.findOne({ name: domainName });
     if (domain) {
       const response = new DomainResponse();
@@ -101,7 +96,6 @@ export class DomainsController {
         resolver: domain.resolver,
       };
       response.records = domain.resolution;
-      logger.debug(response);
       return response;
     }
     return {

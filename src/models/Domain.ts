@@ -19,8 +19,8 @@ import * as _ from 'lodash';
 import { Model } from '.';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 
-const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
-type Location = typeof DomainLocations[number];
+export const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
+export type Location = typeof DomainLocations[number];
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
