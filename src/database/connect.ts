@@ -3,6 +3,7 @@ import { WinstonTypeormLogger } from './WinstonTypeormLogger';
 import SnakeNamingStrategy from './SnakeNamingStrategy';
 import { logger } from '../logger';
 import { env } from '../env';
+const runningMode = env.APPLICATION.RUNNING_MODE;
 
 process.env.TZ = 'UTC';
 
@@ -15,6 +16,8 @@ if (!manager.connections.length) {
     namingStrategy: new SnakeNamingStrategy(),
     // always log queries as slow
     maxQueryExecutionTime: -1,
+    migrationsTableName: 'typeorm_migration',
+    migrationsRun: runningMode.includes('MIGRATIONS'),
   });
 }
 
