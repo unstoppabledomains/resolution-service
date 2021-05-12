@@ -2,6 +2,7 @@ import {
   Column,
   Entity,
   Index,
+  Repository,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -111,5 +112,24 @@ export default class Domain extends Model {
       return znsNamehash(this.name);
     }
     return eip137Namehash(this.name);
+  }
+
+  static async findByNode(
+    node?: string,
+    repository: Repository<Domain> = this.getRepository(),
+  ): Promise<Domain | undefined> {
+    return node ? await repository.findOne({ node }) : undefined;
+  }
+
+  static normalizeResolver(resolver: string | null | undefined): string | null {
+    if (!resolver) {
+      return null;
+    }
+    resolver = resolver.toLowerCase();
+    return resolver === Domain.NullAddress ? null : resolver;
+  }
+
+  static async findOrCreateByName(name: string): Promise<Domain> {
+    return await this.findOrBuild({ name: name });
   }
 }

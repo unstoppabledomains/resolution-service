@@ -11,11 +11,14 @@ export const env = {
         process.env.CNS_REGISTRY_EVENTS_STARTING_BLOCK || 9080000
       ),
       JSON_RPC_API_URL:
-        process.env.ETHEREUM_JSON_RPC_API_URL ||
-        'https://mainnet.infura.io/v3/4458cf4d1689497b9a38b1d6bbf05e78',
+        process.env.ETHEREUM_JSON_RPC_API_URL,
       CHAIN_ID: +(process.env.ETHEREUM_CHAIN_ID || 1),
       CNS_CONFIRMATION_BLOCKS: +(process.env.CNS_CONFIRMATION_BLOCKS || 3),
       CNS_BLOCK_FETCH_LIMIT: +(process.env.CNS_CONFIRMATION_BLOCKS || 10000),
+      CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK: +(
+        process.env.CNS_REGISTRY_EVENTS_STARTING_BLOCK || 9080000
+      ),
+      CNS_RESOLVER_RECORDS_PER_PAGE: +(process.env.CNS_RECORDS_PER_PAGE || 100),
     },
   },
   TYPEORM: {
