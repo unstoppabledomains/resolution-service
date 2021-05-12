@@ -24,7 +24,7 @@ type Location = typeof DomainLocations[number];
 
 class DomainMetadata {
   @IsString()
-  domain!: string;
+  domain: string;
 
   @IsOptional()
   @IsString()
@@ -35,12 +35,12 @@ class DomainMetadata {
   resolver: string | null = null;
 
   @IsEnum(DomainLocations)
-  location!: Location;
+  location: Location;
 }
 
 class DomainResponse {
   @ValidateNested()
-  meta!: DomainMetadata;
+  meta: DomainMetadata;
 
   @IsObject()
   records: Record<string, string> = {};
@@ -51,7 +51,7 @@ class DomainsListQuery {
   @ArrayNotEmpty()
   @IsString({ each: true })
   @IsNotEmpty({ each: true })
-  owners!: string[];
+  owners: string[];
 
   @ArrayNotEmpty()
   @IsNotEmpty({ each: true })
@@ -72,14 +72,14 @@ class DomainsListQuery {
 
 class DomainAttributes {
   @IsString()
-  id!: string;
+  id: string;
 
   @ValidateNested()
-  attributes!: DomainResponse;
+  attributes: DomainResponse;
 }
 
 class DomainsListResponse {
-  data!: DomainAttributes[];
+  data: DomainAttributes[];
 }
 
 @JsonController()
