@@ -11,6 +11,8 @@ export const env = {
         process.env.CNS_REGISTRY_EVENTS_STARTING_BLOCK || 9080000
       ),
     },
+    NEW_RELIC_LICENSE_KEY: process.env.NEW_RELIC_LICENSE_KEY || '',
+    NEW_RELIC_APP_NAME: process.env.NEW_RELIC_APP_NAME || '',
     BUGSNAG_API_KEY: process.env.BUGSNAG_API_KEY || '',
   },
   TYPEORM: {

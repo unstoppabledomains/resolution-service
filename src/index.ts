@@ -4,6 +4,7 @@ import { api } from './api';
 import { env } from './env';
 import path from 'path';
 import { logger } from './logger';
+import('newrelic');
 const runningMode = env.APPLICATION.RUNNING_MODE;
 
 if (runningMode.includes('CNS_WORKER')) {
