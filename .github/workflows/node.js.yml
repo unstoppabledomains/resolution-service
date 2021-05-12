@@ -67,7 +67,7 @@ jobs:
         env:
           POSTGRES_DB: resolution_service_test
 
-     steps:
+    steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v1
