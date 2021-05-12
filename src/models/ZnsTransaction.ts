@@ -73,6 +73,19 @@ export default class ZnsTransaction extends Model {
     }));
   }
 
+  static async latestAtxuid(): Promise<number> {
+    const lastTx = await this.latestTransaction();
+    return lastTx?.atxuid ?? -1;
+  }
+
+  static  async latestTransaction(): Promise<ZnsTransaction | undefined> {
+    return await ZnsTransaction.findOne({
+      where: { atxuid: Not(IsNull()) },
+      order: { atxuid: 'DESC' },
+    });
+  }
+
+
   static async latestBlock(): Promise<number> {
     const transaction = await ZnsTransaction.findOne({
       where: { blockNumber: Not(IsNull()) },
