@@ -12,6 +12,7 @@ import {
   Max,
   Min,
   ValidateNested,
+  validateOrReject,
 } from 'class-validator';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
