@@ -1,6 +1,6 @@
 import { ethers, Wallet, BigNumber } from 'ethers';
-import * as ContractsModule from '../contracts';
-import { provider } from './provider';
+import * as ContractsModule from '../../contracts';
+import { provider } from '../provider';
 import * as sinon from 'sinon';
 import { CryptoSmartContracts } from './CryptoSmartContracts';
 

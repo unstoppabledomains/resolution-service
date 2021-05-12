@@ -11,6 +11,7 @@ import { ExecutionRevertedError } from './BlockchainErrors';
 import { CnsResolverError } from '../../errors/CnsResolverError';
 import { CnsUpdaterError } from '../../errors/CnsUpdaterError';
 import { CnsResolver } from './CnsResolver';
+import connect from '../../database/connect';
 
 export class CnsUpdater {
   private registry: Contract = CNS.Registry.getContract();
@@ -216,8 +217,6 @@ export class CnsUpdater {
         if (error instanceof CnsUpdaterError) {
           logger.error(`Failed to process event. ${JSON.stringify(event)}`);
           logger.error(error);
-        } else {
-          throw error;
         }
       }
     }
@@ -261,13 +260,15 @@ export class CnsUpdater {
   }
 }
 
-setIntervalAsync(async () => {
-  try {
-    logger.info('CnsUpdater is pulling updates from Ethereum');
-    const mirror = new CnsUpdater();
-    await mirror.run();
-  } catch (error) {
-    logger.error(`Unhandled error occured while processing events.`);
-    logger.error(error);
-  }
-}, 5000);
+export function startWorker(): void {
+  setIntervalAsync(async () => {
+    try {
+      logger.info('CnsUpdater is pulling updates from Ethereum');
+      await connect();
+      await new CnsUpdater().run();
+    } catch (error) {
+      logger.error(`Unhandled error occured while processing events.`);
+      logger.error(error);
+    }
+  }, 5000);
+}
