@@ -2,11 +2,6 @@ import supertest from 'supertest';
 import { api } from '../api';
 import { expect } from 'chai';
 import { Domain } from '../models';
-import connect from '../database/connect';
-
-before(async () => {
-  await connect();
-});
 
 describe('DomainsController', () => {
   describe('GET /domain/:domainName', () => {
