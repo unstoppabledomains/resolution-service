@@ -9,14 +9,13 @@ import { CnsUpdater } from './CnsUpdater';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
+import { CnsRegistryEventFactory } from '../../utils/testing/Factories';
 
 describe('CnsUpdater', () => {
   let service: CnsUpdater;
   let registry: Contract;
   let resolver: Contract;
   let whitelistedMinter: Contract;
-  let legacyResolver: Contract;
-  const ethTestHelper: EthereumTestsHelper = new EthereumTestsHelper();
   let contracts: CryptoSmartContracts;
   let coinbaseAddress: string;
 
@@ -31,7 +30,6 @@ describe('CnsUpdater', () => {
     registry = contracts.registry;
     resolver = contracts.resolver;
     whitelistedMinter = contracts.whitelistedMinter;
-    legacyResolver = contracts.legacyResolver;
   });
 
   beforeEach(async () => {
@@ -46,9 +44,9 @@ describe('CnsUpdater', () => {
     testDomainName = `${testDomainLabel}.crypto`;
     testDomainNode = BigNumber.from(eip137Namehash(testDomainName));
     testTokenId = BigNumber.from(testDomainNode);
-    // await CryptoRegistryEventFactory.create({
-    //   blockNumber: await provider.getBlockNumber(),
-    // });
+    await CnsRegistryEventFactory.create({
+      blockNumber: await provider.getBlockNumber(),
+    });
     await whitelistedMinter?.functions
       .mintSLDToDefaultResolver(coinbaseAddress, testDomainLabel, [], [])
       .then((receipt) => receipt.wait());
