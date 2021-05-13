@@ -3,7 +3,6 @@ name: Worker deployment CI
 on:
   workflow_run:
     workflows: ['Node.js CI']
-    branches: [worker-deploy-workflow]
     types:
       - completed
 
