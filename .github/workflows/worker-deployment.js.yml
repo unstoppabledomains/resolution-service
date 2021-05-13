@@ -3,6 +3,7 @@ name: Worker deployment CI
 on:
   workflow_run:
     workflows: ['Node.js CI']
+    branches: [master]
     types:
       - completed
 
@@ -12,7 +13,7 @@ env:
 jobs:
   deployment:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'failed' }}
 
     steps:
       - uses: actions/checkout@v2
