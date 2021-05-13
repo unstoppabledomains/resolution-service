@@ -61,7 +61,7 @@ jobs:
           --health-retries 5
         env:
           POSTGRES_DB: resolution_service_test
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: secret
 
     steps:
       - uses: actions/checkout@v2
