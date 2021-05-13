@@ -1,8 +1,7 @@
 import qs from 'qs';
-import { IsNull, Not } from 'typeorm';
-import { logger } from '../../logger';
 import ZnsTransaction from '../../models/ZnsTransaction';
 import fetch from 'node-fetch';
+import { env } from '../../env';
 /**
  * ZnsProvider is a class that communicates with viewblock and zilliqa api to fetch transactions and domains records
  */
@@ -12,9 +11,11 @@ export default class ZnsProvider {
   private readonly viewBlockApiKey;
 
   private readonly zilliqaRegistryAddress;
+  private readonly network;
 
   constructor() {
-    this.zilliqaRegistryAddress = '0x9611c53be6d1b32058b2747bdececed7e1216793';
+    this.network = env.APPLICATION.ZILLIQA.NETWORK;
+    this.zilliqaRegistryAddress = env.APPLICATION.ZILLIQA.ZNS_REGISTRY_CONTRACT;
     this.viewBlockUrl = 'https://api.viewblock.io/v1/zilliqa';
     const key = process.env.VIEWBLOCK_API_KEY;
     if (!key) {
@@ -31,7 +32,7 @@ export default class ZnsProvider {
     console.log({lastAtxuid, atxuidFrom, atxuidTo});
     // const stats = await this.getStats();
     const params = {
-      network: "mainnet",
+      network: this.network,
       events: true,
       atxuidFrom,
       atxuidTo,
@@ -41,6 +42,32 @@ export default class ZnsProvider {
       this.viewBlockUrl
     }/addresses/${this.zilliqaRegistryAddress}/txs?${query}`;
     return await this.request(url);
+  }
+
+  async requestZilliqaResolutionFor(resolverAddress: string): Promise<Record<string, string>> {
+    const recordResponse = await this.fetchZilliqa([
+      resolverAddress.replace("0x", ""),
+      "records",
+      []
+    ]).then(res => res.result.records || {});
+    return recordResponse;
+  }
+
+  private async fetchZilliqa(params: [string, string, string[]]) {
+    const body = {
+      method: "GetSmartContractSubState",
+      id: "1",
+      jsonrpc: "2.0",
+      params
+    };
+  
+    return await fetch(env.APPLICATION.ZILLIQA.ZNS_API_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body),
+    }).then(res => res.json());
   }
 
   private async request(url: string): Promise<ZnsTransaction[]> {

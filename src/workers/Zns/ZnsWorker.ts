@@ -14,21 +14,22 @@
 import ZnsProvider from './ZnsProvider';
 import { EntityManager, getConnection, Repository } from 'typeorm';
 import { Domain } from '../../models';
-import { NewDomainEvent, ZnsTransactionEvent, ConfiguredEvent } from '../../models/ZnsTransaction';
+import { NewDomainEvent, ConfiguredEvent } from '../../models/ZnsTransaction';
 import ZnsTransaction from '../../models/ZnsTransaction';
 import { znsChildhash } from '../../utils/namehash';
 import { logger } from '../../logger';
-
+import { fromBech32Address } from './Bech32Helper';
 /**
  ** ZnsWorker initialize the configurations from env variables, and ZnsProvider
  *? ZnsWorker -> Talks ZnsProvider -> Provider talks with viewblock and with zilliqa api
- ** ZnsWorker#run() -> start the process 
+ ** ZnsWorker#run() -> start the process
  ** ZnsWorker asks ZnsProvider to fetch the latests transactions.
  ** ZnsProvider talks with database to get the last auixd then talks with viewBlock to fetch the transactions
- *! ZnsWorker begins to process the transactions
+ ** ZnsWorker begins to process the transactions
  ** ZnsWorker asks ZnsProvider to fetch the domain records from zilliqa
  ** ZnsProvider talks with Zilliqa api to fetch the records for domain
  ** ZnsWorker updates Domain and ZilTransactions tables accordingly for each transaction.
+ ** Cycle should keep repeating
  */
 
 /**
@@ -56,7 +57,6 @@ export default class ZnsWorker {
     const transactions = await this.provider.getLatestTransactions(
       this.perPage,
     );
-    console.log(transactions);
     await getConnection().transaction(async (manager) => {
       for (const transaction of transactions) {
         await this.processTransaction(transaction, manager);
@@ -64,59 +64,95 @@ export default class ZnsWorker {
     });
   }
 
-  private async processTransaction(transaction: ZnsTransaction, manager: EntityManager) {
+  private async processTransaction(
+    transaction: ZnsTransaction,
+    manager: EntityManager,
+  ) {
     const domainRepository = manager.getRepository(Domain);
-    logger.info(`transaction atxuid = `, transaction.atxuid, transaction);
     const znsTx = new ZnsTransaction({
       hash: transaction.hash,
       blockNumber: transaction.blockNumber,
       atxuid: transaction.atxuid,
-      events: transaction.events
+      events: transaction.events,
     });
-
-    for (const event of transaction.events) {
+    const events = transaction.events;
+    for (const event of events.reverse()) {
       try {
         switch (event.name) {
           case 'NewDomain': {
-            await this.parseNewDomainEvent(event as NewDomainEvent, domainRepository);
-            break ;
+            await this.parseNewDomainEvent(
+              event as NewDomainEvent,
+              domainRepository,
+            );
+            break;
           }
           case 'Configured': {
-            await this.parseConfiguredEvent(event as ConfiguredEvent, domainRepository);
+            await this.parseConfiguredEvent(
+              event as ConfiguredEvent,
+              domainRepository,
+            );
           }
         }
-      } catch(error) {
-          logger.error(`Failed to process event. ${JSON.stringify(event)}`);
-          logger.error(error);
+      } catch (error) {
+        logger.error(`Failed to process event. ${JSON.stringify(event)}`);
+        logger.error(error);
       }
     }
     await znsTx.save();
   }
 
-  private async parseNewDomainEvent(event: NewDomainEvent, repository: Repository<Domain>): Promise<void> {
-    const {label, parent} = event.params;
+  private async parseNewDomainEvent(
+    event: NewDomainEvent,
+    repository: Repository<Domain>,
+  ): Promise<void> {
+    const { label, parent } = event.params;
     if (this.isInvalidLabel(label)) {
-      throw new Error( `Invalid domain label ${label} at NewDomain event for ${parent}`);
+      throw new Error(
+        `Invalid domain label ${label} at NewDomain event for ${parent}`,
+      );
     }
     const parentDomain = await Domain.findByNode(parent, repository);
     if (!parentDomain) {
-      throw new Error(
-        `Can not find parent node ${parent} for label ${label}`,
-      );
+      throw new Error(`Can not find parent node ${parent} for label ${label}`);
     }
     const node = znsChildhash(parentDomain.node, label);
     const domain = await Domain.findOrBuildByNode(node, repository);
-    domain.attributes({name: `${parentDomain.name}.${label}`});
+    domain.attributes({
+      name: `${label}.${parentDomain.name}`,
+      location: 'ZNS',
+    });
     await repository.save(domain);
   }
 
-  private async parseConfiguredEvent(event: ConfiguredEvent, repository: Repository<Domain>): Promise<void> {
-    logger.info(`Parsing configured event`, event);
-  }
+  private async parseConfiguredEvent(
+    event: ConfiguredEvent,
+    repository: Repository<Domain>,
+  ): Promise<void> {
+    const eventParams = event.params;
+    const { node } = eventParams;
+    const owner = eventParams.owner.startsWith('zil1')
+      ? fromBech32Address(eventParams.owner).toLowerCase()
+      : eventParams.owner;
+    const resolver = eventParams.resolver.startsWith('zil1')
+      ? fromBech32Address(eventParams.resolver).toLowerCase()
+      : eventParams.resolver;
 
+    const domain = await Domain.findByNode(node, repository);
+    if (domain) {
+      const resolution = await this.provider.requestZilliqaResolutionFor(
+        resolver,
+      );
+
+      domain.attributes({
+        resolver,
+        ownerAddress: owner !== Domain.NullAddress ? owner : undefined,
+        resolution,
+      });
+      await repository.save(domain);
+    }
+  }
 
   private isInvalidLabel(label: string | undefined) {
     return !label || label.includes('.') || !!label.match(/[A-Z]/);
   }
-
 }
