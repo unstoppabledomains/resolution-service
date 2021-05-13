@@ -34,7 +34,7 @@ export default class CnsRegistryEvent extends Model {
 
   @IsEnum(EventTypes)
   @Column({ type: 'text' })
-  type!: EventType;
+  type: EventType;
 
   @IsOptional()
   @IsString()

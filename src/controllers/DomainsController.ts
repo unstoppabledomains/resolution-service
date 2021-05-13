@@ -16,13 +16,11 @@ import {
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
 import { In } from 'typeorm';
-
-const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
-type Location = typeof DomainLocations[number];
+import { DomainLocations, Location } from '../models/Domain';
 
 class DomainMetadata {
   @IsString()
-  domain!: string;
+  domain: string;
 
   @IsOptional()
   @IsString()
@@ -33,12 +31,12 @@ class DomainMetadata {
   resolver: string | null = null;
 
   @IsEnum(DomainLocations)
-  location!: Location;
+  location: Location;
 }
 
 class DomainResponse {
   @ValidateNested()
-  meta!: DomainMetadata;
+  meta: DomainMetadata;
 
   @IsObject()
   records: Record<string, string> = {};
@@ -49,7 +47,7 @@ class DomainsListQuery {
   @ArrayNotEmpty()
   @IsString({ each: true })
   @IsNotEmpty({ each: true })
-  owners!: string[];
+  owners: string[];
 
   @ArrayNotEmpty()
   @IsNotEmpty({ each: true })
@@ -70,14 +68,14 @@ class DomainsListQuery {
 
 class DomainAttributes {
   @IsString()
-  id!: string;
+  id: string;
 
   @ValidateNested()
-  attributes!: DomainResponse;
+  attributes: DomainResponse;
 }
 
 class DomainsListResponse {
-  data!: DomainAttributes[];
+  data: DomainAttributes[];
 }
 
 @JsonController()
@@ -87,14 +85,28 @@ export class DomainsController {
   async getDomain(
     @Param('domainName') domainName: string,
   ): Promise<DomainResponse> {
-    const emptyResponse = new DomainResponse();
-    emptyResponse.meta = {
-      domain: domainName,
-      owner: null,
-      resolver: null,
-      location: 'UNMINTED',
+    domainName = domainName.toLowerCase();
+    const domain = await Domain.findOne({ name: domainName });
+    if (domain) {
+      const response = new DomainResponse();
+      response.meta = {
+        domain: domainName,
+        location: domain.location,
+        owner: domain.ownerAddress,
+        resolver: domain.resolver,
+      };
+      response.records = domain.resolution;
+      return response;
+    }
+    return {
+      meta: {
+        domain: domainName,
+        owner: null,
+        resolver: null,
+        location: 'UNMINTED',
+      },
+      records: {},
     };
-    return emptyResponse;
   }
 
   @Get('/domains')

@@ -19,12 +19,12 @@ import * as _ from 'lodash';
 import { Model } from '.';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 
-const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
-type Location = typeof DomainLocations[number];
+export const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
+export type Location = typeof DomainLocations[number];
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
-  static AddressRegex = /^0x[a-f0-9]{40}$/;
+  static AddressRegex = /^0x[a-fA-F0-9]{40}$/;
   static NullAddress = '0x0000000000000000000000000000000000000000';
 
   @IsString()
@@ -33,12 +33,12 @@ export default class Domain extends Model {
   })
   @Index({ unique: true })
   @Column('text')
-  name!: string;
+  name: string;
 
   @Matches(/^0x[a-f0-9]{64}$/)
   @Index({ unique: true })
   @Column('text')
-  node!: string;
+  node: string;
 
   @Index()
   @IsOptional()
@@ -56,7 +56,7 @@ export default class Domain extends Model {
   @Index()
   @ManyToOne((type) => Domain, { nullable: true })
   @JoinColumn()
-  parent!: Promise<Domain | null>;
+  parent: Promise<Domain | null>;
 
   @IsOptional()
   @IsObject()
@@ -68,11 +68,11 @@ export default class Domain extends Model {
 
   @OneToMany((type) => Domain, (domain) => domain.parent)
   @JoinColumn({ name: 'parent_id' })
-  children!: Promise<Domain[]>;
+  children: Promise<Domain[]>;
 
   @IsEnum(DomainLocations)
   @Column('text')
-  location!: Location;
+  location: Location;
 
   nameMatchesNode(): boolean {
     return this.correctNode() === this.node;
