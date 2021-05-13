@@ -113,14 +113,14 @@ export default class Domain extends Model {
     node?: string,
     repository: Repository<Domain> = this.getRepository(),
   ): Promise<Domain | undefined> {
-    return node ? await repository.findOne({node}) : undefined;
+    return node ? await repository.findOne({ node }) : undefined;
   }
 
   static async findOrBuildByNode(
     node: string,
     repository: Repository<Domain> = this.getRepository(),
   ): Promise<Domain> {
-    return (await repository.findOne({node})) || new Domain({node});
+    return (await repository.findOne({ node })) || new Domain({ node });
   }
 
   private getSplittedName(): string[] {

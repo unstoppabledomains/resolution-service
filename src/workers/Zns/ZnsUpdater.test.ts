@@ -5,19 +5,19 @@ import ZnsWorker from './ZnsWorker';
 let worker: ZnsWorker;
 let provider: ZnsProvider;
 
-describe("ZnsWorker", () => {
+describe('ZnsWorker', () => {
   beforeEach(() => {
     worker = new ZnsWorker();
   });
-  
+
   it('should init', () => {
     expect(worker).exist;
   });
 
   it.only('should fetch transaction and update the database', async () => {
-    worker = new ZnsWorker({perPage: 5});
+    worker = new ZnsWorker({ perPage: 5 });
     await worker.run();
-  })
+  });
 });
 
 describe('ZnsProvider', () => {
@@ -29,7 +29,6 @@ describe('ZnsProvider', () => {
     expect(provider).exist;
   });
 
-
   it('should return the transaction', async () => {
     const transactions = await provider.getLatestTransactions(1);
     expect(transactions.length).eq(1);
@@ -39,5 +38,4 @@ describe('ZnsProvider', () => {
     const transactions = await provider.getLatestTransactions(5);
     expect(transactions.length).eq(5);
   });
-
-})
+});

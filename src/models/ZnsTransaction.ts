@@ -29,8 +29,8 @@ export interface NewDomainEvent {
 export interface AdminSetEvent {
   name: 'AdminSet';
   params: {
-    address: string,
-    isApproved: boolean
+    address: string;
+    isApproved: boolean;
   };
 }
 
@@ -87,13 +87,12 @@ export default class ZnsTransaction extends Model {
     return lastTx?.atxuid ?? -1;
   }
 
-  static  async latestTransaction(): Promise<ZnsTransaction | undefined> {
+  static async latestTransaction(): Promise<ZnsTransaction | undefined> {
     return await ZnsTransaction.findOne({
       where: { atxuid: Not(IsNull()) },
       order: { atxuid: 'DESC' },
     });
   }
-
 
   static async latestBlock(): Promise<number> {
     const transaction = await ZnsTransaction.findOne({
