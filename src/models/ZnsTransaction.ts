@@ -26,9 +26,18 @@ export interface NewDomainEvent {
   };
 }
 
+export interface AdminSetEvent {
+  name: 'AdminSet';
+  params: {
+    address: string,
+    isApproved: boolean
+  };
+}
+
 export type ZnsTransactionEvent =
   | NewDomainEvent
   | ConfiguredEvent
+  | AdminSetEvent
   | UnknownEvent;
 
 @Entity({ name: 'zns_transactions' })

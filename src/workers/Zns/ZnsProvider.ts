@@ -50,6 +50,13 @@ export default class ZnsProvider {
     if (response.status !== 200) {
       throw new Error(`ViewBlock API error: ${await response.text()}`);
     }
-    return response.json();
+    const jsonResponse = await response.json();
+    return jsonResponse.map((item: any) => ({
+      hash: item.hash,
+      blockNumber: item.blockHeight,
+      atxuid: item.atxuid,
+      events: item.events
+    })).reverse();
+    
   }
 }

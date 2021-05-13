@@ -12,6 +12,12 @@
 // * We want to create a new domain record in db.
 
 import ZnsProvider from './ZnsProvider';
+import { EntityManager, getConnection, Repository } from 'typeorm';
+import { Domain } from '../../models';
+import { NewDomainEvent, ZnsTransactionEvent, ConfiguredEvent } from '../../models/ZnsTransaction';
+import ZnsTransaction from '../../models/ZnsTransaction';
+import { znsChildhash } from '../../utils/namehash';
+import { logger } from '../../logger';
 
 /**
  ** ZnsWorker initialize the configurations from env variables, and ZnsProvider
@@ -46,11 +52,71 @@ export default class ZnsWorker {
     this.provider = new ZnsProvider();
   }
 
-  async run() {
+  async run(): Promise<void> {
     const transactions = await this.provider.getLatestTransactions(
       this.perPage,
     );
-
-
+    console.log(transactions);
+    await getConnection().transaction(async (manager) => {
+      for (const transaction of transactions) {
+        await this.processTransaction(transaction, manager);
+      }
+    });
   }
+
+  private async processTransaction(transaction: ZnsTransaction, manager: EntityManager) {
+    const domainRepository = manager.getRepository(Domain);
+    logger.info(`transaction atxuid = `, transaction.atxuid, transaction);
+    const znsTx = new ZnsTransaction({
+      hash: transaction.hash,
+      blockNumber: transaction.blockNumber,
+      atxuid: transaction.atxuid,
+      events: transaction.events
+    });
+
+    for (const event of transaction.events) {
+      try {
+        switch (event.name) {
+          case 'NewDomain': {
+            await this.parseNewDomainEvent(event as NewDomainEvent, domainRepository);
+            break ;
+          }
+          case 'Configured': {
+            await this.parseConfiguredEvent(event as ConfiguredEvent, domainRepository);
+          }
+        }
+      } catch(error) {
+          logger.error(`Failed to process event. ${JSON.stringify(event)}`);
+          logger.error(error);
+      }
+    }
+    await znsTx.save();
+  }
+
+  private async parseNewDomainEvent(event: NewDomainEvent, repository: Repository<Domain>): Promise<void> {
+    const {label, parent} = event.params;
+    if (this.isInvalidLabel(label)) {
+      throw new Error( `Invalid domain label ${label} at NewDomain event for ${parent}`);
+    }
+    const parentDomain = await Domain.findByNode(parent, repository);
+    if (!parentDomain) {
+      throw new Error(
+        `Can not find parent node ${parent} for label ${label}`,
+      );
+    }
+    const node = znsChildhash(parentDomain.node, label);
+    const domain = await Domain.findOrBuildByNode(node, repository);
+    domain.attributes({name: `${parentDomain.name}.${label}`});
+    await repository.save(domain);
+  }
+
+  private async parseConfiguredEvent(event: ConfiguredEvent, repository: Repository<Domain>): Promise<void> {
+    logger.info(`Parsing configured event`, event);
+  }
+
+
+  private isInvalidLabel(label: string | undefined) {
+    return !label || label.includes('.') || !!label.match(/[A-Z]/);
+  }
+
 }
