@@ -1,0 +1,45 @@
+name: Worker deployment CI
+
+on:
+  workflow_run:
+    workflows: ['Node.js CI']
+    types:
+      - completed
+
+env:
+  NODE_VERSION: 14.16.1
+
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Get yarn cache path
+        id: yarn-cache
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - name: Add yarn cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ steps.yarn-cache.outputs.dir }}
+            backend/node_modules
+          key:
+            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-${{
+            hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-${{ hashFiles('**/yarn.lock') }}
+            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-
+
+      - name: Install dependencies
+        run: yarn install --freeze-dependencies
+
+      - name: Run typeorm migrations
+        run: NODE_ENV=test yarn db:migration:run
