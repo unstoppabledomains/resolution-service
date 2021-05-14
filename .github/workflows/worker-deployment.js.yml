@@ -43,4 +43,6 @@ jobs:
         run: docker push ${{ env.IMAGE_URL }}
 
       - name: Deploy service
-        run: gcloud run deploy resolution-service --image ${{ env.IMAGE_URL }}
+        run:
+          gcloud run deploy resolution-service --image ${{ env.IMAGE_URL }}
+          --platform managed --region=${{ secrets.GCP_SERVICE_REGION }}
