@@ -30,7 +30,7 @@ jobs:
           export_default_credentials: true
 
       - name: Build Docker image
-        run: docker build -t ${{ env.DOCKER_IMAGE_NAME }} .
+        run: docker build -t ${{ env.DOCKER_IMAGE_NAME }} ..
 
       - name: Tag image with container registry
         run:
