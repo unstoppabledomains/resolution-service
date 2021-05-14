@@ -10,8 +10,7 @@ on:
 env:
   NODE_VERSION: 14.16.1
   DOCKER_IMAGE_NAME: resolution-service
-  CONTAINER_REGISTRY_NAME:
-    gcr.io/${{ secrets.GCP_PROJECT_ID }}/resolution-service
+  IMAGE_URL: gcr.io/${{ secrets.GCP_PROJECT_ID }}/resolution-service
 
 jobs:
   deployment:
@@ -38,34 +37,10 @@ jobs:
         run: docker build -t ${{ env.DOCKER_IMAGE_NAME }} .
 
       - name: Tag image with container registry
-        run:
-          docker tag ${{ env.DOCKER_IMAGE_NAME }} ${{
-          env.CONTAINER_REGISTRY_NAME }}
+        run: docker tag ${{ env.DOCKER_IMAGE_NAME }} ${{ env.IMAGE_URL }}
 
       - name: Deploy tagged image to container registry
-        run: docker push ${{ env.CONTAINER_REGISTRY_NAME }}
+        run: docker push ${{ env.IMAGE_URL }}
 
-      - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Get yarn cache path
-        id: yarn-cache
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-
-      - name: Add yarn cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ${{ steps.yarn-cache.outputs.dir }}
-            backend/node_modules
-          key:
-            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-${{
-            hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-${{ hashFiles('**/yarn.lock') }}
-            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-
-
-      - name: Install dependencies
-        run: yarn install --freeze-dependencies
+      - name: Deploy service
+        run: gcloud run deploy resolution-service --image ${{ env.IMAGE_URL }}
