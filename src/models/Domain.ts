@@ -132,7 +132,22 @@ export default class Domain extends Model {
     return resolver === Domain.NullAddress ? null : resolver;
   }
 
-  static async findOrCreateByName(name: string): Promise<Domain> {
-    return await this.findOrBuild({ name: name });
+  static async findOrCreateByName(
+    name: string,
+    repository: Repository<Domain> = this.getRepository(),
+  ): Promise<Domain> {
+    const domain = await Domain.findOne({ name });
+    if (domain) {
+      return domain;
+    }
+
+    const newDomain = new Domain();
+    newDomain.attributes({
+      name: name,
+      node: eip137Namehash(name),
+      location: 'CNS',
+    });
+    await repository.save(newDomain);
+    return newDomain;
   }
 }

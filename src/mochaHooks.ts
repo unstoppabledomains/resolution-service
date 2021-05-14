@@ -5,9 +5,11 @@ import 'chai/register-expect';
 import connect from './database/connect';
 import { getConnection } from 'typeorm';
 import fixtures from './fixtures';
+import sinonChai from 'sinon-chai';
 
 chai.use(chaiSubset);
 chai.use(chaiAsPromised);
+chai.use(sinonChai);
 
 if (process.env.NODE_ENV !== 'test') {
   throw new Error('NODE_ENV set to ' + process.env.NODE_ENV);

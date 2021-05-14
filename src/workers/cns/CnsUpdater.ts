@@ -15,7 +15,7 @@ import connect from '../../database/connect';
 
 export class CnsUpdater {
   private registry: Contract = CNS.Registry.getContract();
-  private resolver: CnsResolver = new CnsResolver();
+  public resolver: CnsResolver = new CnsResolver();
   private currentSyncBlock = 0;
   private lastProcessedEvent?: Event;
 
@@ -101,8 +101,13 @@ export class CnsUpdater {
       );
     }
 
-    const domain = await Domain.findOrCreateByName(uri);
-    domain.ownerAddress = this.lastProcessedEvent.args?.to.toLowerCase();
+    const domain = new Domain();
+    domain.attributes({
+      name: uri,
+      node: eip137Namehash(uri),
+      location: 'CNS',
+      ownerAddress: this.lastProcessedEvent.args?.to.toLowerCase(),
+    });
     await domainRepository.save(domain);
   }
 
@@ -133,7 +138,7 @@ export class CnsUpdater {
       );
     }
 
-    if (event.args?.updateId) {
+    if (!event.args?.updateId) {
       throw new CnsUpdaterError(
         `Sync event was not processed. Update id not specified.`,
       );
@@ -189,6 +194,11 @@ export class CnsUpdater {
 
     for (const event of events) {
       try {
+        logger.debug(
+          `Processing event: type - '${event.event}'; args - ${JSON.stringify(
+            event.args,
+          )}`,
+        );
         switch (event.event) {
           case 'Transfer': {
             await this.processTransfer(event, domainRepository);

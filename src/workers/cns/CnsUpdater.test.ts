@@ -24,6 +24,8 @@ describe('CnsUpdater', () => {
   let testDomainLabel: string;
   let testDomainNode: BigNumber;
 
+  const AddressZero = '0x0000000000000000000000000000000000000000';
+
   before(async () => {
     contracts = await EthereumTestsHelper.initializeContractsAndStub();
     coinbaseAddress = await provider.getSigner().getAddress();
@@ -54,14 +56,14 @@ describe('CnsUpdater', () => {
   });
 
   it('processes an event', async () => {
-    await Domain.findOrCreateByName(testDomainName);
-    const account = await EthereumTestsHelper.createAccount();
-    await EthereumTestsHelper.fundAddress(account.address);
+    const account = provider.getSigner(1);
+    const accountAddress = await account.getAddress();
+    await EthereumTestsHelper.fundAddress(accountAddress);
     await resolver.functions
       .reset(testTokenId)
       .then((receipt) => receipt.wait());
     await registry.functions
-      .transferFrom(coinbaseAddress, account.address, testTokenId)
+      .transferFrom(coinbaseAddress, accountAddress, testTokenId)
       .then((receipt) => receipt.wait());
     await registry
       .connect(account)
@@ -75,17 +77,18 @@ describe('CnsUpdater', () => {
         testTokenId,
       )
       .then((receipt) => receipt.wait());
+    await EthereumTestsHelper.mineBlocksForConfirmation();
 
     await service.run();
 
-    const domain = await Domain.findOrCreateByName(testDomainName);
+    const domain = await Domain.findOne({ name: testDomainName });
     expect(domain).to.containSubset({
       name: testDomainName,
       resolver: resolver.address.toLowerCase(),
       resolution: {
         'crypto.BTC.address': 'qp3gu0flg7tehyv73ua5nznlw8s040nz3uqnyffrcn',
       },
-      ownerAddress: account.address.toLowerCase(),
+      ownerAddress: accountAddress.toLowerCase(),
     });
 
     // Should reset owner and resolution records after burning.
@@ -93,15 +96,15 @@ describe('CnsUpdater', () => {
       .connect(account)
       .functions.burn(testTokenId)
       .then((receipt) => receipt.wait());
+    await EthereumTestsHelper.mineBlocksForConfirmation();
+
     await service.run();
-    await domain.reload();
+    await domain?.reload();
     expect(domain).to.containSubset({
       name: testDomainName,
-      userId: null,
       resolution: {},
       resolver: null,
       ownerAddress: null,
-      status: null,
     });
 
     expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
@@ -109,6 +112,123 @@ describe('CnsUpdater', () => {
       Resolve: 2,
       Sync: 2,
       Transfer: 4,
+    });
+  });
+
+  it('should add new domain', async () => {
+    const expectedLabel = randomBytes(16).toString('hex');
+
+    const expectedDomainName = `${expectedLabel}.crypto`;
+    await whitelistedMinter.functions
+      .mintSLDToDefaultResolver(coinbaseAddress, expectedLabel, [], [])
+      .then((receipt) => receipt.wait());
+    await EthereumTestsHelper.mineBlocksForConfirmation();
+
+    await service.run();
+
+    const domain = await Domain.findOneOrFail({ name: expectedDomainName });
+    expect(domain.label).to.equal(expectedLabel);
+  });
+
+  it('should not add domain with capital letters', async () => {
+    const expectedLabel = `${randomBytes(16).toString('hex')}-AAA`;
+    const expectedDomainName = `${expectedLabel}.crypto`;
+    await whitelistedMinter.functions
+      .mintSLDToDefaultResolver(coinbaseAddress, expectedLabel, [], [])
+      .then((receipt) => receipt.wait());
+    await EthereumTestsHelper.mineBlocksForConfirmation();
+
+    await service.run();
+
+    const domain = await Domain.findOne({ name: expectedDomainName });
+    expect(domain).to.be.undefined;
+  });
+
+  it('should not add domain with spaces', async () => {
+    const expectedLabel = `    ${randomBytes(16).toString('hex')}   `;
+    const expectedDomainName = `${expectedLabel}.crypto`;
+    await whitelistedMinter.functions
+      .mintSLDToDefaultResolver(coinbaseAddress, expectedDomainName, [], [])
+      .then((receipt) => receipt.wait());
+    await EthereumTestsHelper.mineBlocksForConfirmation();
+
+    await service.run();
+
+    const domain = await Domain.findOne({ name: expectedDomainName });
+    expect(domain).to.be.undefined;
+  });
+
+  it('should reset records if Sync event with zero updateId received', async () => {
+    await resolver.functions
+      .reset(testTokenId)
+      .then((receipt) => receipt.wait());
+    let domain = await Domain.findOrCreateByName(testDomainName);
+    await domain.update({
+      resolver: resolver.address,
+      resolution: { hello: 'world' },
+    });
+    await service.run();
+    domain = await Domain.findOrCreateByName(testDomainName);
+    expect(domain.resolution).to.be.empty;
+  });
+
+  it('should get all domain records when domain was sent via setOwner method', async () => {
+    const account = await EthereumTestsHelper.createAccount();
+    await resolver.functions
+      .reconfigure(
+        ['crypto.ETH.address'],
+        ['0x829BD824B016326A401d083B33D092293333A830'],
+        testTokenId,
+      )
+      .then((receipt) => receipt.wait());
+    await registry.functions
+      .setOwner(account.address, testTokenId)
+      .then((receipt) => receipt.wait());
+    await Domain.findOrCreateByName(testDomainName);
+
+    await service.run();
+
+    const domain = await Domain.findOrCreateByName(testDomainName);
+    expect(domain.resolution).to.deep.equal({
+      'crypto.ETH.address': '0x829BD824B016326A401d083B33D092293333A830',
+    });
+  });
+
+  it('should get actual domain records for an old Resolve event', async () => {
+    await resolver.functions
+      .reconfigure(
+        ['crypto.ETH.address'],
+        ['0x829BD824B016326A401d083B33D092293333A830'],
+        testTokenId,
+      )
+      .then((receipt) => receipt.wait());
+    for (const resolveTo of [
+      AddressZero,
+      resolver.address,
+      AddressZero,
+      resolver.address,
+    ]) {
+      await registry.functions
+        .resolveTo(resolveTo, testTokenId)
+        .then((receipt) => receipt.wait());
+    }
+    await EthereumTestsHelper.mineBlocksForConfirmation();
+    await Domain.findOrCreateByName(testDomainName);
+    const callSpy = sinon.spy(service.resolver, 'getAllDomainRecords');
+
+    await service.run();
+
+    for (let callNumber = 0; callNumber < 3; callNumber++) {
+      callSpy
+        .getCall(callNumber)
+        .should.have.been.calledWith(
+          resolver.address.toLowerCase(),
+          testDomainNode,
+        );
+    }
+    const domain = await Domain.findOrCreateByName(testDomainName);
+    expect(domain.resolution).to.deep.equal({
+      'crypto.ETH.address': '0x829BD824B016326A401d083B33D092293333A830',
     });
   });
 });
