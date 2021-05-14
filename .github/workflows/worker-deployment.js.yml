@@ -10,17 +10,14 @@ on:
 env:
   NODE_VERSION: 14.16.1
   DOCKER_IMAGE_NAME: resolution-service
+  CONTAINER_REGISTRY_NAME:
+    gcr.io/${{ secrets.GCP_PROJECT_ID }}/resolution-service
 
-jobs:
   deployment:
-
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
-      env:
-        CONTAINER_REGISTRY_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.DOCKER_IMAGE_NAME }}
-
       - name: Setup Docker
         uses: docker/build-push-action@v2.4.0
 
