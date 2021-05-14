@@ -10,11 +10,13 @@ on:
 env:
   NODE_VERSION: 14.16.1
   DOCKER_IMAGE_NAME: resolution-service
-  CONTAINER_REGISTRY_NAME:
-    gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.DOCKER_IMAGE_NAME }}
 
 jobs:
   deployment:
+    env:
+      CONTAINER_REGISTRY_NAME:
+        gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.DOCKER_IMAGE_NAME }}
+
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
