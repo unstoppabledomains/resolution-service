@@ -13,6 +13,7 @@ env:
   CONTAINER_REGISTRY_NAME:
     gcr.io/${{ secrets.GCP_PROJECT_ID }}/resolution-service
 
+jobs:
   deployment:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
