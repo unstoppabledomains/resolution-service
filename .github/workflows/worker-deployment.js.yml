@@ -19,6 +19,8 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
+      - uses: actions/checkout@v2
+
       - name: Setup Docker
         uses: docker/build-push-action@v2.4.0
 
@@ -30,7 +32,7 @@ jobs:
           export_default_credentials: true
 
       - name: Build Docker image
-        run: docker build -t ${{ env.DOCKER_IMAGE_NAME }} ..
+        run: docker build -t ${{ env.DOCKER_IMAGE_NAME }} .
 
       - name: Tag image with container registry
         run:
@@ -40,7 +42,6 @@ jobs:
       - name: Deploy tagged image to container registry
         run: docker push ${{ env.CONTAINER_REGISTRY_NAME }}
 
-      - uses: actions/checkout@v2
       - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v2
         with:
