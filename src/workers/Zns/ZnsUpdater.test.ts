@@ -13,11 +13,6 @@ describe('ZnsWorker', () => {
   it('should init', () => {
     expect(worker).exist;
   });
-
-  it.only('should fetch transaction and update the database', async () => {
-    worker = new ZnsWorker({ perPage: 5 });
-    await worker.run();
-  });
 });
 
 describe('ZnsProvider', () => {
@@ -30,12 +25,12 @@ describe('ZnsProvider', () => {
   });
 
   it('should return the transaction', async () => {
-    const transactions = await provider.getLatestTransactions(1);
+    const transactions = await provider.getLatestTransactions(0, 1);
     expect(transactions.length).eq(1);
   });
 
   it('should return the 5 transactions', async () => {
-    const transactions = await provider.getLatestTransactions(5);
+    const transactions = await provider.getLatestTransactions(0, 5);
     expect(transactions.length).eq(5);
   });
 });
