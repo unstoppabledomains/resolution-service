@@ -1,23 +1,22 @@
 import qs from 'qs';
 import ZnsTransaction from '../../models/ZnsTransaction';
 import fetch from 'node-fetch';
-import {Zilliqa} from '@zilliqa-js/zilliqa';
+import { Zilliqa } from '@zilliqa-js/zilliqa';
 import { env } from '../../env';
 /**
  * ZnsProvider is a class that communicates with viewblock and zilliqa api to fetch transactions and domains records
  */
 
-
 type ZilStatsResponse = {
-  nodeCount: number,
-  txHeight: number,
-  dsHeight: number,
-  shardingDifficulty: number,
-  dsDifficulty: number,
-  txCount: number,
-  addressCount: number,
-  shardingPeerCount: number[]
-}
+  nodeCount: number;
+  txHeight: number;
+  dsHeight: number;
+  shardingDifficulty: number;
+  dsDifficulty: number;
+  txCount: number;
+  addressCount: number;
+  shardingPeerCount: number[];
+};
 
 export default class ZnsProvider {
   private readonly viewBlockUrl;
@@ -30,7 +29,7 @@ export default class ZnsProvider {
   constructor() {
     this.network = env.APPLICATION.ZILLIQA.NETWORK;
     this.zilliqaRegistryAddress = env.APPLICATION.ZILLIQA.ZNS_REGISTRY_CONTRACT;
-    this.zilliqa = new Zilliqa(env.APPLICATION.ZILLIQA.JSON_RPC_API_URL)
+    this.zilliqa = new Zilliqa(env.APPLICATION.ZILLIQA.JSON_RPC_API_URL);
     this.viewBlockUrl = 'https://api.viewblock.io/v1/zilliqa';
     const key = process.env.VIEWBLOCK_API_KEY;
     if (!key) {
@@ -40,7 +39,10 @@ export default class ZnsProvider {
     this.viewBlockApiKey = key;
   }
 
-  async getLatestTransactions(from: number, to: number): Promise<ZnsTransaction[]> {
+  async getLatestTransactions(
+    from: number,
+    to: number,
+  ): Promise<ZnsTransaction[]> {
     const params = {
       network: this.network,
       events: true,
@@ -55,14 +57,13 @@ export default class ZnsProvider {
   async requestZilliqaResolutionFor(
     resolverAddress: string,
   ): Promise<Record<string, string>> {
-    return await this.contractSubStateRpc(
-      resolverAddress,
-      'records',
-    );
+    return await this.contractSubStateRpc(resolverAddress, 'records');
   }
 
   async getChainStats(): Promise<ZilStatsResponse> {
-    return await this.request(`https://api.viewblock.io/v1/zilliqa/stats?network=${this.network}`);
+    return await this.request(
+      `https://api.viewblock.io/v1/zilliqa/stats?network=${this.network}`,
+    );
   }
 
   private async contractSubStateRpc(address: string, name: string) {

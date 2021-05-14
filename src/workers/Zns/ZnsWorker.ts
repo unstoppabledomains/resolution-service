@@ -5,8 +5,8 @@ import { NewDomainEvent, ConfiguredEvent } from '../../models/ZnsTransaction';
 import ZnsTransaction from '../../models/ZnsTransaction';
 import { znsChildhash } from '../../utils/namehash';
 import { logger } from '../../logger';
-import {isBech32} from '@zilliqa-js/util/dist/validation';
-import {fromBech32Address} from '@zilliqa-js/crypto';
+import { isBech32 } from '@zilliqa-js/util/dist/validation';
+import { fromBech32Address } from '@zilliqa-js/crypto';
 
 type ZnsWorkerOptions = {
   perPage?: number;
@@ -29,7 +29,8 @@ export default class ZnsWorker {
     while (true) {
       const atxuidTo = atxuidFrom + this.perPage - 1;
       const transactions = await this.provider.getLatestTransactions(
-        atxuidFrom, atxuidTo
+        atxuidFrom,
+        atxuidTo,
       );
 
       await getConnection().transaction(async (manager) => {
@@ -43,16 +44,15 @@ export default class ZnsWorker {
       }
 
       if (transactions.length < this.perPage) {
-        break ;
+        break;
       }
-      atxuidFrom = transactions[transactions.length -1].atxuid! + 1;
+      atxuidFrom = transactions[transactions.length - 1].atxuid! + 1;
     }
   }
 
-
-  private async  createEmptyTransaction(blockNumber: number) {
+  private async createEmptyTransaction(blockNumber: number) {
     const entry = await ZnsTransaction.findOne({
-      where: {blockNumber, atxuid: IsNull(), hash: IsNull()},
+      where: { blockNumber, atxuid: IsNull(), hash: IsNull() },
     });
     if (entry) {
       return;
@@ -92,7 +92,7 @@ export default class ZnsWorker {
               event as ConfiguredEvent,
               domainRepository,
             );
-            break ;
+            break;
           }
         }
       } catch (error) {
