@@ -24,12 +24,8 @@ jobs:
 
       - name: Deploy API
         if: contains(github.event.inputs.deployables, 'api')
-        run:
-          gcloud app deploy api.yaml --update-env-vars
-          RESOLUTION_POSTGRES_URL=/cloudsql/unstoppable-domains:us-west1:ud-resolution-service
+        run: gcloud app deploy api.yaml
 
       - name: Deploy WORKERS
         if: contains(github.event.inputs.deployables, 'workers')
-        run:
-          gcloud app deploy workers.yaml --update-env-vars
-          RESOLUTION_POSTGRES_URL=/cloudsql/unstoppable-domains:us-west1:ud-resolution-service
+        run: gcloud app deploy workers.yaml
