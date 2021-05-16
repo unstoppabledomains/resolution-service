@@ -5,7 +5,7 @@ on:
     inputs:
       deployables:
         description: 'api/worker/dispatch.yaml'
-        default: 'api worker'
+        default: 'api workers'
         required: true
 
 jobs:
