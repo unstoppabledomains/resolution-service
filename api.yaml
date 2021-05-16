@@ -1,0 +1,9 @@
+service: resolution-service-api
+runtime: custom
+env: flex
+
+env_variables:
+  RESOLUTION_RUNNING_MODE: API
+
+beta_settings:
+  cloud_sql_instances: unstoppable-domains:us-west1:ud-resolution-service

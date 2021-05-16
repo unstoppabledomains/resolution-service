@@ -1,0 +1,12 @@
+service: resolution-service-workers
+runtime: custom
+env: flex
+
+manual_scaling:
+  instances: 1
+
+env_variables:
+  RESOLUTION_RUNNING_MODE: CNS_WORKER,ZNS_WORKER,MIGRATIONS
+
+beta_settings:
+  cloud_sql_instances: unstoppable-domains:us-west1:ud-resolution-service
