@@ -3,9 +3,6 @@ import ZnsTransaction from '../../models/ZnsTransaction';
 import fetch from 'node-fetch';
 import { Zilliqa } from '@zilliqa-js/zilliqa';
 import { env } from '../../env';
-/**
- * ZnsProvider is a class that communicates with viewblock and zilliqa api to fetch transactions and domains records
- */
 
 type ZilStatsResponse = {
   nodeCount: number;
@@ -18,6 +15,9 @@ type ZilStatsResponse = {
   shardingPeerCount: number[];
 };
 
+/**
+ * ZnsProvider is a class that communicates with viewblock and zilliqa api to fetch transactions and domains records
+ */
 export default class ZnsProvider {
   private readonly viewBlockUrl;
   private readonly viewBlockApiKey;
@@ -33,7 +33,6 @@ export default class ZnsProvider {
     this.viewBlockUrl = 'https://api.viewblock.io/v1/zilliqa';
     const key = process.env.VIEWBLOCK_API_KEY;
     if (!key) {
-      console.log('no key?');
       throw new Error('VIEWBLOCK_API_KEY is not set');
     }
     this.viewBlockApiKey = key;

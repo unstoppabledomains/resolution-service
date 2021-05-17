@@ -22,4 +22,4 @@ setIntervalAsync(async () => {
 
   await worker.run();
   await connection.close();
-}, 600000); // todo adjust intervals up to 10 minutes
+}, 5000); // todo adjust intervals up to 10 minutes
