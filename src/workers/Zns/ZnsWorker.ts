@@ -1,7 +1,10 @@
 import ZnsProvider from './ZnsProvider';
 import { EntityManager, getConnection, IsNull, Repository } from 'typeorm';
 import { Domain } from '../../models';
-import ZnsTransaction, { NewDomainEvent, ConfiguredEvent } from '../../models/ZnsTransaction';
+import ZnsTransaction, {
+  NewDomainEvent,
+  ConfiguredEvent,
+} from '../../models/ZnsTransaction';
 import { znsChildhash } from '../../utils/namehash';
 import { logger } from '../../logger';
 import { isBech32 } from '@zilliqa-js/util/dist/validation';
@@ -68,7 +71,7 @@ export default class ZnsWorker {
     transaction: ZnsTransaction,
     manager: EntityManager,
   ) {
-    logger.info("LOOK");
+    logger.info('LOOK');
     logger.info(JSON.stringify(transaction));
     const domainRepository = manager.getRepository(Domain);
     const znsTx = new ZnsTransaction({
