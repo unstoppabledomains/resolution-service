@@ -17,7 +17,7 @@ describe('ZnsWorker', () => {
     expect(worker).exist;
   });
 
-  it.only('should parse the fake transaction', async () => {
+  it('should parse the fake transaction', async () => {
     const manager = getManager();
     const fakeTransaction = {
       hash:
