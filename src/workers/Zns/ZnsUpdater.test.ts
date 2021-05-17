@@ -12,7 +12,6 @@ describe('ZnsWorker', () => {
 
   it('should init', async () => {
     expect(worker).exist;
-    await worker.run();
   });
 });
 
