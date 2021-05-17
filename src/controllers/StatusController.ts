@@ -13,10 +13,10 @@ class BlockchainStatus {
 
 class StatusResponse {
   @ValidateNested()
-  CNS!: BlockchainStatus;
+  CNS: BlockchainStatus;
 
   @ValidateNested()
-  ZNS!: BlockchainStatus;
+  ZNS: BlockchainStatus;
 }
 
 @JsonController()

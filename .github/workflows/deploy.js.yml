@@ -1,0 +1,31 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployables:
+        description: 'api/worker/dispatch.yaml'
+        default: 'api workers'
+        required: true
+
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up gcloud SDK
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+
+      - name: Deploy API
+        if: contains(github.event.inputs.deployables, 'api')
+        run: gcloud app deploy api.yaml
+
+      - name: Deploy WORKERS
+        if: contains(github.event.inputs.deployables, 'workers')
+        run: gcloud app deploy workers.yaml

@@ -50,7 +50,7 @@ export default class ZnsTransaction extends Model {
   hash: string | null = null;
 
   @Column('json')
-  events!: ZnsTransactionEvent[];
+  events: ZnsTransactionEvent[];
 
   @IsInt()
   @Min(ZnsTransaction.InitialBlock)
