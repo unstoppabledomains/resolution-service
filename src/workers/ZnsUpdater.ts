@@ -23,4 +23,4 @@ setIntervalAsync(async () => {
 
   await worker.run();
   await connection.close();
-}, env.APPLICATION.ZILLIQA.WORKER_INTERVAL); // todo adjust intervals up to 10 minutes
+}, env.APPLICATION.ZILLIQA.WORKER_INTERVAL);

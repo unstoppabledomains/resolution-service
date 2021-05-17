@@ -48,6 +48,7 @@ export default class ZnsWorker {
       if (transactions.length < this.perPage) {
         break;
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       atxuidFrom = transactions[transactions.length - 1].atxuid! + 1;
     }
   }
@@ -81,7 +82,8 @@ export default class ZnsWorker {
       events: transaction.events,
     });
     const events = transaction.events;
-    for (const event of events.reverse()) {
+    events.reverse();
+    for (const event of events) {
       try {
         switch (event.name) {
           case 'NewDomain': {

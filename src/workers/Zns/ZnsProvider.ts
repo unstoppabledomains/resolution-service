@@ -50,17 +50,17 @@ export default class ZnsProvider {
     };
     const query = qs.stringify(params);
     const url = `${this.viewBlockUrl}/addresses/${this.zilliqaRegistryAddress}/txs?${query}`;
-    return await this.request(url).then(this.preparseTx);
+    return this.request(url).then(this.preparseTx);
   }
 
   async requestZilliqaResolutionFor(
     resolverAddress: string,
   ): Promise<Record<string, string>> {
-    return await this.contractSubStateRpc(resolverAddress, 'records');
+    return this.contractSubStateRpc(resolverAddress, 'records');
   }
 
   async getChainStats(): Promise<ZilStatsResponse> {
-    return await this.request(
+    return this.request(
       `https://api.viewblock.io/v1/zilliqa/stats?network=${this.network}`,
     );
   }
@@ -93,7 +93,6 @@ export default class ZnsProvider {
     if (response.status !== 200) {
       throw new Error(`ViewBlock API error: ${await response.text()}`);
     }
-    const jsonResponse = await response.json();
-    return jsonResponse;
+    return response.json();
   }
 }
