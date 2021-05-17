@@ -1,7 +1,6 @@
 import * as path from 'path';
 import znsConfig from './znsEnv';
 
-
 export const env = {
   APPLICATION: {
     PORT: process.env.RESOLUTION_API_PORT || 3000,
