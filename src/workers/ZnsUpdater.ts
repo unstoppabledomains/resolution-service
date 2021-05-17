@@ -4,6 +4,7 @@ import connect from '../database/connect';
 import ZnsWorker from './Zns/ZnsWorker';
 import { Domain } from '../models';
 import { znsNamehash } from '../utils/namehash';
+import { env } from '../env';
 
 const worker = new ZnsWorker();
 
@@ -22,4 +23,4 @@ setIntervalAsync(async () => {
 
   await worker.run();
   await connection.close();
-}, 5000); // todo adjust intervals up to 10 minutes
+}, env.APPLICATION.ZILLIQA.WORKER_INTERVAL); // todo adjust intervals up to 10 minutes
