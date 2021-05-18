@@ -1,6 +1,6 @@
 #!/bin/bash
 
-[[ $SERVICE_NAME = "workers" ]] && SCALING="manual_scaling:\n\tinstances: 1" || SCALING="ing"
+[[ $SERVICE_NAME = "workers" ]] && SCALING="manual_scaling:\n  instances: 1" || SCALING=""
 
 echo -e "service: resolution-service-${SERVICE_NAME}
 runtime: custom
