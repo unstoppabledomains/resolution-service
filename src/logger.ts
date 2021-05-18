@@ -7,7 +7,9 @@ export const logger = winston.createLogger({
   format: winston.format.cli(),
   defaultMeta: { service: 'resolution-service' },
   transports: [
-    new winston.transports.Console(),
+    new winston.transports.Console({
+      silent: process.env.NODE_ENV === 'test',
+    }),
     ...(env.APPLICATION.BUGSNAG_API_KEY
       ? [
           new BugsnagTransport({

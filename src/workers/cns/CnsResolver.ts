@@ -1,11 +1,14 @@
 import { env } from '../../env';
-import * as _ from 'lodash';
 import { Contract, Event, BigNumber, EventFilter, ethers } from 'ethers';
 import { Domain } from '../../models';
 import { Repository } from 'typeorm';
 import { CNS } from '../../contracts';
 import supportedKeysJson from 'dot-crypto/src/supported-keys/supported-keys.json';
-import { InvalidValuesError, ExecutionRevertedError } from './BlockchainErrors';
+import {
+  InvalidValuesError,
+  ExecutionRevertedError,
+  Revert,
+} from './BlockchainErrors';
 import { CnsResolverError } from '../../errors/CnsResolverError';
 
 const RecordsPerPage = env.APPLICATION.ETHEREUM.CNS_RESOLVER_RECORDS_PER_PAGE;
@@ -27,7 +30,7 @@ export class CnsResolver {
     );
   }
 
-  private async getResolverEvents(
+  async _getResolverEvents(
     resolver: Contract,
     filter: EventFilter,
     fromBlock: number | string,
@@ -42,7 +45,7 @@ export class CnsResolver {
       return {};
     }
     try {
-      return await this.getAllDomainRecords(
+      return await this._getAllDomainRecords(
         domain.resolver,
         BigNumber.from(domain.node),
       );
@@ -63,7 +66,7 @@ export class CnsResolver {
     if (this.isNotLegacyResolver(resolverAddress)) {
       const resolver: Contract = this.resolver.attach(resolverAddress);
       const filter: EventFilter = resolver.filters.NewKey(node);
-      const domainNewKeyEvents = await this.getResolverEvents(
+      const domainNewKeyEvents = await this._getResolverEvents(
         resolver,
         filter,
         startingBlock,
@@ -88,7 +91,7 @@ export class CnsResolver {
     if (this.isNotLegacyResolver(resolverAddress)) {
       const resolver: Contract = this.resolver.attach(resolverAddress);
       const filter: EventFilter = resolver.filters.ResetRecords(node);
-      const resetRecordsEvents = await this.getResolverEvents(
+      const resetRecordsEvents = await this._getResolverEvents(
         resolver,
         filter,
         env.APPLICATION.ETHEREUM.CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK,
@@ -103,22 +106,17 @@ export class CnsResolver {
     return env.APPLICATION.ETHEREUM.CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK;
   }
 
-  async getResolverAddress(node: string): Promise<string | null> {
-    try {
-      const resolverAddress = await this.registry.callStatic.resolverOf(node);
-      return Domain.normalizeResolver(resolverAddress);
-    } catch (error) {
-      if (
-        !error.message.includes(InvalidValuesError) ||
-        !error.message.includes(ExecutionRevertedError)
-      ) {
-        throw error;
-      }
-    }
-    return null;
+  async _getManyDomainRecords(
+    resolverAddress: string,
+    recordKeys: string[],
+    node: BigNumber,
+  ): Promise<string[]> {
+    return await this.resolver
+      .attach(resolverAddress)
+      .callStatic.getMany(recordKeys, node);
   }
 
-  async getAllDomainRecords(
+  async _getAllDomainRecords(
     resolverAddress: string,
     node: BigNumber,
     recordsPerPage: number = RecordsPerPage,
@@ -139,9 +137,11 @@ export class CnsResolver {
     //create paginated promises to fetch data
     while (i < domainKeys.length) {
       recordsPromises.push(
-        this.resolver
-          .attach(resolverAddress)
-          .callStatic.getMany(domainKeys.slice(i, i + recordsPerPage), node),
+        this._getManyDomainRecords(
+          resolverAddress,
+          domainKeys.slice(i, i + recordsPerPage),
+          node,
+        ),
       );
       i += recordsPerPage;
     }
@@ -158,12 +158,28 @@ export class CnsResolver {
     return records;
   }
 
+  async getResolverAddress(node: string): Promise<string | null> {
+    try {
+      const resolverAddress = await this.registry.callStatic.resolverOf(node);
+      return Domain.normalizeResolver(resolverAddress);
+    } catch (error) {
+      if (
+        !error.message.includes(InvalidValuesError) &&
+        !error.message.includes(ExecutionRevertedError) &&
+        !error.message.includes(Revert)
+      ) {
+        throw error;
+      }
+    }
+    return null;
+  }
+
   async getResolverRecordsByKeyHash(
     resolverAddress: string,
     keyHash: string,
     node: string,
   ): Promise<{ key: string; value: string }> {
-    let key = _.get(CnsResolver.DefaultKeysHashes, keyHash);
+    let key = CnsResolver.DefaultKeysHashes[keyHash];
     if (!key && this.isNotLegacyResolver(resolverAddress)) {
       key = await this.resolver
         .attach(resolverAddress)

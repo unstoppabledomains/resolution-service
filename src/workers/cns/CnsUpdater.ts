@@ -137,8 +137,7 @@ export class CnsUpdater {
         `Sync event was not processed. Could not find domain for node: ${node}`,
       );
     }
-
-    if (!event.args?.updateId) {
+    if (event.args?.updateId === undefined) {
       throw new CnsUpdaterError(
         `Sync event was not processed. Update id not specified.`,
       );

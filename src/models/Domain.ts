@@ -134,9 +134,10 @@ export default class Domain extends Model {
 
   static async findOrCreateByName(
     name: string,
+    location: Location,
     repository: Repository<Domain> = this.getRepository(),
   ): Promise<Domain> {
-    const domain = await Domain.findOne({ name });
+    const domain = await repository.findOne({ name, location });
     if (domain) {
       return domain;
     }
@@ -145,7 +146,7 @@ export default class Domain extends Model {
     newDomain.attributes({
       name: name,
       node: eip137Namehash(name),
-      location: 'CNS',
+      location: location,
     });
     await repository.save(newDomain);
     return newDomain;
