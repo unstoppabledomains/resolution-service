@@ -20,11 +20,6 @@ export const env = {
       colorize: process.env.TYPEORM_LOGGING_COLORIZE || true,
     },
     type: 'postgres' as const,
-    // url:
-    //   process.env.NODE_ENV === 'test'
-    //     ? 'postgresql://postgres:secret@localhost/resolution_service_test'
-    //     : process.env.RESOLUTION_POSTGRES_URL ||
-    //       'postgresql://postgres:secret@localhost/resolution_service',
     host: process.env.RESOLUTION_POSTGRES_HOST || 'localhost',
     username: process.env.RESOLUTION_POSTGRES_USERNAME || 'postgres',
     password: process.env.RESOLUTION_POSTGRES_PASSWORD || 'secret',
