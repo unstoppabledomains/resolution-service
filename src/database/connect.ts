@@ -22,6 +22,7 @@ if (!manager.connections.length) {
 }
 
 export default async function connect(): Promise<Connection> {
+  console.log('URL', env.TYPEORM.url);
   const connection = getConnection();
   if (connection.isConnected) {
     return connection;
