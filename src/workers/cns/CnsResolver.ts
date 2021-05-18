@@ -186,7 +186,9 @@ export class CnsResolver {
         .callStatic.hashToKey(keyHash);
     }
     if (!key) {
-      throw new CnsResolverError(`Can find resolver key for hash: ${keyHash}`);
+      throw new CnsResolverError(
+        `Can't find resolver key for hash: ${keyHash}`,
+      );
     }
     const value = await this.resolver
       .attach(resolverAddress)

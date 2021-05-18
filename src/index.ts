@@ -11,7 +11,7 @@ import connect from './database/connect';
 
 connect().then(() => {
   if (runningMode.includes('CNS_WORKER')) {
-    runWorker(path.resolve(__dirname, 'workers/CnsUpdater.import.js'));
+    runWorker(path.resolve(__dirname, 'workers/cns/CnsUpdater.import.js'));
     logger.info('CNS worker is enabled and running');
   }
 
