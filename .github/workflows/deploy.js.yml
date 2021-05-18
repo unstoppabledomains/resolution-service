@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       deployables:
-        description: 'api/worker/dispatch.yaml'
+        description: 'api/workers/dispatch.yaml'
         default: 'api workers'
         required: true
 
@@ -21,6 +21,29 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.GCP_SA_KEY }}
           export_default_credentials: true
+
+      - name: Create worker.yaml
+        shell: bash
+        run:
+          SERVICE_NAME=workers
+          RESOLUTION_RUNNING_MODE=CNS_WORKER,ZNS_WORKER,MIGRATIONS
+          RESOLUTION_POSTGRES_HOST=${{ secrets.RESOLUTION_POSTGRES_HOST }}
+          RESOLUTION_POSTGRES_USERNAME=${{ secrets.RESOLUTION_POSTGRES_USERNAME
+          }} RESOLUTION_POSTGRES_PASSWORD=${{
+          secrets.RESOLUTION_POSTGRES_PASSWORD }} RESOLUTION_POSTGRES_URL=${{
+          secrets.RESOLUTION_POSTGRES_URL }} GCP_SQL_INSTANCE=${{
+          secrets.GCP_SQL_INSTANCE }} bash create-yaml.sh
+
+      - name: Create api.yaml
+        shell: bash
+        run:
+          SERVICE_NAME=api RESOLUTION_RUNNING_MODE=API
+          RESOLUTION_POSTGRES_HOST=${{ secrets.RESOLUTION_POSTGRES_HOST }}
+          RESOLUTION_POSTGRES_USERNAME=${{ secrets.RESOLUTION_POSTGRES_USERNAME
+          }} RESOLUTION_POSTGRES_PASSWORD=${{
+          secrets.RESOLUTION_POSTGRES_PASSWORD }} RESOLUTION_POSTGRES_URL=${{
+          secrets.RESOLUTION_POSTGRES_URL }} GCP_SQL_INSTANCE=${{
+          secrets.GCP_SQL_INSTANCE }} bash create-yaml.sh
 
       - name: Deploy API
         if: contains(github.event.inputs.deployables, 'api')

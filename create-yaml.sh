@@ -1,0 +1,21 @@
+#!/bin/bash
+
+[[ $SERVICE_NAME = "workers" ]] && SCALING="manual_scaling:\n  instances: 1" || SCALING=""
+
+echo -e "service: resolution-service-${SERVICE_NAME}
+runtime: custom
+env: flex
+
+env_variables:
+  RESOLUTION_RUNNING_MODE: ${RESOLUTION_RUNNING_MODE}
+  RESOLUTION_POSTGRES_URL: ${RESOLUTION_POSTGRES_URL}
+  RESOLUTION_POSTGRES_HOST: ${RESOLUTION_POSTGRES_HOST}
+  RESOLUTION_POSTGRES_USERNAME: ${RESOLUTION_POSTGRES_USERNAME}
+  RESOLUTION_POSTGRES_PASSWORD: ${RESOLUTION_POSTGRES_PASSWORD}
+
+beta_settings:
+  cloud_sql_instances: ${GCP_SQL_INSTANCE}
+
+${SCALING}
+
+" > "${SERVICE_NAME}.yaml"
