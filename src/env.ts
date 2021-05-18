@@ -20,6 +20,7 @@ export const env = {
       CNS_RESOLVER_RECORDS_PER_PAGE: Number(
         process.env.CNS_RECORDS_PER_PAGE || 100,
       ),
+      CNS_FETCH_INTERVAL: Number(process.env.CNS_FETCH_INTERVAL || 5000),
     },
     NEW_RELIC_LICENSE_KEY: process.env.NEW_RELIC_LICENSE_KEY || '',
     NEW_RELIC_APP_NAME: process.env.NEW_RELIC_APP_NAME || '',

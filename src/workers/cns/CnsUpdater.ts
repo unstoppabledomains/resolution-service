@@ -279,5 +279,5 @@ export function startWorker(): void {
       logger.error(`Unhandled error occured while processing events.`);
       logger.error(error);
     }
-  }, 5000);
+  }, env.APPLICATION.ETHEREUM.CNS_FETCH_INTERVAL);
 }
