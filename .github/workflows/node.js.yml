@@ -49,18 +49,25 @@ jobs:
       - name: Run eslint check
         run: yarn eslint:check
 
+      - name: Setup Docker
+        uses: docker/build-push-action@v2.4.0
+
+      - name: Build Docker image
+        run: docker build  .
+
   test:
     runs-on: ubuntu-latest
 
     services:
       postgres:
-        image: postgres:11.6
+        image: postgres:13
         ports: ['5432:5432']
         options:
           --health-cmd pg_isready --health-interval 10s --health-timeout 5s
           --health-retries 5
         env:
           POSTGRES_DB: resolution_service_test
+          POSTGRES_PASSWORD: secret
 
     steps:
       - uses: actions/checkout@v2
