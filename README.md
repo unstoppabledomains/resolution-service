@@ -14,7 +14,7 @@
    - [API reference](README.md#api-reference)
  - [Development notes](README.md#development-notes)
 
-Resolution service provides an API for getting domain data and metadata regardless of that domain's location (whether it CNS, ZNS or UNS). The service collects blockchain events and stores them in a database for easy retrival. The resolution service is provided as a docker image so it can be lanuched on a variety of platforms and in the cloud.
+Resolution service provides an API for getting domain data and metadata regardless of that domain's location (whether it is CNS, ZNS or UNS). The service collects blockchain events and stores them in a database for easy retrieval. The resolution service is provided as a docker image so it can be launched on a variety of platforms and in the cloud.
 
 ## Installation
 ### System requirements
@@ -30,17 +30,12 @@ Resolution service provides an API for getting domain data and metadata regardle
  Postgres can be configured on the same server as the resolution service or on a dedicated database hosting (e.g. AWS RDS, Google Cloud SQL). To install postgres locally, follow these [instructions](https://www.postgresql.org/download). Make sure to configure password authentication for the DB user that will be used by the service.
 
 ### Quick start
-1. Clone the resolution-service repository
-
+1. Clone the resolution-service repository\
 `git clone https://github.com/unstoppabledomains/resolution-service.git`
-
-2. Build the docker container
-
+2. Build the docker container\
 `docker build -t resolution-service .`
-
-3. Setup environment variables
-
-Create a file `service.env` that will contain required environment variables:
+3. Setup environment variables\
+Create a file `service.env` that will contain required environment variables:  
 ```
 RESOLUTION_POSTGRES_HOST=example.com:5432   # DB host
 RESOLUTION_POSTGRES_USERNAME=example        # DB user configured in postgres
@@ -49,31 +44,26 @@ ETHEREUM_JSON_RPC_API_URL=https://infura.io # Address of a JSON RPC provider. Th
 ```
 This is the minimum required set of configurations for the service. Additional configuration options are listed in [Environment configuration options](README.md#environment-configuration-options).
 
-4. Setup postgres database. 
-   - Connect to a postgres instance using the psql console
-
+4. Setup postgres database.
+   - Connect to a postgres instance using the psql console\
 `psql --host=HOSTNAME --username=USERNAME`
-   - Create the `resolution_service` database
-
+   - Create the `resolution_service` database\
 `createdb resolution_service`
-   - *Optional*: load synchronization snapshot data
-
+   - *Optional*: load synchronization snapshot data\
 `TODO`
-
-5. Launch the service
-
+5. Launch the service\
 `docker run -d --env-file service.env resolution-service`
 
 ## Running the service
 
-Once the service is started, it will perform initial syncronization with the blockchain networks. It may take ***several*** hours for a full synchronization. To speed up the process, you can use a snapshot of the database provided by Unstoppable domains. During the initial syncronization the API may not work reliably. The status of synchronization can be checked using the `/status` endpoint. After the synchronization is complete, the service API endpoints can be accessed normally. 
+Once the service is started, it will perform initial synchronization with the blockchain networks. It may take ***several*** hours for a full synchronization. To speed up the process, you can use a snapshot of the database provided by Unstoppable domains. During the initial synchronization the API may not work reliably. The status of synchronization can be checked using the `/status` endpoint. After the synchronization is complete, the service API endpoints can be accessed normally. 
 Note that the service is stateless, so the container doesn't need any persistent storage. All data is stored in the database.
 
 ### Environment configuration options
 Option | Default value | Description
 -------|---------------|------------
-RESOLUTION_API_PORT or PORT | 3000 | The port for the HTTP API.
-RESOLUTION_RUNNING_MODE | API,CNS_WORKER,ZNS_WORKER,MIGRATIONS | Comma-separated list of running modes of the resolution service (see [Running modes](README.md#running-modes)).
+RESOLUTION_API_PORT | 3000 | The port for the HTTP API.
+RESOLUTION_RUNNING_MODE | API,CNS_WORKER, ZNS_WORKER,MIGRATIONS | Comma-separated list of running modes of the resolution service (see [Running modes](README.md#running-modes)).
 RESOLUTION_POSTGRES_HOST | localhost | Host for the postgres DB. Note that to connect to a postgres instance running on the same server as the container, `host.docker.internal` should be used instead of `localhost` (see https://docs.docker.com/docker-for-windows/networking/#use-cases-and-workarounds).
 RESOLUTION_POSTGRES_USERNAME | postgres | Username that is used to connect to postgres.
 RESOLUTION_POSTGRES_PASSWORD | secret | Password that is used to connect to postgres.
@@ -100,6 +90,7 @@ Available running modes:
  - **MIGRATIONS** - Runs the migration scripts if necessary.
 
 For example, to run only the `API` with the `CNS_WORKER`, the following environment configuration can be used:
+
 ```
 RESOLUTION_RUNNING_MODE=API,CNS_WORKER
 ```
@@ -112,7 +103,7 @@ Endpoint | Description
 ---------|------------
 GET /domains | Gets the list of domains.
 GET /domains/:domainName | Gets the resolution of the specified domain.
-GET /status | Gets the syncronization status.
+GET /status | Gets the synchronization status.
 
 ## Development notes
 ### Development pre-requirements
@@ -120,7 +111,7 @@ The dev. environment has generally the same pre-requirements as running the serv
 For convenience postgres configuration can be the same as defaults (username - postgres, password - secret).
 
 Additional pre-requirements that are necessary for development:
- - Node.JS 14.16.1
+ - Node.JS 14.16.1\
  Can be installed using [NVM](https://github.com/nvm-sh/nvm)
  - [yarn](https://yarnpkg.com/lang/en/docs/install)
 
@@ -130,43 +121,40 @@ Additional pre-requirements that are necessary for development:
 nvm use 14.16.1 
 yarn install
 ```
-
-2. Configure environment variables.
-The required variables are the same as for running the service in docker. 
+2. Configure environment variables.\
+The required variables are the same as running the service in docker.
 ```
 RESOLUTION_POSTGRES_HOST=localhost
-RESOLUTION_POSTGRES_USERNAME=posgres
+RESOLUTION_POSTGRES_USERNAME=postgres
 RESOLUTION_POSTGRES_PASSWORD=password
 ETHEREUM_JSON_RPC_API_URL=localhost
 ```
-
 3. Run the service
 ```
 yarn start:dev
 ```
 
 ### Running unit tests
-Unit tests can be run using `yarn test`.
-For checking coverage use `yarn test:coverage`.
+Unit tests can be run using `yarn test`. For checking coverage use `yarn test:coverage`.
 
 Unit/integration tests use a postgres database that is cleaned before each test. By default, the database name is `resolution_service_test`.
 
 The tests also use an Ethereum node to test interaction with smart contracts. By default ganache is used. But geth in dev mode is also available. There are several commands available to start an ethereum node: 
  - `yarn ethereum:docker:start` - starts a `geth` node in docker.
  - `yarn ethereum:docker:stop` - stops a `geth` node that was launched previously.
- - `yarn ethereum:ganache:start` - starts `ganache-cli` in background. The command outputs PID of the started ganache process so it can be killed later.
+ - `yarn ethereum:ganache:start` - starts `ganache-cli` in the background. The command outputs PID of the started ganache process so it can be killed later.
 
 ### Service architecture
 
 ![Architecture chart](doc/ResolutionService.png)
 
 The service currently consists of three main components: API, and two workers.
-The API component is a basic HTTP API that allows to read domain data from the database. The openAPI specification can be found [here](link-to-openapi-spec).
+The API component is a basic HTTP API that allows reading domain data from the database. The openAPI specification can be found [here](link-to-openapi-spec).
 
 Currently there are two workers in the resolution service:
- - CNS worker
+ - CNS worker\
 Contains a scheduled job that connects to the Ethereum blockchain using JSON RPC and pulls CNS (.crypto) domains and resolution events. The events are parsed and saved to the database. 
- - ZNS worker
+ - ZNS worker\
 Contains a scheduled job that connects to the Zilliqa blockchain using and pulls ZNS (.zil) domains and resolution events. The events are parsed and saved to the database. 
 
 More workers may be added in the future.
