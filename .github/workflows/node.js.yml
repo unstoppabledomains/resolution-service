@@ -11,6 +11,7 @@ on:
 
 env:
   NODE_VERSION: 14.16.1
+  VIEWBLOCK_API_KEY: ${{ secrets.VIEWBLOCK_API_KEY }}
 
 jobs:
   build:
