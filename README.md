@@ -7,7 +7,7 @@
  - [Installation](README.md#installation)
    - [System requirements](README.md#system-requirements)
    - [Pre-requirements](README.md#pre-requirements)
-   - [Quick setup](README.md#quick-setup)
+   - [Quick start](README.md#quick-start)
  - [Running the service](README.md#running-the-service)
    - [Environment configuration options](README.md#environment-configuration-options)
    - [Running modes](README.md#running-modes)
@@ -23,18 +23,23 @@ Resolution service provides an API for getting domain data and metadata regardle
  - HDD: ? GB
 
 ### Pre-requirements
- - **git** - To clone the repository.
- - **docker** - To run the service.
+ - **git** - to clone the repository.
+ - **docker** - to run the service.
  Install docker by following [instructions](https://docs.docker.com/engine/install/) for an appropriate system.
- - **postgres** - To store the data.
+ - **postgres** - to store the data.
  Postgres can be configured on the same server as the resolution service or on a dedicated database hosting (e.g. AWS RDS, Google Cloud SQL). To install postgres locally, follow these [instructions](https://www.postgresql.org/download). Make sure to configure password authentication for the DB user that will be used by the service.
 
-### Quick setup
+### Quick start
 1. Clone the resolution-service repository
+
 `git clone https://github.com/unstoppabledomains/resolution-service.git`
+
 2. Build the docker container
+
 `docker build -t resolution-service .`
+
 3. Setup environment variables
+
 Create a file `service.env` that will contain required environment variables:
 ```
 RESOLUTION_POSTGRES_HOST=example.com:5432   # DB host
@@ -43,20 +48,26 @@ RESOLUTION_POSTGRES_PASSWORD=password       # DB password configured in postgres
 ETHEREUM_JSON_RPC_API_URL=https://infura.io # Address of a JSON RPC provider. This can be a public API (e.g. infura), or a local ethereum node with JSON RPC enabled
 ```
 This is the minimum required set of configurations for the service. Additional configuration options are listed in [Environment configuration options](README.md#environment-configuration-options).
+
 4. Setup postgres database. 
    - Connect to a postgres instance using the psql console
-   `psql --host=HOSTNAME --username=USERNAME`
+
+`psql --host=HOSTNAME --username=USERNAME`
    - Create the `resolution_service` database
-   `createdb resolution_service`
+
+`createdb resolution_service`
    - *Optional*: load synchronization snapshot data
-   `TODO`
+
+`TODO`
+
 5. Launch the service
+
 `docker run -d --env-file service.env resolution-service`
 
 ## Running the service
 
-Once the service is started, it will perform initial syncronization with the blockchain networks. It may take ***several*** hours for a full synchronization. To speed up the process, you can use a snapshot of the database provided by Unstoppable domains. During the initial syncronization the data that is returned by the API is outdated and the API may not work reliably. The status of synchronization can be checked using the `/status` endpoint.
-Once the synchronization is complete, the service API endpoints can be accessed normally. The service outputs logs to `stdout` so the log output can be displayed using the `docker logs` command. Note that the service is stateless, so the container doesn't need any persistent storage. All data is stored in the database.
+Once the service is started, it will perform initial syncronization with the blockchain networks. It may take ***several*** hours for a full synchronization. To speed up the process, you can use a snapshot of the database provided by Unstoppable domains. During the initial syncronization the API may not work reliably. The status of synchronization can be checked using the `/status` endpoint. After the synchronization is complete, the service API endpoints can be accessed normally. 
+Note that the service is stateless, so the container doesn't need any persistent storage. All data is stored in the database.
 
 ### Environment configuration options
 Option | Default value | Description
@@ -119,6 +130,7 @@ Additional pre-requirements that are necessary for development:
 nvm use 14.16.1 
 yarn install
 ```
+
 2. Configure environment variables.
 The required variables are the same as for running the service in docker. 
 ```
@@ -127,6 +139,7 @@ RESOLUTION_POSTGRES_USERNAME=posgres
 RESOLUTION_POSTGRES_PASSWORD=password
 ETHEREUM_JSON_RPC_API_URL=localhost
 ```
+
 3. Run the service
 ```
 yarn start:dev
