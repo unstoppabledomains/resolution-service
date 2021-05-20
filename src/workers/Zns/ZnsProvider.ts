@@ -72,6 +72,7 @@ export default class ZnsProvider {
       name,
       [],
     );
+    // console.log("state = ",state);
     return state.result?.[name];
   }
 
@@ -91,6 +92,7 @@ export default class ZnsProvider {
       headers: { 'X-APIKEY': this.viewBlockApiKey },
     });
     if (response.status !== 200) {
+      console.log(await response.json());
       throw new Error(`ViewBlock API error: ${await response.text()}`);
     }
     return response.json();

@@ -1,9 +1,16 @@
 import { expect } from 'chai';
 import ZnsProvider from './ZnsProvider';
+import nock from 'nock';
+import ZnsTestMockData from './ZnsTestMockData';
 
 let provider: ZnsProvider;
+let mocks: ZnsTestMockData;
 
 describe('ZnsProvider', () => {
+  before(() => {
+    mocks = new ZnsTestMockData(ZnsProvider);
+  });
+  
   beforeEach(() => {
     provider = new ZnsProvider();
   });
@@ -13,7 +20,13 @@ describe('ZnsProvider', () => {
   });
 
   it('should return first 2 transactions', async () => {
+    const mock = mocks.getMockForTest('should return first 2 transactions');
+    const scope = nock(mock.request.url)
+      .get(mock.request.endpoint)
+      .query(mock.request.params)
+      .reply(200, mock.response);
     const transactions = await provider.getLatestTransactions(0, 1);
+    scope.done();
     const firstTx = {
       hash:
         '0x8ddd3f31d79c2c40f03a38e5fc645df945419c8679064e05bc50f08e23dec5be',
@@ -45,7 +58,13 @@ describe('ZnsProvider', () => {
 
   it('should return records for the domain', async () => {
     const resolverAddress = '0xaec2202caff6b5b637c18ecf7fdf4959a48c7914'; // flowers.zil
+    const mock = mocks.getMockForTest('should return records for the domain');
+    const scope = nock(mock.request.url)
+      .post(mock.request.endpoint)
+      .reply(200, mock.response)
+      
     const records = await provider.requestZilliqaResolutionFor(resolverAddress);
+    scope.done();
     const answer = {
       'crypto.ZIL.address': '0x2fbe7652d33bfaf72e50f0ea926c42c8c89344f4',
     };

@@ -3,10 +3,17 @@ import { getManager } from 'typeorm';
 import ZnsWorker from './ZnsWorker';
 import ZnsTransaction from '../../models/ZnsTransaction';
 import { Domain } from '../../models';
+import ZnsTestMockData from './ZnsTestMockData';
+import nock from 'nock';
 
 let worker: ZnsWorker;
+let mocks: ZnsTestMockData;
 
 describe('ZnsWorker', () => {
+  before(() => {
+    mocks = new ZnsTestMockData(ZnsWorker);
+  });
+
   beforeEach(() => {
     worker = new ZnsWorker();
   });
@@ -17,6 +24,7 @@ describe('ZnsWorker', () => {
 
   it('should parse the fake transaction', async () => {
     const manager = getManager();
+    const mock = mocks.getMockForTest('should parse the fake transaction');
     const fakeTransaction = {
       hash:
         '0xfc7b8fa3576fba44527b54264adbe8197c1c9fcc3484e764d54064dfe6be8939',
@@ -42,7 +50,11 @@ describe('ZnsWorker', () => {
         },
       ],
     };
+    const spy = nock(mock.request.url)
+      .post(mock.request.endpoint)
+      .reply(200, mock.response);
     await worker['processTransaction'](fakeTransaction as any, manager);
+    spy.done();
     const txFromDb = await ZnsTransaction.findOne({
       hash: fakeTransaction.hash,
     });

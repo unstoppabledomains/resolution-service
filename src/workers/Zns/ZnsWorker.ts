@@ -102,6 +102,7 @@ export default class ZnsWorker {
           }
         }
       } catch (error) {
+        console.log(error);
         logger.error(`Failed to process event. ${JSON.stringify(event)}`);
         logger.error(error);
       }
@@ -144,13 +145,11 @@ export default class ZnsWorker {
     const resolver = isBech32(eventParams.resolver)
       ? fromBech32Address(eventParams.resolver).toLowerCase()
       : eventParams.resolver;
-
     const domain = await Domain.findByNode(node, repository);
     if (domain) {
       const resolution = await this.provider.requestZilliqaResolutionFor(
         resolver,
       );
-
       domain.attributes({
         resolver: resolver !== Domain.NullAddress ? resolver : undefined,
         ownerAddress: owner !== Domain.NullAddress ? owner : undefined,

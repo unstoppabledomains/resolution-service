@@ -1,0 +1,114 @@
+{
+  "ZnsWorker": [
+    {
+      "testname": "should parse the fake transaction",
+      "request": {
+        "url": "https://dev-api.zilliqa.com/",
+        "method": "POST",
+        "endpoint": "/",
+        "params": "",
+        "body": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "method": "GetSmartContractSubState",
+          "params": [ "0000000000000000000000000000000000000000", "records", [] ]
+        }
+      },
+      "response": {
+        "error": { 
+          "code": -5,
+          "data": null,
+          "message": "Address not contract address"
+        },
+        "id": 1,
+        "jsonrpc": "2.0"
+      }
+    }
+  ],
+  "ZnsProvider": [
+    {
+      "testname": "should return first 2 transactions",
+      "request": {
+        "method": "GET",
+        "url": "https://api.viewblock.io",
+        "endpoint": "/v1/zilliqa/addresses/0xB925adD1d5EaF13f40efD43451bF97A22aB3d727/txs",
+        "params": {
+          "network":"testnet",
+          "events":true,
+          "atxuidFrom":0,
+          "atxuidTo":1
+        }
+      },
+      "response": [
+        {
+          "hash": "0x47e5d1f098d00c46341e92c6cfc052cecf80c4bb6a69405911bd406b6d56d069",
+          "blockHeight": 2566944,
+          "from": "zil1jjqjdz7vnuz52ffsg8emun3hmpqew9z8y2pj72",
+          "to": "zil1hyj6m5w4atcn7s806s69r0uh5g4t84e8gp6nps",
+          "value": "0",
+          "fee": "810000000000",
+          "timestamp": 1616517549335,
+          "signature": "0x82170A7115F6C6787E357E3F43DF7E56BE99361CA368B7993DE6C7668C89BDA50878708D0F6127684ECE1A4EAC0F400CBD849919F8954886A3B2EF6197B47856",
+          "direction": "in",
+          "nonce": 4,
+          "receiptSuccess": true,
+          "data": "{\"_tag\":\"setAdmin\",\"params\":[{\"vname\":\"address\",\"type\":\"ByStr20\",\"value\":\"0x04159093ca538eedbfd067cfce38036fc04ee90b\"},{\"vname\":\"isApproved\",\"type\":\"Bool\",\"value\":{\"constructor\":\"True\",\"argtypes\":[],\"arguments\":[]}}]}",
+          "internalTransfers": [],
+          "events": [
+            {
+              "address": "zil1hyj6m5w4atcn7s806s69r0uh5g4t84e8gp6nps",
+              "name": "AdminSet",
+              "details": "AdminSet (ByStr20 address, Bool isApproved)",
+              "params": {
+                "address": "zil1qs2epy722w8wm07svl8uuwqrdlqya6gt5xpdc4",
+                "isApproved": "True"
+              }
+            }
+          ],
+          "transitions": [],
+          "atxuid": 1
+        },
+        {
+          "hash": "0x8ddd3f31d79c2c40f03a38e5fc645df945419c8679064e05bc50f08e23dec5be",
+          "blockHeight": 2566938,
+          "from": "zil1jjqjdz7vnuz52ffsg8emun3hmpqew9z8y2pj72",
+          "to": "zil1hyj6m5w4atcn7s806s69r0uh5g4t84e8gp6nps",
+          "value": "0",
+          "fee": "968000000000",
+          "timestamp": 1616517421635,
+          "signature": "0xB259725B35D0B3666F38BC8592B2BF54D942AC4265C5094640D2796AEE6C2B6B3D3A1AD4C5CA9E36A64591A44ECBD834444CD4C9F04885A93B79D9C4CD19DC0A",
+          "direction": "in",
+          "nonce": 2,
+          "receiptSuccess": true,
+          "data": "[{\"vname\":\"initialOwner\",\"type\":\"ByStr20\",\"value\":\"0x9481268bcc9f0545253041f3be4e37d841971447\"},{\"vname\":\"rootNode\",\"type\":\"ByStr32\",\"value\":\"0x9915d0456b878862e822e2361da37232f626a2e47505c8795134a95d36138ed3\"},{\"vname\":\"_scilla_version\",\"type\":\"Uint32\",\"value\":\"0\"}]",
+          "internalTransfers": [],
+          "events": [],
+          "transitions": [],
+          "atxuid": 0
+        }
+      ]
+    },
+    {
+      "testname": "should return records for the domain",
+      "request": {
+        "url": "https://dev-api.zilliqa.com/",
+        "method": "POST",
+        "endpoint": "/",
+        "params": "",
+        "body": {
+          "method": "GetSmartContractSubState",
+          "params": [ "aec2202caff6b5b637c18ecf7fdf4959a48c7914", "records", [] ]
+        }
+      },
+      "response" : {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+          "records": {
+            "crypto.ZIL.address": "0x2fbe7652d33bfaf72e50f0ea926c42c8c89344f4"
+          }
+        }
+      }
+    }
+  ]
+}
