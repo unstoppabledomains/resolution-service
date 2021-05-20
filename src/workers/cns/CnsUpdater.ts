@@ -272,7 +272,6 @@ export function startWorker(): void {
   setIntervalAsync(async () => {
     try {
       logger.info('CnsUpdater is pulling updates from Ethereum');
-      await connect();
       await new CnsUpdater().run();
     } catch (error) {
       logger.error(`Unhandled error occured while processing events.`);
