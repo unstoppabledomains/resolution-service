@@ -10,7 +10,7 @@ describe('ZnsProvider', () => {
   before(() => {
     mocks = new ZnsTestMockData(ZnsProvider);
   });
-  
+
   beforeEach(() => {
     provider = new ZnsProvider();
   });
@@ -61,8 +61,8 @@ describe('ZnsProvider', () => {
     const mock = mocks.getMockForTest('should return records for the domain');
     const scope = nock(mock.request.url)
       .post(mock.request.endpoint)
-      .reply(200, mock.response)
-      
+      .reply(200, mock.response);
+
     const records = await provider.requestZilliqaResolutionFor(resolverAddress);
     scope.done();
     const answer = {

@@ -11,11 +11,11 @@
           "id": 1,
           "jsonrpc": "2.0",
           "method": "GetSmartContractSubState",
-          "params": [ "0000000000000000000000000000000000000000", "records", [] ]
+          "params": ["0000000000000000000000000000000000000000", "records", []]
         }
       },
       "response": {
-        "error": { 
+        "error": {
           "code": -5,
           "data": null,
           "message": "Address not contract address"
@@ -33,10 +33,10 @@
         "url": "https://api.viewblock.io",
         "endpoint": "/v1/zilliqa/addresses/0xB925adD1d5EaF13f40efD43451bF97A22aB3d727/txs",
         "params": {
-          "network":"testnet",
-          "events":true,
-          "atxuidFrom":0,
-          "atxuidTo":1
+          "network": "testnet",
+          "events": true,
+          "atxuidFrom": 0,
+          "atxuidTo": 1
         }
       },
       "response": [
@@ -97,10 +97,10 @@
         "params": "",
         "body": {
           "method": "GetSmartContractSubState",
-          "params": [ "aec2202caff6b5b637c18ecf7fdf4959a48c7914", "records", [] ]
+          "params": ["aec2202caff6b5b637c18ecf7fdf4959a48c7914", "records", []]
         }
       },
-      "response" : {
+      "response": {
         "id": 1,
         "jsonrpc": "2.0",
         "result": {
