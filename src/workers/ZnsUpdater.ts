@@ -1,7 +1,7 @@
 import { logger } from '../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
 import connect from '../database/connect';
-import ZnsWorker from './Zns/ZnsWorker';
+import ZnsWorker from './zns/ZnsWorker';
 import { Domain } from '../models';
 import { znsNamehash } from '../utils/namehash';
 import { env } from '../env';
