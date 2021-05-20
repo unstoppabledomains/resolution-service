@@ -88,12 +88,15 @@ describe('Domain', () => {
     it('should find by node', async () => {
       const domainMetaData = {
         name: 'test.crypto',
-        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'CNS',
       };
       await Domain.create(domainMetaData).save();
-      const fromDb = await Domain.findByNode('0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103');
+      const fromDb = await Domain.findByNode(
+        '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+      );
       expect(fromDb).to.containSubset(domainMetaData);
     });
   });
@@ -101,23 +104,29 @@ describe('Domain', () => {
     it('should find an existed domain', async () => {
       const domainMetaData = {
         name: 'test.crypto',
-        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'CNS',
       };
       await Domain.create(domainMetaData).save();
-      const fromDb = await Domain.findOrBuildByNode('0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103');
+      const fromDb = await Domain.findOrBuildByNode(
+        '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+      );
       expect(fromDb).to.containSubset(domainMetaData);
     });
 
     it('should build new domain', async () => {
-      const domainFromDb = await Domain.findOrBuildByNode('0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303107');
+      const domainFromDb = await Domain.findOrBuildByNode(
+        '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303107',
+      );
       expect(domainFromDb).to.containSubset({
-        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303107',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303107',
         resolution: {},
         ownerAddress: null,
-        resolver: null
-      })
-    })
-  })
+        resolver: null,
+      });
+    });
+  });
 });
