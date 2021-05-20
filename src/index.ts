@@ -6,9 +6,8 @@ import('newrelic');
 
 const runningMode = env.APPLICATION.RUNNING_MODE;
 import connect from './database/connect';
-import CnsUpdater from './workers/CnsUpdater';
-import ZnsUpdater from './workers/ZnsUpdater';
 import { startWorker } from './workers/cns/CnsUpdater';
+import ZnsUpdater from './workers/ZnsUpdater';
 
 connect().then(() => {
   if (runningMode.includes('CNS_WORKER')) {
