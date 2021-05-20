@@ -85,8 +85,8 @@ TYPEORM_LOGGING_COLORIZE | true | Colorize typeorm logs.
 The service provides several running modes. By default it will run all of them. However, the modes that will be used can be selected during startup using the RESOLUTION_RUNNING_MODE environment variable.
 Available running modes:
  - **API** - Runs the service API.
- - **CNS_WORKER** - Runs the CNS worker to sync data from the Ethereum CNS registry smart contract.
- - **ZNS_WORKER** - Runs the ZNS worker to sync data from the Zilliqa ZNS registry smart contract.
+ - **CNS_WORKER** - Runs the CNS worker to sync data from the Ethereum CNS registry
+ - **ZNS_WORKER** - Runs the ZNS worker to sync data from the Zilliqa ZNS registry
  - **MIGRATIONS** - Runs the migration scripts if necessary.
 
 For example, to run only the `API` with the `CNS_WORKER`, the following environment configuration can be used:
@@ -149,7 +149,7 @@ The tests also use an Ethereum node to test interaction with smart contracts. By
 ![Architecture chart](doc/ResolutionService.png)
 
 The service currently consists of three main components: API, and two workers.
-The API component is a basic HTTP API that allows reading domain data from the database. The openAPI specification can be found [here](link-to-openapi-spec).
+The API component is a basic HTTP API that allows reading domain data from the database. The OpenAPI specification can be found [here](link-to-openapi-spec).
 
 Currently there are two workers in the resolution service:
  - CNS worker\
