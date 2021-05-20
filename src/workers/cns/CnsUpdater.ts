@@ -47,14 +47,14 @@ export class CnsUpdater {
     const node = CnsRegistryEvent.tokenIdToNode(event.args?.tokenId);
     const domain = await Domain.findByNode(node, domainRepository);
     //Check if it's not a new URI
-    if (event.args?.from !== '0x0000000000000000000000000000000000000000') {
+    if (event.args?.from !== Domain.NullAddress) {
       if (!domain) {
         throw new CnsUpdaterError(
           `Transfer event was not processed. Could not find domain for ${node}`,
         );
       }
       //Check if it's a burn
-      if (event.args?.to === '0x0000000000000000000000000000000000000000') {
+      if (event.args?.to === Domain.NullAddress) {
         domain.ownerAddress = null;
         domain.resolution = {};
         domain.resolver = null;
@@ -93,8 +93,7 @@ export class CnsUpdater {
     if (
       !this.lastProcessedEvent ||
       this.lastProcessedEvent.event !== 'Transfer' ||
-      this.lastProcessedEvent.args?.from !==
-        '0x0000000000000000000000000000000000000000'
+      this.lastProcessedEvent.args?.from !== Domain.NullAddress
     ) {
       throw new CnsUpdaterError(
         `NewUri event wasn't processed. Unexpected order of events. Expected last processed event to be 'Transfer', got :'${this.lastProcessedEvent?.event}'`,

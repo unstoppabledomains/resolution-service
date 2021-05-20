@@ -23,25 +23,20 @@ const abiMap = {
 
 const cache = {} as { [key: string]: Contract };
 
-export const getCryptoConfig = (
-  networkId: string,
-  networks: { [key: string]: { contracts: any } } = NetworkConfig.networks,
-): Record<
+export type CryptoConfig = Record<
   string,
   {
     address: string;
     legacyAddresses: ReadonlyArray<string>;
     getContract: () => Contract;
   }
-> => {
-  const cryptoConfig = {} as Record<
-    string,
-    {
-      address: string;
-      legacyAddresses: ReadonlyArray<string>;
-      getContract: () => Contract;
-    }
-  >;
+>;
+
+export const getCryptoConfig = (
+  networkId: string,
+  networks: { [key: string]: { contracts: any } } = NetworkConfig.networks,
+): CryptoConfig => {
+  const cryptoConfig = {} as CryptoConfig;
   if (Object.keys(networks).includes(networkId)) {
     const { contracts } = networks[networkId];
 

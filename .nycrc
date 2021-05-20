@@ -1,0 +1,13 @@
+{
+  "exclude": [
+    "*.test.ts",
+    "src/database/migrations/*"
+  ],
+  "check-coverage": true,
+  "watermarks": {
+    "branches": [60,80],
+    "functions": [60,80],
+    "lines": [60,80],
+    "statements": [60,80]
+  }
+}
