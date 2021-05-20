@@ -52,7 +52,7 @@ This is the minimum required set of configurations for the service. Additional c
    - *Optional*: load synchronization snapshot data\
 `TODO`
 5. Launch the service\
-`docker run -d --env-file service.env resolution-service`
+`docker run -d --env-file service.env -p 3000:3000 resolution-service`
 
 ## Running the service
 
