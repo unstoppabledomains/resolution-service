@@ -19,7 +19,6 @@ if (process.env.NODE_ENV !== 'test') {
 }
 export const mochaHooks = {
   async beforeAll(): Promise<void> {
-    logger.transports.forEach((transport) => (transport.silent = true));
     await connect();
     // Why does following line think there are pending migrations?
     // if (await getConnection().showMigrations()) {
