@@ -1,28 +1,21 @@
 import { logger } from '../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
-import connect from '../database/connect';
 import ZnsWorker from './zns/ZnsWorker';
-import { Domain } from '../models';
-import { znsNamehash } from '../utils/namehash';
 import { env } from '../env';
 
 const worker = new ZnsWorker();
 
-export default (): void => {
-  setIntervalAsync(async () => {
-    logger.info('ZnsUpdater is pulling updates from Zilliqa');
-    const connection = await connect();
-    // check if the root domain exists in db, otherwise create it
-    const root = await Domain.findOne({ name: 'zil' });
-    if (!root) {
-      await new Domain({
-        name: 'zil',
-        node: znsNamehash('zil'),
-        location: 'ZNS',
-      }).save();
-    }
+const runWorker = async () => {
+  logger.info('ZnsUpdater is pulling updates from Zilliqa');
+  await worker.run();
+};
 
-    await worker.run();
-    await connection.close();
-  }, env.APPLICATION.ZILLIQA.WORKER_INTERVAL);
+export default async (): Promise<void> => {
+  try {
+    await runWorker();
+    setIntervalAsync(runWorker, env.APPLICATION.ZILLIQA.WORKER_INTERVAL);
+  } catch (error) {
+    logger.error('Failed to run the ZnsWorker');
+    logger.error(error);
+  }
 };
