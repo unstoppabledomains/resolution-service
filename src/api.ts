@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import {
   createExpressServer,
   getMetadataArgsStorage,
-  NotFoundError,
 } from 'routing-controllers';
 import { DomainsController } from './controllers/DomainsController';
 import { StatusController } from './controllers/StatusController';
@@ -12,7 +11,7 @@ import { routingControllersToSpec } from 'routing-controllers-openapi';
 import Bugsnag from '@bugsnag/js';
 import BugsnagPluginExpress from '@bugsnag/plugin-express';
 import { env } from './env';
-import { ErrorHandler } from './errors/ErrorHandler';
+import ErrorHandler from './errors/ErrorHandler';
 
 export const api = createExpressServer({
   classTransformer: true,
