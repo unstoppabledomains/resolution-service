@@ -33,6 +33,7 @@ The resolution service is provided as a docker image so it can be launched on a 
 3. Setup environment variables\
 Create a file `service.env` that will contain required environment variables:  
 ```
+NODE_ENV=production
 RESOLUTION_POSTGRES_HOST=example.com:5432   # DB host
 RESOLUTION_POSTGRES_USERNAME=example        # DB user configured in postgres
 RESOLUTION_POSTGRES_PASSWORD=password       # DB password configured in postgres
@@ -48,7 +49,7 @@ This is the minimum required set of configurations for the service. Additional c
    - *Optional*: load synchronization snapshot data\
 `TODO`
 5. Launch the service\
-`docker run -d --env-file service.env resolution-service`
+`docker run -d -p 3000:3000 --env-file service.env resolution-service`
 
 ## Running the service
 
@@ -60,7 +61,7 @@ Option | Default value | Description
 -------|---------------|------------
 RESOLUTION_API_PORT | 3000 | The port for the HTTP API.
 RESOLUTION_RUNNING_MODE | API,CNS_WORKER, ZNS_WORKER,MIGRATIONS | Comma-separated list of running modes of the resolution service (see [Running modes](README.md#running-modes)).
-RESOLUTION_POSTGRES_HOST | localhost | Host for the postgres DB. Note that to connect to a postgres instance running on the same server as the container, `host.docker.internal` should be used instead of `localhost` (see https://docs.docker.com/docker-for-windows/networking/#use-cases-and-workarounds).
+RESOLUTION_POSTGRES_HOST | localhost | Host for the postgres DB. Note that to connect to a postgres instance running on the same server as the container, `host.docker.internal` should be used instead of `localhost` on Windows and MacOS (see https://docs.docker.com/docker-for-windows/networking/#use-cases-and-workarounds).
 RESOLUTION_POSTGRES_USERNAME | postgres | Username that is used to connect to postgres.
 RESOLUTION_POSTGRES_PASSWORD | secret | Password that is used to connect to postgres.
 RESOLUTION_POSTGRES_DATABASE | resolution_service | Database name in postgres.
