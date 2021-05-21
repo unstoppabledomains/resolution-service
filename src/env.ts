@@ -12,7 +12,11 @@ export const env = {
         process.env.CNS_REGISTRY_EVENTS_STARTING_BLOCK || 9080000
       ),
     },
-    ZILLIQA: znsConfig,
+    ZILLIQA: {
+      ...znsConfig,
+      VIEWBLOCK_API_KEY: process.env.VIEWBLOCK_API_KEY,
+      VIEWBLOCK_API_URL: 'https://api.viewblock.io/v1/zilliqa',
+    },
     NEW_RELIC_LICENSE_KEY: process.env.NEW_RELIC_LICENSE_KEY || '',
     NEW_RELIC_APP_NAME: process.env.NEW_RELIC_APP_NAME || '',
     BUGSNAG_API_KEY: process.env.BUGSNAG_API_KEY || '',
