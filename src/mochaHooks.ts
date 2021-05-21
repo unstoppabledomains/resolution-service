@@ -40,5 +40,4 @@ export const mochaHooks = {
     );
     await fixtures();
   },
-  
 };

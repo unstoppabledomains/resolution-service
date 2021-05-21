@@ -1,20 +1,11 @@
 [
   {
-      "address": "zil1jcgu2wlx6xejqk9jw3aaankw6lsjzeunx2j0jz",
-      "name": "NewDomain",
-      "details": "NewDomain (ByStr32 parent, String label)",
-      "params": {
-          "parent": "0x9915d0456b878862e822e2361da37232f626a2e47505c8795134a95d36138ed3",
-          "label": "should.not.contain.dots"
-      }
-  },
-  {
     "address": "zil1jcgu2wlx6xejqk9jw3aaankw6lsjzeunx2j0jz",
     "name": "NewDomain",
     "details": "NewDomain (ByStr32 parent, String label)",
     "params": {
-        "parent": "0x9915d0456b878862e822e2361da37232f626a2e47505c8795134a95d36138ed3",
-        "label": ""
+      "parent": "0x9915d0456b878862e822e2361da37232f626a2e47505c8795134a95d36138ed3",
+      "label": "should.not.contain.dots"
     }
   },
   {
@@ -22,8 +13,17 @@
     "name": "NewDomain",
     "details": "NewDomain (ByStr32 parent, String label)",
     "params": {
-        "parent": "0x9915d0456b878862e822e2361da37232f626a2e47505c8795134a95d36138ed3",
-        "label": "SHOULDNOTBECAPITALIZED"
+      "parent": "0x9915d0456b878862e822e2361da37232f626a2e47505c8795134a95d36138ed3",
+      "label": ""
+    }
+  },
+  {
+    "address": "zil1jcgu2wlx6xejqk9jw3aaankw6lsjzeunx2j0jz",
+    "name": "NewDomain",
+    "details": "NewDomain (ByStr32 parent, String label)",
+    "params": {
+      "parent": "0x9915d0456b878862e822e2361da37232f626a2e47505c8795134a95d36138ed3",
+      "label": "SHOULDNOTBECAPITALIZED"
     }
   }
 ]

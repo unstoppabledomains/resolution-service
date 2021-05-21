@@ -17,7 +17,7 @@ const zilDevConfig = {
 const configMap = {
   production: zilProdConfig,
   test: zilDevConfig,
-  development: zilDevConfig
+  development: zilDevConfig,
 };
 
 export default configMap[enviroment];

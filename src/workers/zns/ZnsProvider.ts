@@ -30,8 +30,8 @@ export default class ZnsProvider {
     this.network = env.APPLICATION.ZILLIQA.NETWORK;
     this.zilliqaRegistryAddress = env.APPLICATION.ZILLIQA.ZNS_REGISTRY_CONTRACT;
     this.zilliqa = new Zilliqa(env.APPLICATION.ZILLIQA.JSON_RPC_API_URL);
-    this.viewBlockUrl = 'https://api.viewblock.io/v1/zilliqa';
-    const key = process.env.VIEWBLOCK_API_KEY;
+    this.viewBlockUrl = env.APPLICATION.ZILLIQA.VIEWBLOCK_API_URL;
+    const key = env.APPLICATION.ZILLIQA.VIEWBLOCK_API_KEY;
     if (!key) {
       throw new Error('VIEWBLOCK_API_KEY is not set');
     }
@@ -60,9 +60,7 @@ export default class ZnsProvider {
   }
 
   async getChainStats(): Promise<ZilStatsResponse> {
-    return this.request(
-      `${this.viewBlockUrl}/stats?network=${this.network}`,
-    );
+    return this.request(`${this.viewBlockUrl}/stats?network=${this.network}`);
   }
 
   private async contractSubStateRpc(address: string, name: string) {

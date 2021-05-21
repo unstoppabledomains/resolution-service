@@ -6,5 +6,5 @@
   "dsDifficulty": 18,
   "txCount": 1056344,
   "addressCount": 79753,
-  "shardingPeerCount": [ 10, 10, 10 ]
+  "shardingPeerCount": [10, 10, 10]
 }

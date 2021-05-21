@@ -34,7 +34,7 @@ export default class ZnsWorker {
         atxuidFrom,
         atxuidTo,
       );
-      
+
       await getConnection().transaction(async (manager) => {
         for (const transaction of transactions) {
           await this.processTransaction(transaction, manager);
@@ -64,15 +64,13 @@ export default class ZnsWorker {
       blockNumber,
       events: [],
     };
-    const tx = await ZnsTransaction.persist(attributes);
+    await ZnsTransaction.persist(attributes);
   }
 
   private async processTransaction(
     transaction: ZnsTransaction,
     manager: EntityManager,
   ) {
-    logger.info('LOOK');
-    logger.info(JSON.stringify(transaction));
     const domainRepository = manager.getRepository(Domain);
     const znsTx = new ZnsTransaction({
       hash: transaction.hash,

@@ -15,13 +15,15 @@ describe('ZnsProvider', () => {
   });
 
   it('should return first 2 transactions', async () => {
-    const interceptor = nock("https://api.viewblock.io")
-      .get("/v1/zilliqa/addresses/0xB925adD1d5EaF13f40efD43451bF97A22aB3d727/txs")
+    const interceptor = nock('https://api.viewblock.io')
+      .get(
+        '/v1/zilliqa/addresses/0xB925adD1d5EaF13f40efD43451bF97A22aB3d727/txs',
+      )
       .query({
-        "network": "testnet",
-        "events": true,
-        "atxuidFrom": 0,
-        "atxuidTo": 1
+        network: 'testnet',
+        events: true,
+        atxuidFrom: 0,
+        atxuidTo: 1,
       })
       .reply(200, firstTwoTransactions);
     const transactions = await provider.getLatestTransactions(0, 1);
@@ -57,16 +59,16 @@ describe('ZnsProvider', () => {
 
   it('should return records for the domain', async () => {
     const resolverAddress = '0xaec2202caff6b5b637c18ecf7fdf4959a48c7914'; // flowers.zil
-    const interceptor = nock("https://dev-api.zilliqa.com/")
-      .post("/")
+    const interceptor = nock('https://dev-api.zilliqa.com/')
+      .post('/')
       .reply(200, {
-        "id": 1,
-        "jsonrpc": "2.0",
-        "result": {
-          "records": {
-            "crypto.ZIL.address": "0x2fbe7652d33bfaf72e50f0ea926c42c8c89344f4"
-          }
-        }
+        id: 1,
+        jsonrpc: '2.0',
+        result: {
+          records: {
+            'crypto.ZIL.address': '0x2fbe7652d33bfaf72e50f0ea926c42c8c89344f4',
+          },
+        },
       });
 
     const records = await provider.requestZilliqaResolutionFor(resolverAddress);
