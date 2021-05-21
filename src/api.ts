@@ -18,7 +18,7 @@ export const api = createExpressServer({
   classTransformer: true,
   defaultErrorHandler: false,
   controllers: [DomainsController, StatusController],
-  middlewares: [ErrorHandler]
+  middlewares: [ErrorHandler],
 });
 
 if (env.APPLICATION.BUGSNAG_API_KEY) {
@@ -43,5 +43,4 @@ const swaggerSpec = routingControllersToSpec(
   },
 );
 
-api
-  .use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerSpec))
+api.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerSpec));
