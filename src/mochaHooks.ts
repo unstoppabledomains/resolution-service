@@ -24,9 +24,6 @@ export const mochaHooks = {
     //   throw new Error('Have a pending migrations');
     // }
   },
-  async afterEach(): Promise<void> {
-    nock.cleanAll();
-  },
   async beforeEach(): Promise<void> {
     const tableNames = getConnection().entityMetadatas.map((v) => v.tableName);
     await getConnection().query(
@@ -39,5 +36,6 @@ export const mochaHooks = {
           .join(''),
     );
     await fixtures();
+    nock.cleanAll();
   },
 };
