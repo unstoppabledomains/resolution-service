@@ -5,7 +5,6 @@
 [![Get help on Discord](https://img.shields.io/badge/Get%20help%20on-Discord-blueviolet)](https://discord.gg/b6ZVxSZ9Hn)
 
  - [Installation](README.md#installation)
-   - [System requirements](README.md#system-requirements)
    - [Pre-requirements](README.md#pre-requirements)
    - [Quick start](README.md#quick-start)
  - [Running the service](README.md#running-the-service)
@@ -14,14 +13,11 @@
    - [API reference](README.md#api-reference)
  - [Development notes](README.md#development-notes)
 
-Resolution service provides an API for getting domain data and metadata regardless of that domain's location (whether it is CNS, ZNS or UNS). The service collects blockchain events and stores them in a database for easy retrieval. The resolution service is provided as a docker image so it can be launched on a variety of platforms and in the cloud.
+Resolution service provides an API for getting domain data and metadata regardless of that domain's location (whether it is stored in Ethereum, Zilliqa, or any other blockchain). The service is used to cache blockchain events in a database for easy retrieval without acessing blockchain APIs.
+
+The resolution service is provided as a docker image so it can be launched on a variety of platforms and in the cloud.
 
 ## Installation
-### System requirements
- - CPU: 4 cores, 64-bit
- - RAM: 4 GB
- - HDD: ? GB
-
 ### Pre-requirements
  - **git** - to clone the repository.
  - **docker** - to run the service.
