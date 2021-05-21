@@ -34,7 +34,7 @@ export default class ZnsWorker {
         atxuidFrom,
         atxuidTo,
       );
-
+      
       await getConnection().transaction(async (manager) => {
         for (const transaction of transactions) {
           await this.processTransaction(transaction, manager);
@@ -60,12 +60,11 @@ export default class ZnsWorker {
     if (entry) {
       return;
     }
-
     const attributes = {
       blockNumber,
       events: [],
     };
-    await ZnsTransaction.persist(attributes);
+    const tx = await ZnsTransaction.persist(attributes);
   }
 
   private async processTransaction(
@@ -102,7 +101,6 @@ export default class ZnsWorker {
           }
         }
       } catch (error) {
-        console.log(error);
         logger.error(`Failed to process event. ${JSON.stringify(event)}`);
         logger.error(error);
       }

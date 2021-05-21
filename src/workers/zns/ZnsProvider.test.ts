@@ -1,16 +1,11 @@
 import { expect } from 'chai';
 import ZnsProvider from './ZnsProvider';
+import firstTwoTransactions from './mocks/firstTwoTransactions.json';
 import nock from 'nock';
-import ZnsTestMockData from './ZnsTestMockData';
 
 let provider: ZnsProvider;
-let mocks: ZnsTestMockData;
 
 describe('ZnsProvider', () => {
-  before(() => {
-    mocks = new ZnsTestMockData(ZnsProvider);
-  });
-
   beforeEach(() => {
     provider = new ZnsProvider();
   });
@@ -20,13 +15,17 @@ describe('ZnsProvider', () => {
   });
 
   it('should return first 2 transactions', async () => {
-    const mock = mocks.getMockForTest('should return first 2 transactions');
-    const scope = nock(mock.request.url)
-      .get(mock.request.endpoint)
-      .query(mock.request.params)
-      .reply(200, mock.response);
+    const interceptor = nock("https://api.viewblock.io")
+      .get("/v1/zilliqa/addresses/0xB925adD1d5EaF13f40efD43451bF97A22aB3d727/txs")
+      .query({
+        "network": "testnet",
+        "events": true,
+        "atxuidFrom": 0,
+        "atxuidTo": 1
+      })
+      .reply(200, firstTwoTransactions);
     const transactions = await provider.getLatestTransactions(0, 1);
-    scope.done();
+    interceptor.done();
     const firstTx = {
       hash:
         '0x8ddd3f31d79c2c40f03a38e5fc645df945419c8679064e05bc50f08e23dec5be',
@@ -58,13 +57,20 @@ describe('ZnsProvider', () => {
 
   it('should return records for the domain', async () => {
     const resolverAddress = '0xaec2202caff6b5b637c18ecf7fdf4959a48c7914'; // flowers.zil
-    const mock = mocks.getMockForTest('should return records for the domain');
-    const scope = nock(mock.request.url)
-      .post(mock.request.endpoint)
-      .reply(200, mock.response);
+    const interceptor = nock("https://dev-api.zilliqa.com/")
+      .post("/")
+      .reply(200, {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+          "records": {
+            "crypto.ZIL.address": "0x2fbe7652d33bfaf72e50f0ea926c42c8c89344f4"
+          }
+        }
+      });
 
     const records = await provider.requestZilliqaResolutionFor(resolverAddress);
-    scope.done();
+    interceptor.done();
     const answer = {
       'crypto.ZIL.address': '0x2fbe7652d33bfaf72e50f0ea926c42c8c89344f4',
     };

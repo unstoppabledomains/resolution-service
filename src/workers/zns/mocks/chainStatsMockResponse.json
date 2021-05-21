@@ -1,0 +1,10 @@
+{
+  "nodeCount": 40,
+  "txHeight": 2800259,
+  "dsHeight": 27999,
+  "shardingDifficulty": 3,
+  "dsDifficulty": 18,
+  "txCount": 1056344,
+  "addressCount": 79753,
+  "shardingPeerCount": [ 10, 10, 10 ]
+}

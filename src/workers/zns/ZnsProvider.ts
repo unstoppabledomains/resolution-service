@@ -61,7 +61,7 @@ export default class ZnsProvider {
 
   async getChainStats(): Promise<ZilStatsResponse> {
     return this.request(
-      `https://api.viewblock.io/v1/zilliqa/stats?network=${this.network}`,
+      `${this.viewBlockUrl}/stats?network=${this.network}`,
     );
   }
 
@@ -72,7 +72,6 @@ export default class ZnsProvider {
       name,
       [],
     );
-    // console.log("state = ",state);
     return state.result?.[name];
   }
 
@@ -87,14 +86,14 @@ export default class ZnsProvider {
       .reverse();
   }
 
-  private async request(url: string): Promise<any> {
+  private async request<T>(url: string): Promise<T> {
     const response = await fetch(url, {
       headers: { 'X-APIKEY': this.viewBlockApiKey },
     });
+
     if (response.status !== 200) {
-      console.log(await response.json());
-      throw new Error(`ViewBlock API error: ${await response.text()}`);
+      throw new Error(`ViewBlock API error: ${await response.json()}`);
     }
-    return response.json();
+    return await response.json();
   }
 }

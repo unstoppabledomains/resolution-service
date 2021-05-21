@@ -5,7 +5,6 @@ import 'chai/register-expect';
 import connect from './database/connect';
 import { getConnection } from 'typeorm';
 import fixtures from './fixtures';
-import { logger } from './logger';
 import nock from 'nock';
 
 chai.use(chaiSubset);
@@ -25,6 +24,9 @@ export const mochaHooks = {
     //   throw new Error('Have a pending migrations');
     // }
   },
+  async afterEach(): Promise<void> {
+    nock.cleanAll();
+  },
   async beforeEach(): Promise<void> {
     const tableNames = getConnection().entityMetadatas.map((v) => v.tableName);
     await getConnection().query(
@@ -38,4 +40,5 @@ export const mochaHooks = {
     );
     await fixtures();
   },
+  
 };
