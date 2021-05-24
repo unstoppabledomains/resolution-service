@@ -14,7 +14,7 @@
     "src": "./src"
   },
   "scripts": {
-    "test": "NODE_ENV=test mocha",
+    "test": "NODE_ENV=test ZNS_NETWORK=testnet VIEWBLOCK_API_KEY=test mocha",
     "test:coverage": "NODE_ENV=test nyc --reporter=text mocha",
     "build": "tsc",
     "start:dev": "ts-node src/index.ts",

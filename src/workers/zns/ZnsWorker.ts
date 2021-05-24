@@ -48,8 +48,7 @@ export default class ZnsWorker {
       if (transactions.length < this.perPage) {
         break;
       }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      atxuidFrom = transactions[transactions.length - 1].atxuid! + 1;
+      atxuidFrom = transactions[transactions.length - 1].atxuid + 1;
     }
   }
 

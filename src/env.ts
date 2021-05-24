@@ -1,5 +1,5 @@
 import * as path from 'path';
-import znsConfig from './znsEnv';
+const ZnsNetwork = process.env.ZNS_NETWORK || 'mainnet';
 
 export const env = {
   APPLICATION: {
@@ -13,7 +13,15 @@ export const env = {
       ),
     },
     ZILLIQA: {
-      ...znsConfig,
+      NETWORK: ZnsNetwork,
+      ZNS_REGISTRY_CONTRACT:
+        ZnsNetwork === 'mainnet'
+          ? '0x9611c53be6d1b32058b2747bdececed7e1216793'
+          : '0xB925adD1d5EaF13f40efD43451bF97A22aB3d727',
+      JSON_RPC_API_URL:
+        ZnsNetwork === 'mainnet'
+          ? 'https://api.zilliqa.com/'
+          : 'https://dev-api.zilliqa.com/',
       VIEWBLOCK_API_KEY: process.env.VIEWBLOCK_API_KEY,
       VIEWBLOCK_API_URL: 'https://api.viewblock.io/v1/zilliqa',
       FETCH_INTERVAL: Number(process.env.ZNS_FETCH_INTERVAL || 60000),
