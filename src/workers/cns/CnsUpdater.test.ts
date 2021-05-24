@@ -53,6 +53,7 @@ describe('CnsUpdater', () => {
     testDomainNode = BigNumber.from(eip137Namehash(testDomainName));
     testTokenId = BigNumber.from(testDomainNode);
     await CnsRegistryEventFactory.create({
+      // Note, this creates a 'Transfer' event in db, so all expected event counts are adjusted appropriately
       blockNumber: await provider.getBlockNumber(),
     });
     await whitelistedMinter.functions

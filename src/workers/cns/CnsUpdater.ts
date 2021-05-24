@@ -11,13 +11,13 @@ import { ExecutionRevertedError } from './BlockchainErrors';
 import { CnsResolverError } from '../../errors/CnsResolverError';
 import { CnsUpdaterError } from '../../errors/CnsUpdaterError';
 import { CnsResolver } from './CnsResolver';
-import connect from '../../database/connect';
+import e from 'express';
 
 export class CnsUpdater {
   private registry: Contract = CNS.Registry.getContract();
   public resolver: CnsResolver = new CnsResolver();
   private currentSyncBlock = 0;
-  private lastProcessedEvent?: Event;
+  //private lastProcessedEvent?: Event;
 
   private async getLatestNetworkBlock() {
     return await provider.getBlockNumber();
@@ -42,6 +42,7 @@ export class CnsUpdater {
 
   private async processTransfer(
     event: Event,
+    nextEvent: Event | null,
     domainRepository: Repository<Domain>,
   ): Promise<void> {
     const node = CnsRegistryEvent.tokenIdToNode(event.args?.tokenId);
@@ -65,11 +66,19 @@ export class CnsUpdater {
         await this.resolver.fetchResolver(domain, domainRepository);
         await domainRepository.save(domain);
       }
+    } else {
+      if (nextEvent === null || nextEvent.event !== 'NewURI') {
+        throw new CnsUpdaterError(
+          `Transfer event wasn't processed. Unexpected order of events. Expected next event to be 'NewUri', got :'${nextEvent?.event}'`,
+        );
+      }
+      await this.processNewUri(nextEvent, event, domainRepository);
     }
   }
 
   private async processNewUri(
     event: Event,
+    lastProcessedEvent: Event,
     domainRepository: Repository<Domain>,
   ): Promise<void> {
     if (!event.args) {
@@ -91,12 +100,11 @@ export class CnsUpdater {
 
     //Check if the previous event is "mint" - transfer from 0x0
     if (
-      !this.lastProcessedEvent ||
-      this.lastProcessedEvent.event !== 'Transfer' ||
-      this.lastProcessedEvent.args?.from !== Domain.NullAddress
+      lastProcessedEvent.event !== 'Transfer' ||
+      lastProcessedEvent.args?.from !== Domain.NullAddress
     ) {
       throw new CnsUpdaterError(
-        `NewUri event wasn't processed. Unexpected order of events. Expected last processed event to be 'Transfer', got :'${this.lastProcessedEvent?.event}'`,
+        `NewUri event wasn't processed. Unexpected order of events. Expected last processed event to be 'Transfer', got :'${lastProcessedEvent?.event}'`,
       );
     }
 
@@ -105,7 +113,7 @@ export class CnsUpdater {
       name: uri,
       node: eip137Namehash(uri),
       location: 'CNS',
-      ownerAddress: this.lastProcessedEvent.args?.to.toLowerCase(),
+      ownerAddress: lastProcessedEvent.args?.to.toLowerCase(),
     });
     await domainRepository.save(domain);
   }
@@ -187,49 +195,156 @@ export class CnsUpdater {
     );
   }
 
+  private async processEvent(
+    event: Event,
+    nextEvent: Event | null,
+    domainRepository: Repository<Domain>,
+    manager: EntityManager,
+  ) {
+    try {
+      logger.debug(
+        `Processing event: type - '${event.event}'; args - ${JSON.stringify(
+          event.args,
+        )}`,
+      );
+      switch (event.event) {
+        case 'Transfer': {
+          await this.processTransfer(event, nextEvent, domainRepository);
+          break;
+        }
+        case 'Resolve': {
+          await this.processResolve(event, domainRepository);
+          break;
+        }
+        case 'Sync': {
+          await this.processSync(event, domainRepository);
+          break;
+        }
+        case 'NewURI':
+        case 'Approval':
+        case 'ApprovalForAll':
+        default:
+          break;
+      }
+    } catch (error) {
+      if (error instanceof CnsUpdaterError) {
+        logger.error(`Failed to process event. ${JSON.stringify(event)}`);
+        logger.error(error);
+      }
+    }
+  }
+
   private async processEvents(events: Event[], manager: EntityManager) {
     const domainRepository = manager.getRepository(Domain);
+    const promises: Promise<void>[] = [];
 
-    for (const event of events) {
-      try {
-        logger.debug(
-          `Processing event: type - '${event.event}'; args - ${JSON.stringify(
-            event.args,
-          )}`,
-        );
-        switch (event.event) {
-          case 'Transfer': {
-            await this.processTransfer(event, domainRepository);
-            break;
-          }
-          case 'NewURI': {
-            await this.processNewUri(event, domainRepository);
-            break;
-          }
-          case 'Resolve': {
-            await this.processResolve(event, domainRepository);
-            break;
-          }
-          case 'Sync': {
-            await this.processSync(event, domainRepository);
-            break;
-          }
-          case 'Approval':
-          case 'ApprovalForAll':
-          default:
-            break;
+    for (let index = 0; index < events.length; index++) {
+      const event = events[index];
+      const nextEvent = index < events.length - 1 ? events[index + 1] : null;
+      promises.push(
+        this.processEvent(event, nextEvent, domainRepository, manager),
+      );
+    }
+
+    await Promise.all(promises);
+  }
+
+  private async processFlatEvents(
+    events: Record<string, Record<string, Event>>,
+    manager: EntityManager,
+  ) {
+    const domainRepository = manager.getRepository(Domain);
+    const promises: Promise<void>[] = [];
+
+    for (const domainEvents of Object.values(events)) {
+      const flatEvents: Event[] = [];
+      Object.values(domainEvents).forEach((record) => flatEvents.push(record));
+      flatEvents.sort((a, b) => a.blockNumber - b.blockNumber);
+      promises.push(
+        (async () => {
+          for (const event of flatEvents)
+            await this.processEvent(event, null, domainRepository, manager);
+        })(),
+      );
+    }
+
+    await Promise.all(promises);
+  }
+
+  private async processAllEvents(events: Event[], manager: EntityManager) {
+    // Sort transfer events first
+    const newUriEvents = [];
+    const restOfEvents = [];
+    for (let index = 0; index < events.length; index++) {
+      const event = events[index];
+      const nextEvent = index < events.length - 1 ? events[index + 1] : null;
+      if (event.event === 'Transfer') {
+        if (nextEvent?.event === 'NewURI') {
+          newUriEvents.push(event);
+        } else {
+          restOfEvents.push(event);
         }
-        await this.saveEvent(event, manager);
-        this.lastProcessedEvent = event;
-      } catch (error) {
-        if (error instanceof CnsUpdaterError) {
-          logger.error(
-            `Failed to process CNS event: ${JSON.stringify(
-              event,
-            )}. Error:  ${error}`,
-          );
-        }
+      } else if (event.event === 'NewURI') {
+        newUriEvents.push(event);
+      } else {
+        restOfEvents.push(event);
       }
+    }
+    const latestEvents: Record<string, Record<string, Event>> = {};
+    for (let index = 0; index < restOfEvents.length; index++) {
+      const element = restOfEvents[index];
+      if (
+        element.event === 'Transfer' ||
+        element.event === 'Sync' ||
+        element.event === 'Resolve'
+      ) {
+        if (!latestEvents[element.args?.tokenId.toHexString()]) {
+          latestEvents[element.args?.tokenId.toHexString()] = {};
+        }
+        latestEvents[element.args?.tokenId.toHexString()][
+          element.event
+        ] = element;
+      }
+    }
+
+    await this.processEvents(newUriEvents, manager);
+    await this.processFlatEvents(latestEvents, manager);
+
+    const proms = [];
+    for (const event of events) {
+      proms.push(this.saveEvent(event, manager));
+    }
+    await Promise.all(proms);
+  }
+
+  private async runWithPagingRecursive(
+    fromBlock: number,
+    toBlock: number,
+    pageSize: number,
+  ): Promise<void> {
+    this.currentSyncBlock = fromBlock;
+
+    while (this.currentSyncBlock + 1 < toBlock) {
+      const fetchBlock = Math.min(this.currentSyncBlock + pageSize, toBlock);
+
+      try {
+        const events = await this.getRegistryEvents(
+          this.currentSyncBlock + 1,
+          fetchBlock,
+        );
+
+        await getConnection().transaction(async (manager) => {
+          await this.processAllEvents(events, manager);
+        });
+      } catch (error) {
+        logger.error(error);
+        await this.runWithPagingRecursive(
+          this.currentSyncBlock,
+          fetchBlock,
+          pageSize / 2,
+        );
+      }
+      this.currentSyncBlock = fetchBlock;
     }
   }
 
@@ -250,24 +365,11 @@ export class CnsUpdater {
       );
     }
 
-    this.currentSyncBlock = fromBlock;
-
-    while (this.currentSyncBlock < toBlock) {
-      const fetchBlock = Math.min(
-        this.currentSyncBlock + env.APPLICATION.ETHEREUM.CNS_BLOCK_FETCH_LIMIT,
-        toBlock,
-      );
-
-      const events = await this.getRegistryEvents(
-        this.currentSyncBlock + 1,
-        fetchBlock,
-      );
-
-      await getConnection().transaction(async (manager) => {
-        await this.processEvents(events, manager);
-        this.currentSyncBlock = fetchBlock;
-      });
-    }
+    await this.runWithPagingRecursive(
+      fromBlock,
+      toBlock,
+      env.APPLICATION.ETHEREUM.CNS_BLOCK_FETCH_LIMIT,
+    );
   }
 }
 

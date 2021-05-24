@@ -42,7 +42,7 @@ export default class CnsRegistryEvent extends Model {
   blockchainId: string | null = null;
 
   @IsNumber()
-  @ValidateWith<CnsRegistryEvent>('blockNumberIncreases')
+  //@ValidateWith<CnsRegistryEvent>('blockNumberIncreases')
   @Column({ type: 'int' })
   @Index()
   blockNumber = 0;
