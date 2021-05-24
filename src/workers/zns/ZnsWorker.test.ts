@@ -4,11 +4,11 @@ import ZnsWorker from './ZnsWorker';
 import ZnsTransaction from '../../models/ZnsTransaction';
 import { Domain } from '../../models';
 import nock from 'nock';
-import ChainStatsMockResponse from './mocks/chainStatsMockResponse.json';
-import FirstTwoTransactions from './mocks/firstTwoTransactions.json';
-import CorrectTransactions from './mocks/correctTransactions.json';
-import NewDomainEventsWithWrongLabel from './mocks/newDomainEventsWithWrongLabel.json';
-import CorrectNewDomainEvents from './mocks/correctNewDomainEvents.json';
+import ChainStatsMockResponse from '../../../mocks/chainStatsMockResponse.json';
+import FirstTwoTransactions from '../../../mocks/firstTwoTransactions.json';
+import CorrectTransactions from '../../../mocks/correctTransactions.json';
+import NewDomainEventsWithWrongLabel from '../../../mocks/newDomainEventsWithWrongLabel.json';
+import CorrectNewDomainEvents from '../../../mocks/correctNewDomainEvents.json';
 
 import { env } from '../../env';
 import { isBech32 } from '@zilliqa-js/util/dist/validation';
