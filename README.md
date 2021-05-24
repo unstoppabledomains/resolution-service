@@ -38,6 +38,7 @@ RESOLUTION_POSTGRES_HOST=example.com:5432   # DB host
 RESOLUTION_POSTGRES_USERNAME=example        # DB user configured in postgres
 RESOLUTION_POSTGRES_PASSWORD=password       # DB password configured in postgres
 ETHEREUM_JSON_RPC_API_URL=https://infura.io # Address of a JSON RPC provider. This can be a public API (e.g. infura), or a local ethereum node with JSON RPC enabled
+VIEWBLOCK_API_KEY=apikey                    # API key for [viewblock](https://viewblock.io/api) 
 ```
 This is the minimum required set of configurations for the service. Additional configuration options are listed in [Environment configuration options](README.md#environment-configuration-options).
 
@@ -46,14 +47,16 @@ This is the minimum required set of configurations for the service. Additional c
 `psql --host=HOSTNAME --username=USERNAME`
    - Create the `resolution_service` database\
 `createdb resolution_service`
-   - *Optional*: load synchronization snapshot data\
-`TODO`
+   - *Optional*: load synchronization snapshot data:
+      - Download the snapshot from [TBD](snapshot-file-location)
+      - Install the snapshot using the provided script\
+`./tools/restore-snapshot <PSQL_HOSTNAME> <PSQL_USERNAME> <PATH_TO_SNAPSHOT_FILE>`
 5. Launch the service\
-`docker run -d --env-file service.env -p 3000:3000 resolution-service`
+`docker run -d --env-file service.env -p 3000:3000 --network="host" resolution-service`
 
 ## Running the service
 
-Once the service is started, it will perform initial synchronization with the blockchain networks. It may take ***several*** hours for a full synchronization. To speed up the process, you can use a snapshot of the database provided by Unstoppable domains. During the initial synchronization the API may not work reliably. The status of synchronization can be checked using the `/status` endpoint. After the synchronization is complete, the service API endpoints can be accessed normally. 
+Once the service is started, it will perform initial synchronization with the blockchain networks. It may take more than 24 hours for a full synchronization. To speed up the process, you can use a snapshot of the database provided by Unstoppable domains: [TBD](snapshot-file-location). During the initial synchronization the API may not work reliably. The status of synchronization can be checked using the `/status` endpoint. After the synchronization is complete, the service API endpoints can be accessed normally. 
 Note that the service is stateless, so the container doesn't need any persistent storage. All data is stored in the database.
 
 ### Environment configuration options
@@ -101,6 +104,7 @@ Endpoint | Description
 GET /domains | Gets the list of domains.
 GET /domains/:domainName | Gets the resolution of the specified domain.
 GET /status | Gets the synchronization status.
+GET /api-docs | Returns a swagger documentation page.
 
 ## Development notes
 ### Development pre-requirements
@@ -158,5 +162,19 @@ More workers may be added in the future.
 
 ### Logs and monitoring
 
-The resolution service outputs logs to `stdout` so they are available by `docker logs` and can be monitored by cloud tools (e.g. AWS CloudWatch or Google Cloud Logging).
+The resolution service outputs logs to `stdout` so they are available by `docker logs` and can be monitored by cloud tools (e.g. AWS CloudWatch or Google Cloud Logging). The general log format should be:
+`<timestamp> <log level>: <Component label> - <Log message>`
+
+The resolution service has a configurable logging level. Log messages are at consistent levels across the whole service. We use the following guidelines to determine logging level:
+Event|Component|description|log level
+-----|---------|-----------|---------
+Startup info|all|Log any startup information (e.g. worker is starting, API is listening)|info
+Sync progress|Workers|Log current sync progress of a worker (which blocks are being processed, how many blocks are left to process)|info
+Handled errors|all|Log any errors that can be handled gracefully (e.g. a malformed request that will return a 400 error)|warn
+Unhandled errors|all|Log any errors that were captured by top-level error handlers (e.g. an unexpected third-party API error, invalid db state)|error
+API Request|API controllers|Log any request to the API with their parameters|debug
+DB query|all|Log any db queries with their parameters|debug
+Parsed event|Workers|Log any event or transaction parsed by the worker|debug
+External API calls|all|Log external API calls|debug
+
 Additionally, if the appropriate keys are provided in the environment configuration, the service will report errors to monitoring tools. The resolution service has integrations with [bugsnag](https://www.bugsnag.com/) and [newrelic](https://newrelic.com/). 
