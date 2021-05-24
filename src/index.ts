@@ -8,8 +8,14 @@ const runningMode = env.APPLICATION.RUNNING_MODE;
 import connect from './database/connect';
 import { startWorker } from './workers/cns/CnsUpdater';
 import ZnsUpdater from './workers/ZnsUpdater';
+import { runValidation } from './workers/validate';
 
 connect().then(() => {
+  if (runningMode.includes('VALIDATE')) {
+    logger.info('running validation');
+    runValidation();
+  }
+
   if (runningMode.includes('CNS_WORKER')) {
     startWorker();
     logger.info('CNS worker is enabled and running');

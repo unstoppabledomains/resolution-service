@@ -11,7 +11,6 @@ import { ExecutionRevertedError } from './BlockchainErrors';
 import { CnsResolverError } from '../../errors/CnsResolverError';
 import { CnsUpdaterError } from '../../errors/CnsUpdaterError';
 import { CnsResolver } from './CnsResolver';
-import e from 'express';
 
 export class CnsUpdater {
   private registry: Contract = CNS.Registry.getContract();
