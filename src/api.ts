@@ -11,10 +11,13 @@ import { routingControllersToSpec } from 'routing-controllers-openapi';
 import Bugsnag from '@bugsnag/js';
 import BugsnagPluginExpress from '@bugsnag/plugin-express';
 import { env } from './env';
+import ErrorHandler from './errors/ErrorHandler';
 
 export const api = createExpressServer({
   classTransformer: true,
+  defaultErrorHandler: false,
   controllers: [DomainsController, StatusController],
+  middlewares: [ErrorHandler],
 });
 
 if (env.APPLICATION.BUGSNAG_API_KEY) {
