@@ -5,7 +5,6 @@
 [![Get help on Discord](https://img.shields.io/badge/Get%20help%20on-Discord-blueviolet)](https://discord.gg/b6ZVxSZ9Hn)
 
  - [Installation](README.md#installation)
-   - [System requirements](README.md#system-requirements)
    - [Pre-requirements](README.md#pre-requirements)
    - [Quick start](README.md#quick-start)
  - [Running the service](README.md#running-the-service)
@@ -14,14 +13,11 @@
    - [API reference](README.md#api-reference)
  - [Development notes](README.md#development-notes)
 
-Resolution service provides an API for getting domain data and metadata regardless of that domain's location (whether it is CNS, ZNS or UNS). The service collects blockchain events and stores them in a database for easy retrieval. The resolution service is provided as a docker image so it can be launched on a variety of platforms and in the cloud.
+Resolution service provides an API for getting domain data and metadata regardless of that domain's location (whether it is stored in Ethereum, Zilliqa, or any other blockchain). The service is used to cache blockchain events in a database for easy retrieval without acessing blockchain APIs.
+
+The resolution service is provided as a docker image so it can be launched on a variety of platforms and in the cloud.
 
 ## Installation
-### System requirements
- - CPU: 4 cores, 64-bit
- - RAM: 4 GB
- - HDD: ? GB
-
 ### Pre-requirements
  - **git** - to clone the repository.
  - **docker** - to run the service.
@@ -37,6 +33,7 @@ Resolution service provides an API for getting domain data and metadata regardle
 3. Setup environment variables\
 Create a file `service.env` that will contain required environment variables:  
 ```
+NODE_ENV=production
 RESOLUTION_POSTGRES_HOST=example.com:5432   # DB host
 RESOLUTION_POSTGRES_USERNAME=example        # DB user configured in postgres
 RESOLUTION_POSTGRES_PASSWORD=password       # DB password configured in postgres
@@ -64,7 +61,7 @@ Option | Default value | Description
 -------|---------------|------------
 RESOLUTION_API_PORT | 3000 | The port for the HTTP API.
 RESOLUTION_RUNNING_MODE | API,CNS_WORKER, ZNS_WORKER,MIGRATIONS | Comma-separated list of running modes of the resolution service (see [Running modes](README.md#running-modes)).
-RESOLUTION_POSTGRES_HOST | localhost | Host for the postgres DB. Note that to connect to a postgres instance running on the same server as the container, `host.docker.internal` should be used instead of `localhost` (see https://docs.docker.com/docker-for-windows/networking/#use-cases-and-workarounds).
+RESOLUTION_POSTGRES_HOST | localhost | Host for the postgres DB. Note that to connect to a postgres instance running on the same server as the container, `host.docker.internal` should be used instead of `localhost` on Windows and MacOS (see https://docs.docker.com/docker-for-windows/networking/#use-cases-and-workarounds).
 RESOLUTION_POSTGRES_USERNAME | postgres | Username that is used to connect to postgres.
 RESOLUTION_POSTGRES_PASSWORD | secret | Password that is used to connect to postgres.
 RESOLUTION_POSTGRES_DATABASE | resolution_service | Database name in postgres.
@@ -85,8 +82,8 @@ TYPEORM_LOGGING_COLORIZE | true | Colorize typeorm logs.
 The service provides several running modes. By default it will run all of them. However, the modes that will be used can be selected during startup using the RESOLUTION_RUNNING_MODE environment variable.
 Available running modes:
  - **API** - Runs the service API.
- - **CNS_WORKER** - Runs the CNS worker to sync data from the Ethereum CNS registry smart contract.
- - **ZNS_WORKER** - Runs the ZNS worker to sync data from the Zilliqa ZNS registry smart contract.
+ - **CNS_WORKER** - Runs the CNS worker to sync data from the Ethereum CNS registry
+ - **ZNS_WORKER** - Runs the ZNS worker to sync data from the Zilliqa ZNS registry
  - **MIGRATIONS** - Runs the migration scripts if necessary.
 
 For example, to run only the `API` with the `CNS_WORKER`, the following environment configuration can be used:
@@ -149,7 +146,7 @@ The tests also use an Ethereum node to test interaction with smart contracts. By
 ![Architecture chart](doc/ResolutionService.png)
 
 The service currently consists of three main components: API, and two workers.
-The API component is a basic HTTP API that allows reading domain data from the database. The openAPI specification can be found [here](link-to-openapi-spec).
+The API component is a basic HTTP API that allows reading domain data from the database. The OpenAPI specification can be found [here](link-to-openapi-spec).
 
 Currently there are two workers in the resolution service:
  - CNS worker\
