@@ -13,6 +13,7 @@ import CorrectNewDomainEvents from '../../../mocks/correctNewDomainEvents.json';
 import { env } from '../../env';
 import { isBech32 } from '@zilliqa-js/util/dist/validation';
 import { fromBech32Address } from '@zilliqa-js/crypto';
+import { ZnsTx } from './ZnsProvider';
 
 let worker: ZnsWorker;
 
@@ -464,10 +465,7 @@ describe('ZnsWorker', () => {
         id: 1,
         jsonrpc: '2.0',
       });
-    await worker['processTransaction'](
-      fakeTransaction as ZnsTransaction,
-      manager,
-    );
+    await worker['processTransaction'](fakeTransaction as ZnsTx, manager);
     spy.done();
     const txFromDb = await ZnsTransaction.findOne({
       hash: fakeTransaction.hash,

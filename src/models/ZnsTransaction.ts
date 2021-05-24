@@ -79,7 +79,7 @@ export default class ZnsTransaction extends Model {
   }
 
   static async latestTransaction(): Promise<ZnsTransaction | undefined> {
-    return await ZnsTransaction.findOne({
+    return ZnsTransaction.findOne({
       where: { atxuid: Not(IsNull()) },
       order: { atxuid: 'DESC' },
     });
@@ -94,7 +94,7 @@ export default class ZnsTransaction extends Model {
     return transaction?.blockNumber || ZnsTransaction.InitialBlock;
   }
 
-  async atxuidIncreasesSequentially() {
+  async atxuidIncreasesSequentially(): Promise<boolean> {
     if (this.id || !this.atxuid || this.atxuid === 0) {
       return true;
     }

@@ -1,9 +1,10 @@
 import qs from 'qs';
-import ZnsTransaction from '../../models/ZnsTransaction';
+import { ZnsTransactionEvent } from '../../models/ZnsTransaction';
 import fetch from 'node-fetch';
 import { Zilliqa } from '@zilliqa-js/zilliqa';
 import { env } from '../../env';
 
+// This type is being returned from viewblock api when chain stats are fetched
 type ZilStatsResponse = {
   nodeCount: number;
   txHeight: number;
@@ -13,6 +14,34 @@ type ZilStatsResponse = {
   txCount: number;
   addressCount: number;
   shardingPeerCount: number[];
+};
+
+// This type is being returned from viewblock api when transactions are fetched
+type ZnsTransactionResponse = {
+  hash: string;
+  blockHeight: number;
+  from: string;
+  to: string;
+  value: string;
+  fee: string;
+  timestamp: Date;
+  signature: string;
+  direction: 'in' | 'out';
+  nonce: number;
+  receiptSuccess: boolean;
+  data: string;
+  internalTransfers: Record<string, unknown>[];
+  events: ZnsTransactionEvent[];
+  transitions: Record<string, unknown>[];
+  atxuid: number;
+};
+
+// This is the only information we need from the ZnsTransactionResponse
+export type ZnsTx = {
+  hash: string;
+  blockNumber: number;
+  atxuid: number;
+  events: ZnsTransactionEvent[];
 };
 
 /**
@@ -38,10 +67,7 @@ export default class ZnsProvider {
     this.viewBlockApiKey = key;
   }
 
-  async getLatestTransactions(
-    from: number,
-    to: number,
-  ): Promise<ZnsTransaction[]> {
+  async getLatestTransactions(from: number, to: number): Promise<ZnsTx[]> {
     const params = {
       network: this.network,
       events: true,
@@ -50,7 +76,7 @@ export default class ZnsProvider {
     };
     const query = qs.stringify(params);
     const url = `${this.viewBlockUrl}/addresses/${this.zilliqaRegistryAddress}/txs?${query}`;
-    return this.request(url).then(this.preparseTx);
+    return this.request<ZnsTransactionResponse[]>(url).then(this.preparseTx);
   }
 
   async requestZilliqaResolutionFor(
@@ -73,9 +99,9 @@ export default class ZnsProvider {
     return state.result?.[name];
   }
 
-  private preparseTx(response: any): ZnsTransaction[] {
+  private preparseTx(response: ZnsTransactionResponse[]): ZnsTx[] {
     return response
-      .map((item: any) => ({
+      .map((item) => ({
         hash: item.hash,
         blockNumber: item.blockHeight,
         atxuid: item.atxuid,
@@ -92,6 +118,6 @@ export default class ZnsProvider {
     if (response.status !== 200) {
       throw new Error(`ViewBlock API error: ${await response.json()}`);
     }
-    return await response.json();
+    return response.json();
   }
 }

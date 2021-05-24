@@ -1,4 +1,4 @@
-import ZnsProvider from './ZnsProvider';
+import ZnsProvider, { ZnsTx } from './ZnsProvider';
 import { EntityManager, getConnection, IsNull, Repository } from 'typeorm';
 import { Domain } from '../../models';
 import ZnsTransaction, {
@@ -67,10 +67,7 @@ export default class ZnsWorker {
     await ZnsTransaction.persist(attributes);
   }
 
-  private async processTransaction(
-    transaction: ZnsTransaction,
-    manager: EntityManager,
-  ) {
+  private async processTransaction(transaction: ZnsTx, manager: EntityManager) {
     const domainRepository = manager.getRepository(Domain);
     const znsTx = new ZnsTransaction({
       hash: transaction.hash,
