@@ -2,6 +2,7 @@ import { logger } from '../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
 import ZnsWorker from './zns/ZnsWorker';
 import { env } from '../env';
+import Bugsnag from '@bugsnag/js';
 
 const worker = new ZnsWorker();
 
@@ -15,6 +16,7 @@ export default async (): Promise<void> => {
     await runWorker();
     setIntervalAsync(runWorker, env.APPLICATION.ZILLIQA.FETCH_INTERVAL);
   } catch (error) {
+    Bugsnag.notify(error);
     logger.error('Failed to run the ZnsWorker');
     logger.error(error);
   }

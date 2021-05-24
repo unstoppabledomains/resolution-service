@@ -9,6 +9,7 @@ import { znsChildhash } from '../../utils/namehash';
 import { logger } from '../../logger';
 import { isBech32 } from '@zilliqa-js/util/dist/validation';
 import { fromBech32Address } from '@zilliqa-js/crypto';
+import Bugsnag from '@bugsnag/js';
 
 type ZnsWorkerOptions = {
   perPage?: number;
@@ -95,6 +96,7 @@ export default class ZnsWorker {
           }
         }
       } catch (error) {
+        Bugsnag.notify(error);
         logger.error(`Failed to process event. ${JSON.stringify(event)}`);
         logger.error(error);
       }
