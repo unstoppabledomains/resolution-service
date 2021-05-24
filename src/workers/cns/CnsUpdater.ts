@@ -223,8 +223,11 @@ export class CnsUpdater {
         this.lastProcessedEvent = event;
       } catch (error) {
         if (error instanceof CnsUpdaterError) {
-          logger.error(`Failed to process event. ${JSON.stringify(event)}`);
-          logger.error(error);
+          logger.error(
+            `Failed to process CNS event: ${JSON.stringify(
+              event,
+            )}. Error:  ${error}`,
+          );
         }
       }
     }
@@ -274,8 +277,9 @@ export function startWorker(): void {
       logger.info('CnsUpdater is pulling updates from Ethereum');
       await new CnsUpdater().run();
     } catch (error) {
-      logger.error(`Unhandled error occured while processing events.`);
-      logger.error(error);
+      logger.error(
+        `Unhandled error occured while processing CNS events: ${error}`,
+      );
     }
   }, env.APPLICATION.ETHEREUM.CNS_FETCH_INTERVAL);
 }
