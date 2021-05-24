@@ -16,6 +16,7 @@ export const env = {
       ...znsConfig,
       VIEWBLOCK_API_KEY: process.env.VIEWBLOCK_API_KEY,
       VIEWBLOCK_API_URL: 'https://api.viewblock.io/v1/zilliqa',
+      FETCH_INTERVAL: Number(process.env.ZNS_FETCH_INTERVAL || 60000),
     },
     NEW_RELIC_LICENSE_KEY: process.env.NEW_RELIC_LICENSE_KEY || '',
     NEW_RELIC_APP_NAME: process.env.NEW_RELIC_APP_NAME || '',

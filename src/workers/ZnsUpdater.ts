@@ -13,7 +13,7 @@ const runWorker = async () => {
 export default async (): Promise<void> => {
   try {
     await runWorker();
-    setIntervalAsync(runWorker, env.APPLICATION.ZILLIQA.WORKER_INTERVAL);
+    setIntervalAsync(runWorker, env.APPLICATION.ZILLIQA.FETCH_INTERVAL);
   } catch (error) {
     logger.error('Failed to run the ZnsWorker');
     logger.error(error);
