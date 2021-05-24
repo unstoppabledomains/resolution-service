@@ -1,5 +1,4 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
-import { eip137Namehash, znsNamehash } from '../../utils/namehash';
 
 export class Domains1620009214529 implements MigrationInterface {
   name = 'Domains1620009214529';

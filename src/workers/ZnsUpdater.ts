@@ -6,18 +6,20 @@ import Bugsnag from '@bugsnag/js';
 
 const worker = new ZnsWorker();
 
-const runWorker = async () => {
-  logger.info('ZnsUpdater is pulling updates from Zilliqa');
-  await worker.run();
-};
-
-export default async (): Promise<void> => {
+const runWorker = async (): Promise<void> => {
   try {
-    await runWorker();
-    setIntervalAsync(runWorker, env.APPLICATION.ZILLIQA.FETCH_INTERVAL);
+    logger.info('ZnsUpdater is pulling updates from Zilliqa');
+    await worker.run();
   } catch (error) {
     Bugsnag.notify(error);
     logger.error('Failed to run the ZnsWorker');
     logger.error(error);
   }
+};
+
+export default async (): Promise<void> => {
+  await runWorker();
+  setIntervalAsync(async () => {
+    await runWorker();
+  }, env.APPLICATION.ZILLIQA.FETCH_INTERVAL);
 };
