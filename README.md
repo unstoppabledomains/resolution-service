@@ -38,7 +38,7 @@ RESOLUTION_POSTGRES_HOST=example.com:5432   # DB host
 RESOLUTION_POSTGRES_USERNAME=example        # DB user configured in postgres
 RESOLUTION_POSTGRES_PASSWORD=password       # DB password configured in postgres
 ETHEREUM_JSON_RPC_API_URL=https://infura.io # Address of a JSON RPC provider. This can be a public API (e.g. infura), or a local ethereum node with JSON RPC enabled
-VIEWBLOCK_API_KEY=apikey                    # API key for [viewblock](https://viewblock.io/api) 
+VIEWBLOCK_API_KEY=apikey                    # key for Viewblock API, required for getting data from Zilliqa blockchain
 ```
 This is the minimum required set of configurations for the service. Additional configuration options are listed in [Environment configuration options](README.md#environment-configuration-options).
 
