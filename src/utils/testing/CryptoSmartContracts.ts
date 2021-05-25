@@ -89,42 +89,45 @@ export class CryptoSmartContracts {
     );
     this._registry = await registryFactory.deploy();
 
+    const txPromises = [];
     const mintingControllerFactory = new ContractFactory(
       mintingControllerJson.abi,
       mintingControllerJson.bytecode,
       provider.getSigner(),
     );
-    this._mintingController = await mintingControllerFactory.deploy(
-      this.registry?.address,
-    );
+    txPromises.push(mintingControllerFactory.deploy(this.registry?.address));
 
     const signatureControllerFactory = new ContractFactory(
       signatureControllerJson.abi,
       signatureControllerJson.bytecode,
       provider.getSigner(),
     );
-    this._signatureController = await signatureControllerFactory.deploy(
-      this.registry?.address,
-    );
+    txPromises.push(signatureControllerFactory.deploy(this.registry?.address));
 
     const uriPrefixControllerFactory = new ContractFactory(
       uriPrefixControllerJson.abi,
       uriPrefixControllerJson.bytecode,
       provider.getSigner(),
     );
-    this._uriPrefixController = await uriPrefixControllerFactory.deploy(
-      this.registry?.address,
-    );
+    txPromises.push(uriPrefixControllerFactory.deploy(this.registry?.address));
 
-    await this.registry?.functions
-      .addController(this.mintingController?.address)
-      .then((receipt) => receipt.wait());
-    await this.registry?.functions
-      .addController(this.signatureController?.address)
-      .then((receipt) => receipt.wait());
-    await this.registry?.functions
-      .addController(this.uriPrefixController?.address)
-      .then((receipt) => receipt.wait());
+    [
+      this._mintingController,
+      this._signatureController,
+      this._uriPrefixController,
+    ] = await Promise.all(txPromises);
+
+    await Promise.all([
+      this.registry?.functions
+        .addController(this.mintingController?.address)
+        .then((receipt) => receipt.wait()),
+      this.registry?.functions
+        .addController(this.signatureController?.address)
+        .then((receipt) => receipt.wait()),
+      this.registry?.functions
+        .addController(this.uriPrefixController?.address)
+        .then((receipt) => receipt.wait()),
+    ]);
 
     const whitelistedMinterFactory = new ContractFactory(
       whitelistedMinterJson.abi,
