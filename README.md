@@ -76,6 +76,9 @@ CNS_REGISTRY_EVENTS_STARTING_BLOCK | 9080000 | Starting block that is used to lo
 CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK | 9080000 | Starting block that is used to look for events in the CNS registry.
 ETHEREUM_JSON_RPC_API_URL | - | Address of a JSON RPC provider. This can be a public API (e.g. infura), or a local ethereum node with JSON RPC enabled.
 ETHEREUM_CHAIN_ID | 1 | ID of the Ethereum chain that is used by the service.
+ZNS_NETWORK | mainnet | Name of the Zilliqa network will be used by ZNS worker (mainnet or testnet).
+VIEWBLOCK_API_KEY | - | API key for [viewblock](https://viewblock.io/api), required by ZNS worker.
+ZNS_FETCH_INTERVAL | 5000 | Specifies the interval to fetch data from the ZNS registry in milliseconds.
 NEW_RELIC_LICENSE_KEY | - | License key that will be used to access newrelic. If the key is not specified, new relic will not be enabled.
 NEW_RELIC_APP_NAME | - | App name will be used to access newrelic. If the app name is not specified, new relic will not be enabled.
 BUGSNAG_API_KEY | - | API key that will be used to access bugsnag. If the key is not specified, bugsnag will not be enabled.
