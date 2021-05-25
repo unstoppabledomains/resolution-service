@@ -76,12 +76,6 @@ describe('CnsResolver', () => {
     resolver = contracts.resolver;
     whitelistedMinter = contracts.whitelistedMinter;
     legacyResolver = contracts.legacyResolver;
-
-    await CnsRegistryEventFactory.create({
-      blockNumber: await provider.getBlockNumber(),
-    });
-
-    service = new CnsResolver();
   });
 
   beforeEach(async () => {
@@ -97,10 +91,16 @@ describe('CnsResolver', () => {
     testDomainNode = BigNumber.from(eip137Namehash(testDomainName));
     testTokenId = BigNumber.from(testDomainNode);
 
+    await CnsRegistryEventFactory.create({
+      blockNumber: await provider.getBlockNumber(),
+    });
+
     await whitelistedMinter.functions
       .mintSLDToDefaultResolver(coinbaseAddress, testDomainLabel, [], [])
       .then((receipt) => receipt.wait());
     await EthereumTestsHelper.mineBlocksForConfirmation();
+
+    service = new CnsResolver();
   });
 
   afterEach(() => {
