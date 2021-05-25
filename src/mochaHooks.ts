@@ -5,10 +5,14 @@ import 'chai/register-expect';
 import connect from './database/connect';
 import { getConnection } from 'typeorm';
 import fixtures from './fixtures';
+import nock from 'nock';
 
 chai.use(chaiSubset);
 chai.use(chaiAsPromised);
-
+// disallow any 3-rd party http connections
+nock.disableNetConnect();
+// allow calling the localhost for supertest
+nock.enableNetConnect('127.0.0.1');
 if (process.env.NODE_ENV !== 'test') {
   throw new Error('NODE_ENV set to ' + process.env.NODE_ENV);
 }
@@ -32,5 +36,6 @@ export const mochaHooks = {
           .join(''),
     );
     await fixtures();
+    nock.cleanAll();
   },
 };
