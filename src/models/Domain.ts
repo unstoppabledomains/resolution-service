@@ -2,7 +2,6 @@ import {
   Column,
   Entity,
   Index,
-  Repository,
   JoinColumn,
   ManyToOne,
   OneToMany,
