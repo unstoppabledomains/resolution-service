@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if (($# < 2)); then
+  echo "Usage: " $0 " <db_host> <username> [dump file]"
+  exit 1
+fi
+
+HOST=$1
+USERNAME=$2
+if (($# == 3)); then
+  FILENAME=$3
+else
+  FILENAME="./resolution_service.dump"
+fi
+
+pg_restore -h $HOST -U $USERNAME -d resolution_service $FILENAME
