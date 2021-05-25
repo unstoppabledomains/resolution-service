@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import ZnsProvider from './ZnsProvider';
-import firstTwoTransactions from '../../../mocks/firstTwoTransactions.json';
+import firstTwoTransactions from '../../../mocks/zns/firstTwoTransactions.json';
 import nock from 'nock';
 
 let provider: ZnsProvider;
