@@ -1,4 +1,5 @@
 import * as path from 'path';
+const ZnsNetwork = process.env.ZNS_NETWORK || 'mainnet';
 
 export const env = {
   APPLICATION: {
@@ -21,6 +22,20 @@ export const env = {
         process.env.CNS_RECORDS_PER_PAGE || 100,
       ),
       CNS_FETCH_INTERVAL: Number(process.env.CNS_FETCH_INTERVAL || 5000),
+    },
+    ZILLIQA: {
+      NETWORK: ZnsNetwork,
+      ZNS_REGISTRY_CONTRACT:
+        ZnsNetwork === 'mainnet'
+          ? '0x9611c53be6d1b32058b2747bdececed7e1216793'
+          : '0xB925adD1d5EaF13f40efD43451bF97A22aB3d727',
+      JSON_RPC_API_URL:
+        ZnsNetwork === 'mainnet'
+          ? 'https://api.zilliqa.com/'
+          : 'https://dev-api.zilliqa.com/',
+      VIEWBLOCK_API_KEY: process.env.VIEWBLOCK_API_KEY,
+      VIEWBLOCK_API_URL: 'https://api.viewblock.io/v1/zilliqa',
+      FETCH_INTERVAL: Number(process.env.ZNS_FETCH_INTERVAL || 5000),
     },
     NEW_RELIC_LICENSE_KEY: process.env.NEW_RELIC_LICENSE_KEY || '',
     NEW_RELIC_APP_NAME: process.env.NEW_RELIC_APP_NAME || '',

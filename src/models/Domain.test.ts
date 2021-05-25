@@ -90,21 +90,21 @@ describe('Domain', () => {
     });
   });
 
-  describe('findByNode', () => {
-    it('should return a domain by node', async () => {
-      const expectedDomain = {
+  describe('.findByNode', () => {
+    it('should find by node', async () => {
+      const domainMetaData = {
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'CNS',
       };
-      const domain = Domain.create(expectedDomain);
+      const domain = Domain.create(domainMetaData);
       await domain.save();
 
-      const foundDomain = await Domain.findByNode(expectedDomain.node);
+      const foundDomain = await Domain.findByNode(domainMetaData.node);
 
-      expect(foundDomain).to.containSubset(expectedDomain);
+      expect(foundDomain).to.containSubset(domainMetaData);
     });
 
     it('should return undefined if node is undefined', async () => {
@@ -114,7 +114,7 @@ describe('Domain', () => {
     });
   });
 
-  describe('normalizeResolver', () => {
+  describe('.normalizeResolver', () => {
     it('should normalize the resolver address', () => {
       const resolver = '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842';
       const expected = '0xb66dce2da6afaaa98f2013446dbcb0f4b0ab2842';
@@ -131,7 +131,8 @@ describe('Domain', () => {
       expect(Domain.normalizeResolver(resolver)).to.be.null;
     });
   });
-  describe('findOrCreateByName', () => {
+
+  describe('.findOrCreateByName', () => {
     it('should create a domain', async () => {
       const expectedDomain = {
         name: 'test.crypto',
@@ -165,6 +166,36 @@ describe('Domain', () => {
       );
 
       expect(foundDomain).to.containSubset(expectedDomain);
+    });
+  });
+
+  describe('.findOrBuildByNode', () => {
+    it('should find an existed domain', async () => {
+      const domainMetaData = {
+        name: 'test.crypto',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        location: 'CNS',
+      };
+      await Domain.create(domainMetaData).save();
+      const fromDb = await Domain.findOrBuildByNode(
+        '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+      );
+      expect(fromDb).to.containSubset(domainMetaData);
+    });
+
+    it('should build new domain', async () => {
+      const domainFromDb = await Domain.findOrBuildByNode(
+        '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303107',
+      );
+      expect(domainFromDb).to.containSubset({
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303107',
+        resolution: {},
+        ownerAddress: null,
+        resolver: null,
+      });
     });
   });
 });

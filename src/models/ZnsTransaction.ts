@@ -73,6 +73,18 @@ export default class ZnsTransaction extends Model {
     }));
   }
 
+  static async latestAtxuid(): Promise<number> {
+    const lastTx = await this.latestTransaction();
+    return lastTx?.atxuid ?? -1;
+  }
+
+  static async latestTransaction(): Promise<ZnsTransaction | undefined> {
+    return ZnsTransaction.findOne({
+      where: { atxuid: Not(IsNull()) },
+      order: { atxuid: 'DESC' },
+    });
+  }
+
   static async latestBlock(): Promise<number> {
     const transaction = await ZnsTransaction.findOne({
       where: { blockNumber: Not(IsNull()) },
@@ -82,7 +94,7 @@ export default class ZnsTransaction extends Model {
     return transaction?.blockNumber || ZnsTransaction.InitialBlock;
   }
 
-  async atxuidIncreasesSequentially() {
+  async atxuidIncreasesSequentially(): Promise<boolean> {
     if (this.id || !this.atxuid || this.atxuid === 0) {
       return true;
     }

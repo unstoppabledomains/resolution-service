@@ -6,6 +6,7 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  Repository,
 } from 'typeorm';
 import {
   IsObject,
@@ -19,6 +20,7 @@ import ValidateWith from '../services/ValidateWith';
 import * as _ from 'lodash';
 import { Model } from '.';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
+import { Attributes } from '../types/common';
 
 export const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
 export type Location = typeof DomainLocations[number];
@@ -75,6 +77,11 @@ export default class Domain extends Model {
   @Column('text')
   location: Location;
 
+  constructor(attributes?: Attributes<Domain>) {
+    super();
+    this.attributes<Domain>(attributes);
+  }
+
   nameMatchesNode(): boolean {
     return this.correctNode() === this.node;
   }
@@ -103,6 +110,20 @@ export default class Domain extends Model {
     return this.getSplittedName().pop() || '';
   }
 
+  static async findByNode(
+    node?: string,
+    repository: Repository<Domain> = this.getRepository(),
+  ): Promise<Domain | undefined> {
+    return node ? await repository.findOne({ node }) : undefined;
+  }
+
+  static async findOrBuildByNode(
+    node: string,
+    repository: Repository<Domain> = this.getRepository(),
+  ): Promise<Domain> {
+    return (await repository.findOne({ node })) || new Domain({ node });
+  }
+
   private getSplittedName(): string[] {
     return this.name ? this.name.split('.') : [];
   }
@@ -115,13 +136,6 @@ export default class Domain extends Model {
       return znsNamehash(this.name);
     }
     return eip137Namehash(this.name);
-  }
-
-  static async findByNode(
-    node?: string,
-    repository: Repository<Domain> = this.getRepository(),
-  ): Promise<Domain | undefined> {
-    return node ? await repository.findOne({ node }) : undefined;
   }
 
   static normalizeResolver(resolver: string | null | undefined): string | null {
