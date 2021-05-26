@@ -19,11 +19,11 @@ export class CnsUpdater {
   private currentSyncBlock = 0;
   private lastProcessedEvent?: Event;
 
-  private async getLatestNetworkBlock() {
+  static async getLatestNetworkBlock(): Promise<number> {
     return await provider.getBlockNumber();
   }
 
-  private async getLatestMirroredBlock(): Promise<number> {
+  static async getLatestMirroredBlock(): Promise<number> {
     return await CnsRegistryEvent.latestBlock();
   }
 
@@ -235,9 +235,9 @@ export class CnsUpdater {
 
   public async run(): Promise<void> {
     logger.info('CnsUpdater is pulling updates from Ethereum');
-    const fromBlock = await this.getLatestMirroredBlock();
+    const fromBlock = await CnsUpdater.getLatestMirroredBlock();
     const toBlock =
-      (await this.getLatestNetworkBlock()) -
+      (await CnsUpdater.getLatestNetworkBlock()) -
       env.APPLICATION.ETHEREUM.CNS_CONFIRMATION_BLOCKS;
 
     logger.info(
