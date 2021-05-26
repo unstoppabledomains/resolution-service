@@ -47,23 +47,22 @@ This is the minimum required set of configurations for the service. Additional c
 `psql --host=HOSTNAME --username=USERNAME`
    - Create the `resolution_service` database\
 `createdb resolution_service`
-   - *Optional*: load synchronization snapshot data:
-      - Download the snapshot from [TBD](snapshot-file-location)
-      - Install the snapshot using the provided script\
-`./tools/restore-snapshot <PSQL_HOSTNAME> <PSQL_USERNAME> <PATH_TO_SNAPSHOT_FILE>`
 5. Launch the service\
 `docker run -d --env-file service.env -p 3000:3000 --network="host" resolution-service`
 
+> ℹ️ By default, the service will use a snapshot of a synchronized database to seed domain data. If you want to synchronize blockchain data from scratch, add `RUNNING_MODE=API,CNS_WORKER,ZNS_WORKER,MIGRATIONS` to the `service.env` file.
+
 ## Running the service
 
-Once the service is started, it will perform initial synchronization with the blockchain networks. It may take more than 24 hours for a full synchronization. To speed up the process, you can use a snapshot of the database provided by Unstoppable domains: [TBD](snapshot-file-location). During the initial synchronization the API may not work reliably. The status of synchronization can be checked using the `/status` endpoint. After the synchronization is complete, the service API endpoints can be accessed normally. 
+Once the service is started, it will perform initial synchronization with the blockchain networks. It may take more than 24 hours for a full synchronization. To speed up the process, a snapshot of the database is provided by Unstoppable domains: [TBD](snapshot-file-location). The snapshot is loaded by default using the `LOAD_SNAPSHOT` running mode (see [Running modes](README.md#running-modes)).
+During the initial synchronization the API may not work reliably. The status of synchronization can be checked using the `/status` endpoint. After the synchronization is complete, the service API endpoints can be accessed normally. 
 Note that the service is stateless, so the container doesn't need any persistent storage. All data is stored in the database.
 
 ### Environment configuration options
 Option | Default value | Description
 -------|---------------|------------
 RESOLUTION_API_PORT | 3000 | The port for the HTTP API.
-RESOLUTION_RUNNING_MODE | API,CNS_WORKER, ZNS_WORKER,MIGRATIONS | Comma-separated list of running modes of the resolution service (see [Running modes](README.md#running-modes)).
+RESOLUTION_RUNNING_MODE | API,CNS_WORKER, ZNS_WORKER,MIGRATIONS, LOAD_SNAPSHOT | Comma-separated list of running modes of the resolution service (see [Running modes](README.md#running-modes)).
 RESOLUTION_POSTGRES_HOST | localhost | Host for the postgres DB. Note that to connect to a postgres instance running on the same server as the container, `host.docker.internal` should be used instead of `localhost` on Windows and MacOS (see https://docs.docker.com/docker-for-windows/networking/#use-cases-and-workarounds).
 RESOLUTION_POSTGRES_USERNAME | postgres | Username that is used to connect to postgres.
 RESOLUTION_POSTGRES_PASSWORD | secret | Password that is used to connect to postgres.
@@ -91,6 +90,7 @@ Available running modes:
  - **CNS_WORKER** - Runs the CNS worker to sync data from the Ethereum CNS registry
  - **ZNS_WORKER** - Runs the ZNS worker to sync data from the Zilliqa ZNS registry
  - **MIGRATIONS** - Runs the migration scripts if necessary.
+ - **LOAD_SNAPSHOT** - Loads the snapshot data from `/resolution_service.dump`
 
 For example, to run only the `API` with the `CNS_WORKER`, the following environment configuration can be used:
 
