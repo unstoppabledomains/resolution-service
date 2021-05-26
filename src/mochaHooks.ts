@@ -6,13 +6,18 @@ import connect from './database/connect';
 import { getConnection } from 'typeorm';
 import fixtures from './fixtures';
 import nock from 'nock';
+import sinonChai from 'sinon-chai';
 
 chai.use(chaiSubset);
 chai.use(chaiAsPromised);
+chai.use(sinonChai);
 // disallow any 3-rd party http connections
 nock.disableNetConnect();
 // allow calling the localhost for supertest
-nock.enableNetConnect('127.0.0.1');
+nock.enableNetConnect((host) => {
+  return host.includes('127.0.0.1') || host.includes('localhost');
+});
+
 if (process.env.NODE_ENV !== 'test') {
   throw new Error('NODE_ENV set to ' + process.env.NODE_ENV);
 }

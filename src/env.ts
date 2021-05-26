@@ -8,9 +8,20 @@ export const env = {
       ? process.env.RESOLUTION_RUNNING_MODE.split(',')
       : ['API', 'CNS_WORKER', 'ZNS_WORKER', 'MIGRATIONS'],
     ETHEREUM: {
-      CNS_REGISTRY_EVENTS_STARTING_BLOCK: +(
-        process.env.CNS_REGISTRY_EVENTS_STARTING_BLOCK || 9080000
+      CNS_REGISTRY_EVENTS_STARTING_BLOCK: Number(
+        process.env.CNS_REGISTRY_EVENTS_STARTING_BLOCK || 9080000,
       ),
+      JSON_RPC_API_URL: process.env.ETHEREUM_JSON_RPC_API_URL,
+      CHAIN_ID: Number(process.env.ETHEREUM_CHAIN_ID || 1),
+      CNS_CONFIRMATION_BLOCKS: Number(process.env.CNS_CONFIRMATION_BLOCKS || 3),
+      CNS_BLOCK_FETCH_LIMIT: Number(process.env.CNS_BLOCK_FETCH_LIMIT || 1000),
+      CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK: Number(
+        process.env.CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK || 9080000,
+      ),
+      CNS_RESOLVER_RECORDS_PER_PAGE: Number(
+        process.env.CNS_RECORDS_PER_PAGE || 100,
+      ),
+      CNS_FETCH_INTERVAL: Number(process.env.CNS_FETCH_INTERVAL || 5000),
     },
     ZILLIQA: {
       NETWORK: ZnsNetwork,
