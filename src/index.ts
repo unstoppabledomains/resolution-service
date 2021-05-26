@@ -7,12 +7,12 @@ const runningMode = env.APPLICATION.RUNNING_MODE;
 import connect from './database/connect';
 import CnsUpdater from './workers/CnsUpdater';
 import ZnsUpdater from './workers/ZnsUpdater';
-import { loadSnapshot } from './database/loadSnapshot'
+import { loadSnapshot } from './database/loadSnapshot';
 
 connect().then(async () => {
   if (runningMode.includes('LOAD_SNAPSHOT')) {
     logger.info('Loading db snapshot');
-    try{
+    try {
       await loadSnapshot();
     } catch (error) {
       logger.error(error);
