@@ -59,29 +59,29 @@ During the initial synchronization the API may not work reliably. The status of 
 Note that the service is stateless, so the container doesn't need any persistent storage. All data is stored in the database.
 
 ### Environment configuration options
-Option | Default value | Description
--------|---------------|------------
-RESOLUTION_API_PORT | 3000 | The port for the HTTP API.
-RESOLUTION_RUNNING_MODE | API,CNS_WORKER, ZNS_WORKER,MIGRATIONS, LOAD_SNAPSHOT | Comma-separated list of running modes of the resolution service (see [Running modes](README.md#running-modes)).
-RESOLUTION_POSTGRES_HOST | localhost | Host for the postgres DB. Note that to connect to a postgres instance running on the same server as the container, `host.docker.internal` should be used instead of `localhost` on Windows and MacOS (see https://docs.docker.com/docker-for-windows/networking/#use-cases-and-workarounds).
-RESOLUTION_POSTGRES_USERNAME | postgres | Username that is used to connect to postgres.
-RESOLUTION_POSTGRES_PASSWORD | secret | Password that is used to connect to postgres.
-RESOLUTION_POSTGRES_DATABASE | resolution_service | Database name in postgres.
-CNS_CONFIRMATION_BLOCKS | 3 | Number of blocks that the service will wait before accepting an event from the CNS contract. This helps to avoid block reorgs, forks, etc.
-CNS_BLOCK_FETCH_LIMIT | 1000 | Batch limit for fetching event data from the Ethereum JSON RPC. Note that some API providers may limit the amount of data that can be returned in a single request. So this number should be kept relatively low. However, raising this limit should speed up synchronization if a dedicated node is used with the service.
-CNS_RECORDS_PER_PAGE | 100 | Batch limit for fetching domain records from CNS registry smart contract.
-CNS_FETCH_INTERVAL | 5000 | Specifies the interval to fetch data from the CNS registry in milliseconds.
-CNS_REGISTRY_EVENTS_STARTING_BLOCK | 9080000 | Starting block that is used to look for events in the CNS registry. This helps to avoid parsing old blockchain data, before the contract was even deployed.
-CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK | 9080000 | Starting block that is used to look for events in the CNS registry.
-ETHEREUM_JSON_RPC_API_URL | - | Address of a JSON RPC provider. This can be a public API (e.g. infura), or a local ethereum node with JSON RPC enabled.
-ETHEREUM_CHAIN_ID | 1 | ID of the Ethereum chain that is used by the service.
-ZNS_NETWORK | mainnet | Name of the Zilliqa network will be used by ZNS worker (mainnet or testnet).
-VIEWBLOCK_API_KEY | - | API key for [viewblock](https://viewblock.io/api), required by ZNS worker.
-ZNS_FETCH_INTERVAL | 5000 | Specifies the interval to fetch data from the ZNS registry in milliseconds.
-NEW_RELIC_LICENSE_KEY | - | License key that will be used to access newrelic. If the key is not specified, new relic will not be enabled.
-NEW_RELIC_APP_NAME | - | App name will be used to access newrelic. If the app name is not specified, new relic will not be enabled.
-BUGSNAG_API_KEY | - | API key that will be used to access bugsnag. If the key is not specified, bugsnag will not be enabled.
-TYPEORM_LOGGING_COLORIZE | true | Colorize typeorm logs.
+Option | Default value | required | Description
+-------|---------------|----------|------------
+RESOLUTION_API_PORT | 3000 | :x:	| The port for the HTTP API.
+RESOLUTION_RUNNING_MODE | API,CNS_WORKER, ZNS_WORKER,MIGRATIONS, LOAD_SNAPSHOT | :x:	| Comma-separated list of running modes of the resolution service (see [Running modes](README.md#running-modes)).
+RESOLUTION_POSTGRES_HOST | localhost | :heavy_check_mark:	| Host for the postgres DB. Note that to connect to a postgres instance running on the same server as the container, `host.docker.internal` should be used instead of `localhost` on Windows and MacOS (see https://docs.docker.com/docker-for-windows/networking/#use-cases-and-workarounds).
+RESOLUTION_POSTGRES_USERNAME | postgres | :heavy_check_mark:	| Username that is used to connect to postgres.
+RESOLUTION_POSTGRES_PASSWORD | secret | :heavy_check_mark:	| Password that is used to connect to postgres.
+RESOLUTION_POSTGRES_DATABASE | resolution_service | :x:	| Database name in postgres.
+CNS_CONFIRMATION_BLOCKS | 3 | :x:	| Number of blocks that the service will wait before accepting an event from the CNS contract. This helps to avoid block reorgs, forks, etc.
+CNS_BLOCK_FETCH_LIMIT | 1000 | :x:	| Batch limit for fetching event data from the Ethereum JSON RPC. Note that some API providers may limit the amount of data that can be returned in a single request. So this number should be kept relatively low. However, raising this limit should speed up synchronization if a dedicated node is used with the service.
+CNS_RECORDS_PER_PAGE | 100 | :x:	| Batch limit for fetching domain records from CNS registry smart contract.
+CNS_FETCH_INTERVAL | 5000 | :x:	| Specifies the interval to fetch data from the CNS registry in milliseconds.
+CNS_REGISTRY_EVENTS_STARTING_BLOCK | 9080000 | :x:	| Starting block that is used to look for events in the CNS registry. This helps to avoid parsing old blockchain data, before the contract was even deployed.
+CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK | 9080000 | :x:	| Starting block that is used to look for events in the CNS registry.
+ETHEREUM_JSON_RPC_API_URL | - | :heavy_check_mark:	| Address of a JSON RPC provider. This can be a public API (e.g. infura), or a local ethereum node with JSON RPC enabled.
+ETHEREUM_CHAIN_ID | 1 | :x:	| ID of the Ethereum chain that is used by the service.
+ZNS_NETWORK | mainnet | :x:	| Name of the Zilliqa network will be used by ZNS worker (mainnet or testnet).
+VIEWBLOCK_API_KEY | - | :heavy_check_mark:	| API key for [viewblock](https://viewblock.io/api), required by ZNS worker.
+ZNS_FETCH_INTERVAL | 5000 | :x:	| Specifies the interval to fetch data from the ZNS registry in milliseconds.
+NEW_RELIC_LICENSE_KEY | - | :x:	| License key that will be used to access newrelic. If the key is not specified, new relic will not be enabled.
+NEW_RELIC_APP_NAME | - | :x:	| App name will be used to access newrelic. If the app name is not specified, new relic will not be enabled.
+BUGSNAG_API_KEY | - | :x:	| API key that will be used to access bugsnag. If the key is not specified, bugsnag will not be enabled.
+TYPEORM_LOGGING_COLORIZE | true | :x:	| Colorize typeorm logs.
 
 ### Running modes
 The service provides several running modes. By default it will run all of them. However, the modes that will be used can be selected during startup using the RESOLUTION_RUNNING_MODE environment variable.
