@@ -3,9 +3,10 @@ import { api } from './api';
 import { env } from './env';
 import { logger } from './logger';
 import('newrelic');
+
 const runningMode = env.APPLICATION.RUNNING_MODE;
 import connect from './database/connect';
-import CnsUpdater from './workers/CnsUpdater';
+import { startWorker } from './workers/cns/CnsUpdater';
 import ZnsUpdater from './workers/ZnsUpdater';
 import { loadSnapshot } from './database/loadSnapshot';
 
@@ -22,7 +23,7 @@ connect().then(async () => {
   }
 
   if (runningMode.includes('CNS_WORKER')) {
-    CnsUpdater();
+    startWorker();
     logger.info('CNS worker is enabled and running');
   }
 

@@ -5,8 +5,9 @@
       "emitDecoratorMetadata": true,
       "allowJs": true,
       "outDir": "build",
-      "strictPropertyInitialization": false,
-      "resolveJsonModule": true
+      "resolveJsonModule": true,
+      "esModuleInterop": true,
+      "strictPropertyInitialization": false
     },
   "include": [
     "./src/**/*.ts",

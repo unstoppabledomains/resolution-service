@@ -127,7 +127,7 @@ export default class Domain extends Model {
     return this.name ? this.name.split('.') : [];
   }
 
-  private correctNode() {
+  private correctNode(): string | undefined {
     if (!this.name || this.name !== this.name.toLowerCase()) {
       return undefined;
     }
@@ -135,5 +135,33 @@ export default class Domain extends Model {
       return znsNamehash(this.name);
     }
     return eip137Namehash(this.name);
+  }
+
+  static normalizeResolver(resolver: string | null | undefined): string | null {
+    if (!resolver) {
+      return null;
+    }
+    resolver = resolver.toLowerCase();
+    return resolver === Domain.NullAddress ? null : resolver;
+  }
+
+  static async findOrCreateByName(
+    name: string,
+    location: Location,
+    repository: Repository<Domain> = this.getRepository(),
+  ): Promise<Domain> {
+    const domain = await repository.findOne({ name, location });
+    if (domain) {
+      return domain;
+    }
+
+    const newDomain = new Domain();
+    newDomain.attributes({
+      name: name,
+      node: eip137Namehash(name),
+      location: location,
+    });
+    await repository.save(newDomain);
+    return newDomain;
   }
 }
