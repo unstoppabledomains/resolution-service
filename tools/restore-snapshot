@@ -2,7 +2,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-if (($# < 2)); then
+if (($# < 3)); then
   echo "Usage: " $0 " <db_host> <username> <db_name> [dump file]"
   exit 1
 fi
