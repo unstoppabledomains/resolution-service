@@ -4,9 +4,7 @@ import ZnsWorker from './zns/ZnsWorker';
 import { env } from '../env';
 import Bugsnag from '@bugsnag/js';
 
-const worker = new ZnsWorker();
-
-const runWorker = async (): Promise<void> => {
+const runWorker = async (worker: ZnsWorker): Promise<void> => {
   try {
     logger.info('ZnsUpdater is pulling updates from Zilliqa');
     await worker.run();
@@ -18,8 +16,9 @@ const runWorker = async (): Promise<void> => {
 };
 
 export default async (): Promise<void> => {
-  await runWorker();
+  const worker = new ZnsWorker();
+  await runWorker(worker);
   setIntervalAsync(async () => {
-    await runWorker();
+    await runWorker(worker);
   }, env.APPLICATION.ZILLIQA.FETCH_INTERVAL);
 };
