@@ -17,7 +17,7 @@ connect().then(async () => {
       await loadSnapshot();
     } catch (error) {
       logger.error(error);
-      return;
+      process.exit(1);
     }
     logger.info('Db snapshot loaded');
   }
