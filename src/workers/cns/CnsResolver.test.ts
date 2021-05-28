@@ -12,7 +12,7 @@ import { eip137Namehash } from '../../utils/namehash';
 import { CnsRegistryEventFactory } from '../../utils/testing/Factories';
 import supportedKeysJson from 'dot-crypto/src/supported-keys/supported-keys.json';
 
-describe('CnsResolver', function () {
+describe('CnsResolver', () => {
   let service: CnsResolver;
   let registry: Contract;
   let resolver: Contract;
