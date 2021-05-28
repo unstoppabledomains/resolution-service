@@ -26,4 +26,14 @@ export async function loadSnapshot(): Promise<void> {
     },
   );
   logger.info(output);
+
+  // Check snapshot results
+  if (
+    (await CnsRegistryEvent.count()) !== env.TYPEORM.SNAPSHOT.cnsEventsCount ||
+    (await ZnsTransaction.count()) !==
+      env.TYPEORM.SNAPSHOT.znsTransactionsCount ||
+    (await Domain.count()) !== env.TYPEORM.SNAPSHOT.domainsCount
+  ) {
+    throw new Error('Snapshot failed to load correctly.');
+  }
 }

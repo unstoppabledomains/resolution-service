@@ -86,5 +86,12 @@ export const env = {
       path.join(__dirname, './database/migrations/*.ts'),
       path.join(__dirname, './database/migrations/*.js'),
     ] as string[],
+    SNAPSHOT: {
+      cnsEventsCount: Number(process.env.SNAPSHOT_CNS_EVENTS_COUNT || 966679),
+      znsTransactionsCount: Number(
+        process.env.SNAPSHOT_ZNS_TRANSACTIONS_COUNT || 95203,
+      ),
+      domainsCount: Number(process.env.SNAPSHOT_DOMAINS_COUNT || 269650),
+    },
   },
 };
