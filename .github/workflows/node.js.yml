@@ -69,6 +69,8 @@ jobs:
           RESOLUTION_POSTGRES_DATABASE: resolution_service_test
           RESOLUTION_POSTGRES_HOST: 'localhost'
           RESOLUTION_POSTGRES_USERNAME: 'postgres'
+          POSTGRES_DB: 'resolution_service_test'
+          POSTGRES_PASSWORD: 'secret'
           RESOLUTION_POSTGRES_PASSWORD: secret
           VIEWBLOCK_API_KEY: 'test'
           ETHEREUM_JSON_RPC_API_URL: 'test'
