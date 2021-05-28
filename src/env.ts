@@ -23,7 +23,7 @@ if (!process.env.ETHEREUM_JSON_RPC_API_URL) {
 
 if (requiredEnvNotSet.length !== 0) {
   throw new Error(
-    `Enviroment variables are not defined: ${requiredEnvNotSet.join(' && ')}`,
+    `Environment variables are not defined: ${requiredEnvNotSet.join(' && ')}`,
   );
 }
 
