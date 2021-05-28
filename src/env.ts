@@ -1,7 +1,29 @@
 import * as path from 'path';
+
+const postgressEnvNotSet = [];
+
+if (!process.env.RESOLUTION_POSTGRES_HOST) {
+  postgressEnvNotSet.push('RESOLUTION_POSTGRES_HOST');
+}
+if (!process.env.RESOLUTION_POSTGRES_USERNAME) {
+  postgressEnvNotSet.push('RESOLUTION_POSTGRES_USERNAME');
+}
+if (!process.env.RESOLUTION_POSTGRES_PASSWORD) {
+  postgressEnvNotSet.push('RESOLUTION_POSTGRES_PASSWORD');
+}
+if (!process.env.RESOLUTION_POSTGRES_DATABASE) {
+  postgressEnvNotSet.push('RESOLUTION_POSTGRES_DATABASE');
+}
+
+if (postgressEnvNotSet.length !== 0) {
+  throw new Error(
+    `Enviroment variables are not defined: ${postgressEnvNotSet.join(' && ')}`,
+  );
+}
+
 const ZnsNetwork = process.env.ZNS_NETWORK || 'mainnet';
 
-export const env = {
+const enviroment = {
   APPLICATION: {
     PORT: process.env.RESOLUTION_API_PORT || process.env.PORT || 3000,
     RUNNING_MODE: process.env.RESOLUTION_RUNNING_MODE
@@ -46,14 +68,13 @@ export const env = {
       colorize: process.env.TYPEORM_LOGGING_COLORIZE || true,
     },
     type: 'postgres' as const,
-    host: process.env.RESOLUTION_POSTGRES_HOST || 'localhost',
-    username: process.env.RESOLUTION_POSTGRES_USERNAME || 'postgres',
-    password: process.env.RESOLUTION_POSTGRES_PASSWORD || 'secret',
+    host: process.env.RESOLUTION_POSTGRES_HOST,
+    username: process.env.RESOLUTION_POSTGRES_USERNAME,
+    password: process.env.RESOLUTION_POSTGRES_PASSWORD,
     database:
-      process.env.RESOLUTION_POSTGRES_DATABASE ||
-      (process.env.NODE_ENV === 'test'
-        ? 'resolution_service_test'
-        : 'resolution_service'),
+      process.env.NODE_ENV === 'test'
+        ? process.env.RESOLUTION_POSTGRES_DATABASE + '_test'
+        : process.env.RESOLUTION_POSTGRES_DATABASE,
 
     entities: [
       path.join(__dirname, './models/index.ts'),
@@ -65,3 +86,23 @@ export const env = {
     ] as string[],
   },
 };
+
+if (
+  enviroment.APPLICATION.RUNNING_MODE.includes('ZNS_WORKER') &&
+  !enviroment.APPLICATION.ZILLIQA.VIEWBLOCK_API_KEY
+) {
+  throw new Error(
+    'Enviroment variable VIEWBLOCK_API_KEY is undefined, but required for ZNS_WORKER',
+  );
+}
+
+if (
+  enviroment.APPLICATION.RUNNING_MODE.includes('CNS_WORKER') &&
+  !enviroment.APPLICATION.ETHEREUM.JSON_RPC_API_URL
+) {
+  throw new Error(
+    'Enviroment variable ETHEREUM_JSON_RPC_API_URL is undefined, but required for CNS_WORKER',
+  );
+}
+
+export const env = enviroment;
