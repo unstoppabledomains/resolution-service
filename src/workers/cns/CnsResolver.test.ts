@@ -12,7 +12,7 @@ import { eip137Namehash } from '../../utils/namehash';
 import { CnsRegistryEventFactory } from '../../utils/testing/Factories';
 import supportedKeysJson from 'dot-crypto/src/supported-keys/supported-keys.json';
 
-describe('CnsResolver', () => {
+describe('CnsResolver', function () {
   let service: CnsResolver;
   let registry: Contract;
   let resolver: Contract;
@@ -26,7 +26,7 @@ describe('CnsResolver', () => {
   let testDomainLabel: string;
   let testDomainNode: BigNumber;
   const sinonSandbox = sinon.createSandbox();
-
+  this.timeout(5000);
   const PredefinedRecordKeys = Object.keys(supportedKeysJson.keys);
 
   const RecordKeys = [
