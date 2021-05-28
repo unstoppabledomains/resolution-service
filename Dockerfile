@@ -1,9 +1,12 @@
 FROM node:14.16.1-alpine
 RUN apk add --no-cache git
 RUN apk add gcc make g++ zlib-dev xfce4-dev-tools
-WORKDIR /resolution-service
-COPY package.json yarn.lock ./
-RUN yarn install
-COPY . .
-RUN yarn build
+ADD ./ /app
+WORKDIR /app
+RUN rm -rf node_modules && \
+    yarn install && \
+    yarn build && \
+    rm -rf node_modules && \
+    yarn install --production
+
 ENTRYPOINT ["node", "build/src/index.js"]
