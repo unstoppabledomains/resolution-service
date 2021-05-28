@@ -4,9 +4,17 @@ import ZnsWorker from './zns/ZnsWorker';
 import { env } from '../env';
 import Bugsnag from '@bugsnag/js';
 
-const worker = new ZnsWorker();
+let worker: ZnsWorker;
 
 const runWorker = async (): Promise<void> => {
+  if (!env.APPLICATION.RUNNING_MODE.includes('ZNS_WORKER')) {
+    return;
+  }
+
+  if (!worker) {
+    worker = new ZnsWorker();
+  }
+
   try {
     logger.info('ZnsUpdater is pulling updates from Zilliqa');
     await worker.run();
