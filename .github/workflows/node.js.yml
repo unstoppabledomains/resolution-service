@@ -66,8 +66,12 @@ jobs:
           --health-cmd pg_isready --health-interval 10s --health-timeout 5s
           --health-retries 5
         env:
-          POSTGRES_DB: resolution_service_test
-          POSTGRES_PASSWORD: secret
+          RESOLUTION_POSTGRES_DATABASE: resolution_service_test
+          RESOLUTION_POSTGRES_HOST: 'localhost'
+          RESOLUTION_POSTGRES_USERNAME: 'postgres'
+          RESOLUTION_POSTGRES_PASSWORD: secret
+          VIEWBLOCK_API_KEY: 'test'
+          ETHEREUM_JSON_RPC_API_URL: 'test'
 
     steps:
       - uses: actions/checkout@v2
