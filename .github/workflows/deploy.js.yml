@@ -15,6 +15,9 @@ jobs:
       RESOLUTION_POSTGRES_HOST: ${{ secrets.RESOLUTION_POSTGRES_HOST }}
       RESOLUTION_POSTGRES_USERNAME: ${{ secrets.RESOLUTION_POSTGRES_USERNAME }}
       RESOLUTION_POSTGRES_PASSWORD: ${{ secrets.RESOLUTION_POSTGRES_PASSWORD }}
+      RESOLUTION_POSTGRES_DATABASE: ${{ secrets.RESOLUTION_POSTGRES_DATABASE}}
+      ETHEREUM_JSON_RPC_API_URL: ${{ secrets.ETHEREUM_JSON_RPC_API_URL}}
+      VIEWBLOCK_API_KEY: ${{ secrets.VIEWBLOCK_API_KEY }}
       GCP_SQL_INSTANCE: ${{ secrets.GCP_SQL_INSTANCE }}
 
     steps:
@@ -29,10 +32,7 @@ jobs:
 
       - name: Create worker.yaml
         shell: bash
-        run:
-          SERVICE_NAME=workers
-          RESOLUTION_RUNNING_MODE=CNS_WORKER,ZNS_WORKER,MIGRATIONS bash
-          create-yaml.sh
+        run: SERVICE_NAME=workers RESOLUTION_RUNNING_MODE=CNS_WORKER,ZNS_WORKER,MIGRATIONS bash create-yaml.sh
 
       - name: Create api.yaml
         shell: bash
