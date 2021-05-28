@@ -49,11 +49,8 @@ jobs:
       - name: Run eslint check
         run: yarn eslint:check
 
-      - name: Setup Docker
-        uses: docker/build-push-action@v2.4.0
-
-      - name: Build Docker image
-        run: docker build  .
+      - name: Run typescript build check
+        run: yarn build:check
 
   test:
     runs-on: ubuntu-latest

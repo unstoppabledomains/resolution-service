@@ -5,8 +5,6 @@ ADD ./ /app
 WORKDIR /app
 RUN rm -rf node_modules && \
     yarn install && \
-    yarn build && \
-    rm -rf node_modules && \
-    yarn install --production
+    yarn build
 
 ENTRYPOINT ["node", "build/src/index.js"]
