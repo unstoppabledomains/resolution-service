@@ -1,29 +1,35 @@
 import * as path from 'path';
 
-const postgressEnvNotSet = [];
+const requiredEnvNotSet = [];
 
 if (!process.env.RESOLUTION_POSTGRES_HOST) {
-  postgressEnvNotSet.push('RESOLUTION_POSTGRES_HOST');
+  requiredEnvNotSet.push('RESOLUTION_POSTGRES_HOST');
 }
 if (!process.env.RESOLUTION_POSTGRES_USERNAME) {
-  postgressEnvNotSet.push('RESOLUTION_POSTGRES_USERNAME');
+  requiredEnvNotSet.push('RESOLUTION_POSTGRES_USERNAME');
 }
 if (!process.env.RESOLUTION_POSTGRES_PASSWORD) {
-  postgressEnvNotSet.push('RESOLUTION_POSTGRES_PASSWORD');
+  requiredEnvNotSet.push('RESOLUTION_POSTGRES_PASSWORD');
 }
 if (!process.env.RESOLUTION_POSTGRES_DATABASE) {
-  postgressEnvNotSet.push('RESOLUTION_POSTGRES_DATABASE');
+  requiredEnvNotSet.push('RESOLUTION_POSTGRES_DATABASE');
+}
+if (!process.env.VIEWBLOCK_API_KEY) {
+  requiredEnvNotSet.push('VIEWBLOCK_API_KEY');
+}
+if (!process.env.ETHEREUM_JSON_RPC_API_URL) {
+  requiredEnvNotSet.push('ETHEREUM_JSON_RPC_API_URL');
 }
 
-if (postgressEnvNotSet.length !== 0) {
+if (requiredEnvNotSet.length !== 0) {
   throw new Error(
-    `Enviroment variables are not defined: ${postgressEnvNotSet.join(' && ')}`,
+    `Enviroment variables are not defined: ${requiredEnvNotSet.join(' && ')}`,
   );
 }
 
 const ZnsNetwork = process.env.ZNS_NETWORK || 'mainnet';
 
-const enviroment = {
+export const env = {
   APPLICATION: {
     PORT: process.env.RESOLUTION_API_PORT || process.env.PORT || 3000,
     RUNNING_MODE: process.env.RESOLUTION_RUNNING_MODE
@@ -71,11 +77,7 @@ const enviroment = {
     host: process.env.RESOLUTION_POSTGRES_HOST,
     username: process.env.RESOLUTION_POSTGRES_USERNAME,
     password: process.env.RESOLUTION_POSTGRES_PASSWORD,
-    database:
-      process.env.NODE_ENV === 'test'
-        ? process.env.RESOLUTION_POSTGRES_DATABASE + '_test'
-        : process.env.RESOLUTION_POSTGRES_DATABASE,
-
+    database: process.env.RESOLUTION_POSTGRES_DATABASE,
     entities: [
       path.join(__dirname, './models/index.ts'),
       path.join(__dirname, './models/index.js'),
@@ -86,23 +88,3 @@ const enviroment = {
     ] as string[],
   },
 };
-
-if (
-  enviroment.APPLICATION.RUNNING_MODE.includes('ZNS_WORKER') &&
-  !enviroment.APPLICATION.ZILLIQA.VIEWBLOCK_API_KEY
-) {
-  throw new Error(
-    'Enviroment variable VIEWBLOCK_API_KEY is undefined, but required for ZNS_WORKER',
-  );
-}
-
-if (
-  enviroment.APPLICATION.RUNNING_MODE.includes('CNS_WORKER') &&
-  !enviroment.APPLICATION.ETHEREUM.JSON_RPC_API_URL
-) {
-  throw new Error(
-    'Enviroment variable ETHEREUM_JSON_RPC_API_URL is undefined, but required for CNS_WORKER',
-  );
-}
-
-export const env = enviroment;
