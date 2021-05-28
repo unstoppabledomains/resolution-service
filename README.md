@@ -66,7 +66,7 @@ RESOLUTION_RUNNING_MODE | API,CNS_WORKER, ZNS_WORKER,MIGRATIONS, LOAD_SNAPSHOT |
 RESOLUTION_POSTGRES_HOST | localhost | :heavy_check_mark:	| Host for the postgres DB. Note that to connect to a postgres instance running on the same server as the container, `host.docker.internal` should be used instead of `localhost` on Windows and MacOS (see https://docs.docker.com/docker-for-windows/networking/#use-cases-and-workarounds).
 RESOLUTION_POSTGRES_USERNAME | postgres | :heavy_check_mark:	| Username that is used to connect to postgres.
 RESOLUTION_POSTGRES_PASSWORD | secret | :heavy_check_mark:	| Password that is used to connect to postgres.
-RESOLUTION_POSTGRES_DATABASE | resolution_service | :x:	| Database name in postgres.
+RESOLUTION_POSTGRES_DATABASE | resolution_service | :heavy_check_mark:	| Database name in postgres.
 CNS_CONFIRMATION_BLOCKS | 3 | :x:	| Number of blocks that the service will wait before accepting an event from the CNS contract. This helps to avoid block reorgs, forks, etc.
 CNS_BLOCK_FETCH_LIMIT | 1000 | :x:	| Batch limit for fetching event data from the Ethereum JSON RPC. Note that some API providers may limit the amount of data that can be returned in a single request. So this number should be kept relatively low. However, raising this limit should speed up synchronization if a dedicated node is used with the service.
 CNS_RECORDS_PER_PAGE | 100 | :x:	| Batch limit for fetching domain records from CNS registry smart contract.
