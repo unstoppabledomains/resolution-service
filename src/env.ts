@@ -1,4 +1,32 @@
 import * as path from 'path';
+
+const requiredEnvNotSet = [];
+
+if (!process.env.RESOLUTION_POSTGRES_HOST) {
+  requiredEnvNotSet.push('RESOLUTION_POSTGRES_HOST');
+}
+if (!process.env.RESOLUTION_POSTGRES_USERNAME) {
+  requiredEnvNotSet.push('RESOLUTION_POSTGRES_USERNAME');
+}
+if (!process.env.RESOLUTION_POSTGRES_PASSWORD) {
+  requiredEnvNotSet.push('RESOLUTION_POSTGRES_PASSWORD');
+}
+if (!process.env.RESOLUTION_POSTGRES_DATABASE) {
+  requiredEnvNotSet.push('RESOLUTION_POSTGRES_DATABASE');
+}
+if (!process.env.VIEWBLOCK_API_KEY) {
+  requiredEnvNotSet.push('VIEWBLOCK_API_KEY');
+}
+if (!process.env.ETHEREUM_JSON_RPC_API_URL) {
+  requiredEnvNotSet.push('ETHEREUM_JSON_RPC_API_URL');
+}
+
+if (requiredEnvNotSet.length !== 0) {
+  throw new Error(
+    `Environment variables are not defined: ${requiredEnvNotSet.join(' && ')}`,
+  );
+}
+
 const ZnsNetwork = process.env.ZNS_NETWORK || 'mainnet';
 
 export const env = {
@@ -46,15 +74,10 @@ export const env = {
       colorize: process.env.TYPEORM_LOGGING_COLORIZE || true,
     },
     type: 'postgres' as const,
-    host: process.env.RESOLUTION_POSTGRES_HOST || 'localhost',
-    username: process.env.RESOLUTION_POSTGRES_USERNAME || 'postgres',
-    password: process.env.RESOLUTION_POSTGRES_PASSWORD || 'secret',
-    database:
-      process.env.RESOLUTION_POSTGRES_DATABASE ||
-      (process.env.NODE_ENV === 'test'
-        ? 'resolution_service_test'
-        : 'resolution_service'),
-
+    host: process.env.RESOLUTION_POSTGRES_HOST,
+    username: process.env.RESOLUTION_POSTGRES_USERNAME,
+    password: process.env.RESOLUTION_POSTGRES_PASSWORD,
+    database: process.env.RESOLUTION_POSTGRES_DATABASE,
     entities: [
       path.join(__dirname, './models/index.ts'),
       path.join(__dirname, './models/index.js'),

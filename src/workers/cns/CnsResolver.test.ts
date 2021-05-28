@@ -26,7 +26,6 @@ describe('CnsResolver', () => {
   let testDomainLabel: string;
   let testDomainNode: BigNumber;
   const sinonSandbox = sinon.createSandbox();
-
   const PredefinedRecordKeys = Object.keys(supportedKeysJson.keys);
 
   const RecordKeys = [
