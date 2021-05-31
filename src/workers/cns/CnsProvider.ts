@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
-import { logger } from '../logger';
-import { env } from '../env';
+import { logger } from '../../logger';
+import { env } from '../../env';
 
 class StaticJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   async getNetwork(): Promise<ethers.providers.Network> {
@@ -16,7 +16,7 @@ class StaticJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   }
 }
 
-export const provider = new StaticJsonRpcProvider(
+export const CnsProvider = new StaticJsonRpcProvider(
   env.APPLICATION.ETHEREUM.JSON_RPC_API_URL,
   {
     name: '',
