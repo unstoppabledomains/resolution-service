@@ -72,6 +72,20 @@ describe('CnsUpdater', () => {
     expect(service.run()).to.be.rejectedWith(CnsUpdaterError);
   });
 
+  it('should save worker stats', async () => {
+    // test domain is created in beforeEach hook
+    await EthereumTestsHelper.mineBlocksForConfirmation();
+
+    await service.run();
+
+    const workerStatus = await WorkerStatus.findOne({ location: 'CNS' });
+    const expectedBlockNumber =
+      (await CnsProvider.getBlockNumber()) -
+      env.APPLICATION.ETHEREUM.CNS_CONFIRMATION_BLOCKS;
+    expect(workerStatus).to.exist;
+    expect(workerStatus?.lastMirroredBlockNumber).to.eq(expectedBlockNumber);
+  });
+
   describe('basic events', () => {
     it('processes a NewUri event', async () => {
       // test domain is created in beforeEach hook
