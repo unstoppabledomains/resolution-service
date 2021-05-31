@@ -73,13 +73,6 @@ export default class CnsRegistryEvent extends Model {
   @Index()
   node: string | null = null;
 
-  static async latestBlock(): Promise<number> {
-    const event = await CnsRegistryEvent.findOne({
-      order: { blockNumber: 'DESC' },
-    });
-    return event ? event.blockNumber : CnsRegistryEvent.InitialBlock;
-  }
-
   static tokenIdToNode(tokenId: BigNumber): string {
     const node = tokenId.toHexString().replace(/^(0x)?/, '');
     return '0x' + node.padStart(64, '0');

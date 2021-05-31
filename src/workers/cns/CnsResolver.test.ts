@@ -1,15 +1,14 @@
 import { BigNumber, Contract } from 'ethers';
 import { randomBytes } from 'crypto';
 import { env } from '../../env';
-import { provider } from '../../utils/provider';
-import { Domain } from '../../models';
+import { CnsProvider } from './CnsProvider';
+import { Domain, WorkerStatus } from '../../models';
 import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
 import { CryptoSmartContracts } from '../../utils/testing/CryptoSmartContracts';
 import { CnsResolver } from './CnsResolver';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
-import { CnsRegistryEventFactory } from '../../utils/testing/Factories';
 import supportedKeysJson from 'dot-crypto/src/supported-keys/supported-keys.json';
 
 describe('CnsResolver', () => {
@@ -71,7 +70,7 @@ describe('CnsResolver', () => {
 
   before(async () => {
     contracts = await EthereumTestsHelper.initializeContractsAndStub();
-    coinbaseAddress = await provider.getSigner().getAddress();
+    coinbaseAddress = await CnsProvider.getSigner().getAddress();
     registry = contracts.registry;
     resolver = contracts.resolver;
     whitelistedMinter = contracts.whitelistedMinter;
@@ -84,16 +83,17 @@ describe('CnsResolver', () => {
         env.APPLICATION.ETHEREUM,
         'CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK',
       )
-      .value(await provider.getBlockNumber());
+      .value(await CnsProvider.getBlockNumber());
 
     testDomainLabel = randomBytes(16).toString('hex');
     testDomainName = `${testDomainLabel}.crypto`;
     testDomainNode = BigNumber.from(eip137Namehash(testDomainName));
     testTokenId = BigNumber.from(testDomainNode);
 
-    await CnsRegistryEventFactory.create({
-      blockNumber: await provider.getBlockNumber(),
-    });
+    await WorkerStatus.saveWorkerStatus(
+      'CNS',
+      await CnsProvider.getBlockNumber(),
+    );
 
     await whitelistedMinter.functions
       .mintSLDToDefaultResolver(coinbaseAddress, testDomainLabel, [], [])
@@ -256,7 +256,7 @@ describe('CnsResolver', () => {
       await resolver.functions
         .reconfigure(['custom-key'], ['custom-value'], testTokenId)
         .then((receipt) => receipt.wait());
-      const resetRecordsBlockNumber = await provider.getBlockNumber();
+      const resetRecordsBlockNumber = await CnsProvider.getBlockNumber();
       const ethereumCallSpy = sinonSandbox.spy(service, '_getResolverEvents');
       const domainRecords = await service._getAllDomainRecords(
         resolver.address,

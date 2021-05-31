@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { getManager } from 'typeorm';
 import ZnsWorker from './ZnsWorker';
 import ZnsTransaction from '../../models/ZnsTransaction';
-import { Domain } from '../../models';
+import { Domain, WorkerStatus } from '../../models';
 import nock from 'nock';
 import ChainStatsMockResponse from '../../../mocks/zns/chainStatsMockResponse.json';
 import FirstTwoTransactions from '../../../mocks/zns/firstTwoTransactions.json';
@@ -18,7 +18,12 @@ import { ZnsTx } from './ZnsProvider';
 let worker: ZnsWorker;
 
 describe('ZnsWorker', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    const workerStats = {
+      lastAtxuid: -1,
+    };
+    await WorkerStatus.saveWorkerStatus('CNS', 0, workerStats);
+
     worker = new ZnsWorker();
   });
 
@@ -28,11 +33,6 @@ describe('ZnsWorker', () => {
 
   it('should run for the first 2 transactions', async () => {
     worker = new ZnsWorker({ perPage: 2 });
-    const chainStatsInterceptor = nock('https://api.viewblock.io')
-      .get('/v1/zilliqa/stats')
-      .query(true)
-      .reply(200, ChainStatsMockResponse);
-
     const transactionInterceptor = nock('https://api.viewblock.io')
       .get(
         `/v1/zilliqa/addresses/${env.APPLICATION.ZILLIQA.ZNS_REGISTRY_CONTRACT}/txs`,
@@ -48,7 +48,7 @@ describe('ZnsWorker', () => {
       .reply(200, []);
 
     await worker.run();
-    chainStatsInterceptor.done();
+
     transactionInterceptor.done();
     loopEndingTransactionInterceotor.done();
     for (const transaction of FirstTwoTransactions) {
@@ -57,50 +57,20 @@ describe('ZnsWorker', () => {
       });
       expect(txfromDb?.atxuid).to.eq(transaction.atxuid);
     }
-    const loopEndingEmptyTransactionFromDb = await ZnsTransaction.findOne({
-      blockNumber: ChainStatsMockResponse.txHeight,
-    });
-    expect(loopEndingEmptyTransactionFromDb).exist;
-    expect(loopEndingEmptyTransactionFromDb?.atxuid).to.eq(null);
-    expect(loopEndingEmptyTransactionFromDb?.blockNumber).to.eq(
-      ChainStatsMockResponse.txHeight,
+
+    const workerStatus = await WorkerStatus.findOne({ location: 'ZNS' });
+    expect(workerStatus).to.exist;
+    expect(workerStatus?.lastMirroredBlockNumber).to.eq(
+      FirstTwoTransactions[0].blockHeight,
     );
-  });
-
-  it('should not create the same empty transaction twice', async () => {
-    worker = new ZnsWorker({ perPage: 2 });
-    const chainStatsInterceptor = nock('https://api.viewblock.io')
-      .get('/v1/zilliqa/stats')
-      .query(true)
-      .times(2)
-      .reply(200, ChainStatsMockResponse);
-
-    const transactionInterceptor = nock('https://api.viewblock.io')
-      .get(
-        `/v1/zilliqa/addresses/${env.APPLICATION.ZILLIQA.ZNS_REGISTRY_CONTRACT}/txs`,
-      )
-      .query(true)
-      .times(2)
-      .reply(200, []);
-
-    await worker.run();
-    // running the worker again to get the point where we check for the same empty transaction
-    await worker.run();
-    chainStatsInterceptor.done();
-    transactionInterceptor.done();
-
-    const emptyTransactions = await ZnsTransaction.find({
-      blockNumber: ChainStatsMockResponse.txHeight,
-    });
-    expect(emptyTransactions.length).to.equal(1);
+    expect(workerStatus?.workerStats).to.exist;
+    expect(workerStatus?.workerStats?.lastAtxuid).to.eq(
+      FirstTwoTransactions[0].atxuid,
+    );
   });
 
   it('should not store the domain if parent is missing in db', async () => {
     worker = new ZnsWorker({ perPage: 2 });
-    const chainStatsInterceptor = nock('https://api.viewblock.io')
-      .get('/v1/zilliqa/stats')
-      .query(true)
-      .reply(200, ChainStatsMockResponse);
 
     const fakeTransaction = {
       ...FirstTwoTransactions[0],
@@ -117,7 +87,6 @@ describe('ZnsWorker', () => {
       .reply(200, [fakeTransaction]);
 
     await worker.run();
-    chainStatsInterceptor.done();
     transactionInterceptor.done();
 
     // transaction should be stored
@@ -136,10 +105,6 @@ describe('ZnsWorker', () => {
   describe('.ConfiguredEvent', () => {
     it('should process the configured event from transaction', async () => {
       worker = new ZnsWorker({ perPage: 2 });
-      const chainStatsInterceptor = nock('https://api.viewblock.io')
-        .get('/v1/zilliqa/stats')
-        .query(true)
-        .reply(200, ChainStatsMockResponse);
 
       const fakeTransaction = {
         ...CorrectTransactions[2],
@@ -165,7 +130,6 @@ describe('ZnsWorker', () => {
         });
 
       await worker.run();
-      chainStatsInterceptor.done();
       transactionInterceptor.done();
       zilliqaInterceptor.done();
 
@@ -191,10 +155,6 @@ describe('ZnsWorker', () => {
 
     it('should not update the db due to missing node in db', async () => {
       worker = new ZnsWorker({ perPage: 2 });
-      const chainStatsInterceptor = nock('https://api.viewblock.io')
-        .get('/v1/zilliqa/stats')
-        .query(true)
-        .reply(200, ChainStatsMockResponse);
 
       const fakeTransaction = {
         ...CorrectTransactions[2],
@@ -226,7 +186,6 @@ describe('ZnsWorker', () => {
           jsonrpc: '2.0',
         });
       await worker.run();
-      chainStatsInterceptor.done();
       transactionInterceptor.done();
       // this call should not be fired since node is not found in db
       expect(zilliqaInterceptor.isDone()).to.be.false;
@@ -267,7 +226,6 @@ describe('ZnsWorker', () => {
         .reply(200, [fakeTransaction]);
 
       await worker.run();
-      chainStatsInterceptor.done();
       transactionInterceptor.done();
 
       // transaction should be stored
@@ -285,10 +243,6 @@ describe('ZnsWorker', () => {
 
     it('label in newDomain event should not be empty', async () => {
       worker = new ZnsWorker({ perPage: 2 });
-      const chainStatsInterceptor = nock('https://api.viewblock.io')
-        .get('/v1/zilliqa/stats')
-        .query(true)
-        .reply(200, ChainStatsMockResponse);
 
       const fakeTransaction = {
         ...FirstTwoTransactions[0],
@@ -303,7 +257,6 @@ describe('ZnsWorker', () => {
         .reply(200, [fakeTransaction]);
 
       await worker.run();
-      chainStatsInterceptor.done();
       transactionInterceptor.done();
 
       // transaction should be stored
@@ -321,10 +274,6 @@ describe('ZnsWorker', () => {
 
     it('label in newDomain event should not be capitalized', async () => {
       worker = new ZnsWorker({ perPage: 2 });
-      const chainStatsInterceptor = nock('https://api.viewblock.io')
-        .get('/v1/zilliqa/stats')
-        .query(true)
-        .reply(200, ChainStatsMockResponse);
 
       const fakeTransaction = {
         ...FirstTwoTransactions[0],
@@ -339,7 +288,6 @@ describe('ZnsWorker', () => {
         .reply(200, [fakeTransaction]);
 
       await worker.run();
-      chainStatsInterceptor.done();
       transactionInterceptor.done();
 
       // transaction should be stored
@@ -357,10 +305,6 @@ describe('ZnsWorker', () => {
 
     it('should continue to parse the tx even if one of the newDomain events are failed', async () => {
       worker = new ZnsWorker({ perPage: 2 });
-      const chainStatsInterceptor = nock('https://api.viewblock.io')
-        .get('/v1/zilliqa/stats')
-        .query(true)
-        .reply(200, ChainStatsMockResponse);
 
       const fakeTransaction = {
         ...FirstTwoTransactions[0],
@@ -397,7 +341,6 @@ describe('ZnsWorker', () => {
         .reply(200, []);
 
       await worker.run();
-      chainStatsInterceptor.done();
       transactionInterceptor.done();
       loopEndingTransactionInterceotor.done();
       // transaction should be stored

@@ -1,7 +1,7 @@
 import { logger } from '../../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
-import { provider } from '../../utils/provider';
-import { CnsRegistryEvent, Domain } from '../../models';
+import { CnsProvider } from './CnsProvider';
+import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import { env } from '../../env';
 import { Contract, Event, BigNumber } from 'ethers';
 import { EntityManager, getConnection, Repository } from 'typeorm';
@@ -11,7 +11,6 @@ import { ExecutionRevertedError } from './BlockchainErrors';
 import { CnsResolverError } from '../../errors/CnsResolverError';
 import { CnsUpdaterError } from '../../errors/CnsUpdaterError';
 import { CnsResolver } from './CnsResolver';
-import connect from '../../database/connect';
 
 export class CnsUpdater {
   private registry: Contract = CNS.Registry.getContract();
@@ -20,11 +19,23 @@ export class CnsUpdater {
   private lastProcessedEvent?: Event;
 
   static async getLatestNetworkBlock(): Promise<number> {
-    return await provider.getBlockNumber();
+    return await CnsProvider.getBlockNumber();
   }
 
   static async getLatestMirroredBlock(): Promise<number> {
-    return await CnsRegistryEvent.latestBlock();
+    return await WorkerStatus.latestMirroredBlockForWorker('CNS');
+  }
+
+  private async saveLastMirroredBlock(
+    blockNumber: number,
+    manager: EntityManager,
+  ): Promise<void> {
+    await WorkerStatus.saveWorkerStatus(
+      'CNS',
+      blockNumber,
+      {},
+      manager.getRepository(WorkerStatus),
+    );
   }
 
   private async getRegistryEvents(
@@ -266,6 +277,7 @@ export class CnsUpdater {
       await getConnection().transaction(async (manager) => {
         await this.processEvents(events, manager);
         this.currentSyncBlock = fetchBlock;
+        await this.saveLastMirroredBlock(this.currentSyncBlock, manager);
       });
     }
   }

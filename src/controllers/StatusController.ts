@@ -2,9 +2,9 @@ import { Get, JsonController } from 'routing-controllers';
 import 'reflect-metadata';
 import { ResponseSchema } from 'routing-controllers-openapi';
 import { IsNumber, ValidateNested } from 'class-validator';
-import { CnsUpdater } from '../workers/cns/CnsUpdater';
-import { ZnsTransaction } from '../models';
+import { WorkerStatus } from '../models';
 import ZnsProvider from '../workers/zns/ZnsProvider';
+import { CnsProvider } from '../workers/cns/CnsProvider';
 
 class BlockchainStatus {
   @IsNumber()
@@ -33,10 +33,14 @@ export class StatusController {
     statusResponse.CNS = new BlockchainStatus();
     statusResponse.ZNS = new BlockchainStatus();
 
-    statusResponse.CNS.latestMirroredBlock = await CnsUpdater.getLatestMirroredBlock();
-    statusResponse.CNS.latestNetworkBlock = await CnsUpdater.getLatestNetworkBlock();
+    statusResponse.CNS.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
+      'CNS',
+    );
+    statusResponse.CNS.latestNetworkBlock = await CnsProvider.getBlockNumber();
 
-    statusResponse.ZNS.latestMirroredBlock = await ZnsTransaction.latestAtxuid();
+    statusResponse.ZNS.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
+      'ZNS',
+    );
     statusResponse.ZNS.latestNetworkBlock = (
       await this.znsProvider.getChainStats()
     ).txHeight;

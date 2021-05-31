@@ -2,10 +2,7 @@ import supertest from 'supertest';
 import { api } from '../api';
 import { expect } from 'chai';
 import nock from 'nock';
-import {
-  CnsRegistryEventFactory,
-  ZnsTransactionFactory,
-} from '../utils/testing/Factories';
+import { WorkerStatus } from '../models';
 
 describe('StatusController', () => {
   it('should return appropriate block counts', async () => {
@@ -32,7 +29,7 @@ describe('StatusController', () => {
         jsonrpc: '2.0',
         method: 'eth_blockNumber',
         params: [],
-        id: 83,
+        id: /^\d+$/,
       })
       .reply(200, {
         id: 83,
@@ -40,17 +37,21 @@ describe('StatusController', () => {
         result: '0x4b7', // 1207
       });
 
-    await CnsRegistryEventFactory.create({
-      blockNumber: expectedStatus.CNS.latestMirroredBlock,
-    });
-    await ZnsTransactionFactory.create({
-      blockNumber: expectedStatus.ZNS.latestMirroredBlock,
-    });
+    await WorkerStatus.saveWorkerStatus(
+      'CNS',
+      expectedStatus.CNS.latestMirroredBlock,
+      {},
+    );
+    await WorkerStatus.saveWorkerStatus(
+      'ZNS',
+      expectedStatus.ZNS.latestMirroredBlock,
+      {},
+    );
 
     const res = await supertest(api).get('/status').send();
 
-    //viewBlockInterceptor.done();
-    //jsonRpcInterceptor.done();
+    viewBlockInterceptor.done();
+    jsonRpcInterceptor.done();
 
     expect(res.body).containSubset(expectedStatus);
     expect(res.status).eq(200);
