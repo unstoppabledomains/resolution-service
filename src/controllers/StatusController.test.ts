@@ -3,19 +3,26 @@ import { api } from '../api';
 import { expect } from 'chai';
 import nock from 'nock';
 import { WorkerStatus } from '../models';
+import * as sinon from 'sinon';
+import * as ProviderModule from '../workers/cns/CnsProvider';
 
 describe('StatusController', () => {
+  const sinonSandbox = sinon.createSandbox();
+  const mockJsonRpcProviderUrl = 'http://test.jsonrpc.provider:8545';
+
   before(() => {
-    nock.disableNetConnect(); // We need to disable connection to localhost since we are mocking requests to it
-    nock.enableNetConnect('127.0.0.1');
+    sinonSandbox // Nock behaves really weirdly when mocking localhost, so we mock the provider to not use localhost at all
+      .stub(ProviderModule, 'CnsProvider')
+      .value(
+        new ProviderModule.StaticJsonRpcProvider(mockJsonRpcProviderUrl, {
+          name: '',
+          chainId: 99,
+        }),
+      );
   });
 
   after(() => {
-    nock.cleanAll();
-    nock.disableNetConnect();
-    nock.enableNetConnect((host) => {
-      return host.includes('127.0.0.1') || host.includes('localhost'); // re-enable connection
-    });
+    sinonSandbox.restore();
   });
 
   it('should return appropriate block counts', async () => {
@@ -37,7 +44,7 @@ describe('StatusController', () => {
       })
       .reply(200, { txHeight: expectedStatus.ZNS.latestNetworkBlock });
 
-    const jsonRpcInterceptor = nock('http://localhost:8545')
+    const jsonRpcInterceptor = nock(mockJsonRpcProviderUrl)
       .post('/', {
         jsonrpc: '2.0',
         method: 'eth_blockNumber',

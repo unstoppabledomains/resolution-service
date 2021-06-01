@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import { logger } from '../../logger';
 import { env } from '../../env';
 
-class StaticJsonRpcProvider extends ethers.providers.JsonRpcProvider {
+export class StaticJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   async getNetwork(): Promise<ethers.providers.Network> {
     if (this._network) {
       return Promise.resolve(this._network);
