@@ -16,16 +16,41 @@ export default class WorkerStatus extends Model {
   @IsNumber()
   @Min(0)
   @Column({ type: 'int' })
+  @ValidateWith<WorkerStatus>('blockNumberIncreases', {
+    message: 'the value of lastMirroredBlockNumber should increase',
+  })
   lastMirroredBlockNumber = 0;
 
   @IsOptional()
-  @IsObject()
-  @Column('jsonb', { default: {} })
-  workerStats?: Record<string, string | number> = undefined;
+  @IsNumber()
+  @Column({ type: 'int' })
+  @ValidateWith<WorkerStatus>('lastAtxuidIncreases', {
+    message: 'the value of lastAtxuid should increase',
+  })
+  lastAtxuid?: number = undefined;
 
   constructor(attributes?: Attributes<WorkerStatus>) {
     super();
     this.attributes<WorkerStatus>(attributes);
+  }
+
+  async blockNumberIncreases(): Promise<boolean> {
+    const previousBlock = await WorkerStatus.latestMirroredBlockForWorker(
+      this.location,
+    );
+    return previousBlock <= this.lastMirroredBlockNumber;
+  }
+
+  async lastAtxuidIncreases(): Promise<boolean> {
+    const previousAtxuid = await WorkerStatus.latestAtxuidForWorker(
+      this.location,
+    );
+    if (previousAtxuid === undefined) {
+      return true;
+    }
+    return this.lastAtxuid === undefined
+      ? false
+      : previousAtxuid <= this.lastAtxuid;
   }
 
   static async latestMirroredBlockForWorker(
@@ -35,19 +60,17 @@ export default class WorkerStatus extends Model {
     return status ? status.lastMirroredBlockNumber : 0;
   }
 
-  static async getWorkerStats<StatsType>(
+  static async latestAtxuidForWorker(
     location: Location,
-  ): Promise<StatsType | undefined> {
+  ): Promise<number | undefined> {
     const status = await WorkerStatus.findOne({ location });
-    return status
-      ? Object.assign({} as StatsType, status.workerStats)
-      : undefined;
+    return status?.lastAtxuid;
   }
 
   static async saveWorkerStatus(
     location: Location,
     latestBlock: number,
-    workerStats?: Record<string, string | number>,
+    lastAtxuid?: number,
     repository: Repository<WorkerStatus> = WorkerStatus.getRepository(),
   ): Promise<void> {
     let workerStatus = await repository.findOne({ location });
@@ -57,7 +80,7 @@ export default class WorkerStatus extends Model {
       });
     }
     workerStatus.lastMirroredBlockNumber = latestBlock;
-    workerStatus.workerStats = workerStats;
+    workerStatus.lastAtxuid = lastAtxuid;
     await repository.save(workerStatus);
   }
 }

@@ -9,7 +9,6 @@ import { CnsUpdater } from './CnsUpdater';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
-import { CnsRegistryEventFactory } from '../../utils/testing/Factories';
 import { CnsUpdaterError } from '../../errors/CnsUpdaterError';
 
 describe('CnsUpdater', () => {
@@ -38,24 +37,22 @@ describe('CnsUpdater', () => {
   });
 
   beforeEach(async () => {
+    const blocknumber = await CnsProvider.getBlockNumber();
     sinon
       .stub(
         env.APPLICATION.ETHEREUM,
         'CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK',
       )
-      .value(await CnsProvider.getBlockNumber());
+      .value(blocknumber);
     sinon
       .stub(env.APPLICATION.ETHEREUM, 'CNS_REGISTRY_EVENTS_STARTING_BLOCK')
-      .value(await CnsProvider.getBlockNumber());
+      .value(blocknumber);
 
     testDomainLabel = randomBytes(16).toString('hex');
     testDomainName = `${testDomainLabel}.crypto`;
     testDomainNode = BigNumber.from(eip137Namehash(testDomainName));
     testTokenId = BigNumber.from(testDomainNode);
-    await WorkerStatus.saveWorkerStatus(
-      'CNS',
-      await CnsProvider.getBlockNumber(),
-    );
+    await WorkerStatus.saveWorkerStatus('CNS', blocknumber);
 
     await whitelistedMinter.functions
       .mintSLDToDefaultResolver(coinbaseAddress, testDomainLabel, [], [])

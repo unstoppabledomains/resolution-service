@@ -18,22 +18,22 @@ export class CnsUpdater {
   private currentSyncBlock = 0;
   private lastProcessedEvent?: Event;
 
-  static async getLatestNetworkBlock(): Promise<number> {
-    return await CnsProvider.getBlockNumber();
+  static getLatestNetworkBlock(): Promise<number> {
+    return CnsProvider.getBlockNumber();
   }
 
-  static async getLatestMirroredBlock(): Promise<number> {
-    return await WorkerStatus.latestMirroredBlockForWorker('CNS');
+  static getLatestMirroredBlock(): Promise<number> {
+    return WorkerStatus.latestMirroredBlockForWorker('CNS');
   }
 
-  private async saveLastMirroredBlock(
+  private saveLastMirroredBlock(
     blockNumber: number,
     manager: EntityManager,
   ): Promise<void> {
-    await WorkerStatus.saveWorkerStatus(
+    return WorkerStatus.saveWorkerStatus(
       'CNS',
       blockNumber,
-      {},
+      undefined,
       manager.getRepository(WorkerStatus),
     );
   }

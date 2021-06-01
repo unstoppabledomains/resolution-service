@@ -5,6 +5,19 @@ import nock from 'nock';
 import { WorkerStatus } from '../models';
 
 describe('StatusController', () => {
+  before(() => {
+    nock.disableNetConnect(); // We need to disable connection to localhost since we are mocking requests to it
+    nock.enableNetConnect('127.0.0.1');
+  });
+
+  after(() => {
+    nock.cleanAll();
+    nock.disableNetConnect();
+    nock.enableNetConnect((host) => {
+      return host.includes('127.0.0.1') || host.includes('localhost'); // re-enable connection
+    });
+  });
+
   it('should return appropriate block counts', async () => {
     const expectedStatus = {
       CNS: {
@@ -31,21 +44,21 @@ describe('StatusController', () => {
         params: [],
         id: /^\d+$/,
       })
-      .reply(200, {
-        id: 83,
+      .reply(200, (uri, requestBody) => ({
+        id: 1,
         jsonrpc: '2.0',
         result: '0x4b7', // 1207
-      });
+      }));
 
     await WorkerStatus.saveWorkerStatus(
       'CNS',
       expectedStatus.CNS.latestMirroredBlock,
-      {},
+      undefined,
     );
     await WorkerStatus.saveWorkerStatus(
       'ZNS',
       expectedStatus.ZNS.latestMirroredBlock,
-      {},
+      undefined,
     );
 
     const res = await supertest(api).get('/status').send();

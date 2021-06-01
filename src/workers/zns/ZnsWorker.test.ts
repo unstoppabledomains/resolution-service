@@ -19,11 +19,7 @@ let worker: ZnsWorker;
 
 describe('ZnsWorker', () => {
   beforeEach(async () => {
-    const workerStats = {
-      lastAtxuid: -1,
-    };
-    await WorkerStatus.saveWorkerStatus('CNS', 0, workerStats);
-
+    await WorkerStatus.saveWorkerStatus('CNS', 0, -1);
     worker = new ZnsWorker();
   });
 
@@ -63,10 +59,8 @@ describe('ZnsWorker', () => {
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(
       FirstTwoTransactions[0].blockHeight,
     );
-    expect(workerStatus?.workerStats).to.exist;
-    expect(workerStatus?.workerStats?.lastAtxuid).to.eq(
-      FirstTwoTransactions[0].atxuid,
-    );
+    expect(workerStatus?.lastAtxuid).to.exist;
+    expect(workerStatus?.lastAtxuid).to.eq(FirstTwoTransactions[0].atxuid);
   });
 
   it('should not store the domain if parent is missing in db', async () => {

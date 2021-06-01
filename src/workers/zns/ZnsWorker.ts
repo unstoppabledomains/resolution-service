@@ -15,10 +15,6 @@ type ZnsWorkerOptions = {
   perPage?: number;
 };
 
-type ZnsWorkerStats = {
-  lastAtxuid: number;
-};
-
 export default class ZnsWorker {
   private provider: ZnsProvider;
   private perPage: number;
@@ -29,29 +25,20 @@ export default class ZnsWorker {
   }
 
   private async getLastAtxuid() {
-    const stats = await WorkerStatus.getWorkerStats<ZnsWorkerStats>('ZNS');
-    return stats ? stats.lastAtxuid : -1;
+    const lastAtxuid = await WorkerStatus.latestAtxuidForWorker('ZNS');
+    return lastAtxuid === undefined ? -1 : lastAtxuid;
   }
 
   private async saveWorkerStatus(
     latestBlock: number,
     latestAtxuid: number,
     manager: EntityManager,
-  ) {
-    const workerStats: ZnsWorkerStats = {
-      lastAtxuid: latestAtxuid,
-    };
+  ): Promise<void> {
     const repository = manager.getRepository(WorkerStatus);
-    logger.info(
-      `Save worker status ${JSON.stringify({
-        num: latestBlock,
-        st: workerStats,
-      })}`,
-    );
-    await WorkerStatus.saveWorkerStatus(
+    return WorkerStatus.saveWorkerStatus(
       'ZNS',
       latestBlock,
-      workerStats,
+      latestAtxuid,
       repository,
     );
   }
