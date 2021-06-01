@@ -1,7 +1,12 @@
 import { execSync } from 'child_process';
 import { logger } from '../logger';
 import { env } from '../env';
-import { CnsRegistryEvent, Domain, ZnsTransaction } from '../models';
+import {
+  CnsRegistryEvent,
+  Domain,
+  ZnsTransaction,
+  WorkerStatus,
+} from '../models';
 
 export async function loadSnapshot(): Promise<void> {
   // Check if there is data in DB
@@ -16,6 +21,7 @@ export async function loadSnapshot(): Promise<void> {
 
   // clear domains as existing 'zil' and 'crypto' records will be conflicting
   await Domain.clear();
+  await WorkerStatus.clear();
 
   // Execute snapshot command
   const output = execSync(
