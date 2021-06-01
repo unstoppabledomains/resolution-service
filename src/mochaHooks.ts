@@ -7,6 +7,7 @@ import { getConnection } from 'typeorm';
 import fixtures from './fixtures';
 import nock from 'nock';
 import sinonChai from 'sinon-chai';
+import { logger } from './logger';
 
 chai.use(chaiSubset);
 chai.use(chaiAsPromised);
@@ -23,6 +24,7 @@ if (process.env.NODE_ENV !== 'test') {
 }
 export const mochaHooks = {
   async beforeAll(): Promise<void> {
+    logger.transports.forEach((transport) => (transport.silent = true));
     await connect();
     // Why does following line think there are pending migrations?
     // if (await getConnection().showMigrations()) {

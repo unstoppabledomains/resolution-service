@@ -34,7 +34,10 @@
     "db:migration:new": "yarn typeorm migration:create -n",
     "db:migration:run": "yarn typeorm migration:run",
     "db:migration:revert": "yarn typeorm migration:revert",
-    "db:migration:pending": "yarn typeorm migration:show | (! grep -E '\\[ \\]' )"
+    "db:migration:pending": "yarn typeorm migration:show | (! grep -E '\\[ \\]' )",
+    "db:snapshot:create": "./tools/create-snapshot",
+    "db:snapshot:load": "RESOLUTION_RUNNING_MODE=LOAD_SNAPSHOT yarn start:dev",
+    "db:snapshot:check": "yarn typeorm schema:drop && yarn db:migration:run && yarn db:snapshot:load"
   },
   "dependencies": {
     "@bugsnag/js": "^7.9.2",

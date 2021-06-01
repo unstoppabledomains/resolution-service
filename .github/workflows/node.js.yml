@@ -105,3 +105,6 @@ jobs:
 
       - name: Run test
         run: yarn test
+
+      - name: Check snapshot
+        run: NODE_ENV=test yarn db:snapshot:check

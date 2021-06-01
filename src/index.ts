@@ -8,8 +8,20 @@ const runningMode = env.APPLICATION.RUNNING_MODE;
 import connect from './database/connect';
 import { startWorker } from './workers/cns/CnsUpdater';
 import ZnsUpdater from './workers/ZnsUpdater';
+import { loadSnapshot } from './database/loadSnapshot';
 
-connect().then(() => {
+connect().then(async () => {
+  if (runningMode.includes('LOAD_SNAPSHOT')) {
+    logger.info('Loading db snapshot');
+    try {
+      await loadSnapshot();
+    } catch (error) {
+      logger.error(error);
+      process.exit(1);
+    }
+    logger.info('Db snapshot loaded');
+  }
+
   if (runningMode.includes('CNS_WORKER')) {
     startWorker();
     logger.info('CNS worker is enabled and running');

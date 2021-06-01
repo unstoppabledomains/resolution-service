@@ -34,7 +34,7 @@ export const env = {
     PORT: process.env.RESOLUTION_API_PORT || process.env.PORT || 3000,
     RUNNING_MODE: process.env.RESOLUTION_RUNNING_MODE
       ? process.env.RESOLUTION_RUNNING_MODE.split(',')
-      : ['API', 'CNS_WORKER', 'ZNS_WORKER', 'MIGRATIONS'],
+      : ['MIGRATIONS', 'LOAD_SNAPSHOT', 'API', 'CNS_WORKER', 'ZNS_WORKER'],
     ETHEREUM: {
       CNS_REGISTRY_EVENTS_STARTING_BLOCK: Number(
         process.env.CNS_REGISTRY_EVENTS_STARTING_BLOCK || 9080000,
@@ -86,5 +86,12 @@ export const env = {
       path.join(__dirname, './database/migrations/*.ts'),
       path.join(__dirname, './database/migrations/*.js'),
     ] as string[],
+    SNAPSHOT: {
+      cnsEventsCount: Number(process.env.SNAPSHOT_CNS_EVENTS_COUNT || 966679),
+      znsTransactionsCount: Number(
+        process.env.SNAPSHOT_ZNS_TRANSACTIONS_COUNT || 95203,
+      ),
+      domainsCount: Number(process.env.SNAPSHOT_DOMAINS_COUNT || 269650),
+    },
   },
 };
