@@ -1,13 +1,11 @@
 import { getConnection } from 'typeorm';
-import { Resolution } from '@unstoppabledomains/resolution';
-
-const resolution = new Resolution();
+import { eip137Namehash, znsNamehash } from './utils/namehash';
 
 export default async (): Promise<void> => {
   await getConnection().query(
     `INSERT INTO "domains" (name, node, location)
-       VALUES ('zil', '${resolution.namehash('zil')}', 'ZNS'),
-              ('crypto', '${resolution.namehash('crypto')}', 'CNS')
+       VALUES ('zil', '${znsNamehash('zil')}', 'ZNS'),
+              ('crypto', '${eip137Namehash('crypto')}', 'CNS')
        ON CONFLICT (name) DO NOTHING
     `,
   );

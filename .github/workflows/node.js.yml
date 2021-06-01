@@ -49,14 +49,18 @@ jobs:
       - name: Run eslint check
         run: yarn eslint:check
 
-      - name: Setup Docker
-        uses: docker/build-push-action@v2.4.0
-
-      - name: Build Docker image
-        run: docker build  .
+      - name: Run typescript build check
+        run: yarn build:check
 
   test:
     runs-on: ubuntu-latest
+    env:
+      RESOLUTION_POSTGRES_DATABASE: 'resolution_service_test'
+      RESOLUTION_POSTGRES_HOST: 'localhost'
+      RESOLUTION_POSTGRES_USERNAME: 'postgres'
+      RESOLUTION_POSTGRES_PASSWORD: secret
+      VIEWBLOCK_API_KEY: 'test'
+      ETHEREUM_JSON_RPC_API_URL: 'http://localhost:8545'
 
     services:
       postgres:
@@ -66,8 +70,8 @@ jobs:
           --health-cmd pg_isready --health-interval 10s --health-timeout 5s
           --health-retries 5
         env:
-          POSTGRES_DB: resolution_service_test
-          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: 'resolution_service_test'
+          POSTGRES_PASSWORD: 'secret'
 
     steps:
       - uses: actions/checkout@v2
@@ -101,3 +105,6 @@ jobs:
 
       - name: Run test
         run: yarn test
+
+      - name: Check snapshot
+        run: NODE_ENV=test yarn db:snapshot:check

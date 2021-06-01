@@ -7,10 +7,6 @@ export function eip137Namehash(domain: string): string {
   return arrayToHex(arr);
 }
 
-export function eip137Childhash(parentHash: string, label: string): string {
-  return childhash(parentHash, label, sha3);
-}
-
 export function znsNamehash(domain: string): string {
   const arr = hashArray(domain, sha256);
   return arrayToHex(arr);

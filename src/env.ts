@@ -1,4 +1,32 @@
 import * as path from 'path';
+
+const requiredEnvNotSet = [];
+
+if (!process.env.RESOLUTION_POSTGRES_HOST) {
+  requiredEnvNotSet.push('RESOLUTION_POSTGRES_HOST');
+}
+if (!process.env.RESOLUTION_POSTGRES_USERNAME) {
+  requiredEnvNotSet.push('RESOLUTION_POSTGRES_USERNAME');
+}
+if (!process.env.RESOLUTION_POSTGRES_PASSWORD) {
+  requiredEnvNotSet.push('RESOLUTION_POSTGRES_PASSWORD');
+}
+if (!process.env.RESOLUTION_POSTGRES_DATABASE) {
+  requiredEnvNotSet.push('RESOLUTION_POSTGRES_DATABASE');
+}
+if (!process.env.VIEWBLOCK_API_KEY) {
+  requiredEnvNotSet.push('VIEWBLOCK_API_KEY');
+}
+if (!process.env.ETHEREUM_JSON_RPC_API_URL) {
+  requiredEnvNotSet.push('ETHEREUM_JSON_RPC_API_URL');
+}
+
+if (requiredEnvNotSet.length !== 0) {
+  throw new Error(
+    `Environment variables are not defined: ${requiredEnvNotSet.join(' && ')}`,
+  );
+}
+
 const ZnsNetwork = process.env.ZNS_NETWORK || 'mainnet';
 
 export const env = {
@@ -6,7 +34,7 @@ export const env = {
     PORT: process.env.RESOLUTION_API_PORT || process.env.PORT || 3000,
     RUNNING_MODE: process.env.RESOLUTION_RUNNING_MODE
       ? process.env.RESOLUTION_RUNNING_MODE.split(',')
-      : ['API', 'CNS_WORKER', 'ZNS_WORKER', 'MIGRATIONS'],
+      : ['MIGRATIONS', 'LOAD_SNAPSHOT', 'API', 'CNS_WORKER', 'ZNS_WORKER'],
     ETHEREUM: {
       CNS_REGISTRY_EVENTS_STARTING_BLOCK: Number(
         process.env.CNS_REGISTRY_EVENTS_STARTING_BLOCK || 9080000,
@@ -14,7 +42,7 @@ export const env = {
       JSON_RPC_API_URL: process.env.ETHEREUM_JSON_RPC_API_URL,
       CHAIN_ID: Number(process.env.ETHEREUM_CHAIN_ID || 1),
       CNS_CONFIRMATION_BLOCKS: Number(process.env.CNS_CONFIRMATION_BLOCKS || 3),
-      CNS_BLOCK_FETCH_LIMIT: Number(process.env.CNS_BLOCK_FETCH_LIMIT || 1000),
+      CNS_BLOCK_FETCH_LIMIT: Number(process.env.CNS_BLOCK_FETCH_LIMIT || 500),
       CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK: Number(
         process.env.CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK || 9080000,
       ),
@@ -46,15 +74,10 @@ export const env = {
       colorize: process.env.TYPEORM_LOGGING_COLORIZE || true,
     },
     type: 'postgres' as const,
-    host: process.env.RESOLUTION_POSTGRES_HOST || 'localhost',
-    username: process.env.RESOLUTION_POSTGRES_USERNAME || 'postgres',
-    password: process.env.RESOLUTION_POSTGRES_PASSWORD || 'secret',
-    database:
-      process.env.RESOLUTION_POSTGRES_DATABASE ||
-      (process.env.NODE_ENV === 'test'
-        ? 'resolution_service_test'
-        : 'resolution_service'),
-
+    host: process.env.RESOLUTION_POSTGRES_HOST,
+    username: process.env.RESOLUTION_POSTGRES_USERNAME,
+    password: process.env.RESOLUTION_POSTGRES_PASSWORD,
+    database: process.env.RESOLUTION_POSTGRES_DATABASE,
     entities: [
       path.join(__dirname, './models/index.ts'),
       path.join(__dirname, './models/index.js'),
@@ -63,5 +86,12 @@ export const env = {
       path.join(__dirname, './database/migrations/*.ts'),
       path.join(__dirname, './database/migrations/*.js'),
     ] as string[],
+    SNAPSHOT: {
+      cnsEventsCount: Number(process.env.SNAPSHOT_CNS_EVENTS_COUNT || 966679),
+      znsTransactionsCount: Number(
+        process.env.SNAPSHOT_ZNS_TRANSACTIONS_COUNT || 95203,
+      ),
+      domainsCount: Number(process.env.SNAPSHOT_DOMAINS_COUNT || 269650),
+    },
   },
 };

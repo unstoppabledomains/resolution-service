@@ -1,0 +1,24 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+if (($# < 3)); then
+  echo "Usage: " $0 " <db_host> <username> <db_name> [dump file]"
+  exit 1
+fi
+
+HOST=$1
+USERNAME=$2
+DB_NAME=$3
+if (($# == 4)); then
+  FILENAME=$4
+else
+  FILENAME="./resolution_service.dump"
+fi
+
+if ! command -v pg_dump &> /dev/null; then
+    >&2 echo "Command not found 'pg_dump'"
+    exit 1
+fi
+
+pg_dump -h $HOST -U $USERNAME $DB_NAME --data-only -T typeorm_migration -Fc -Z9 -f $FILENAME
