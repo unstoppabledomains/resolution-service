@@ -1,6 +1,6 @@
 import { ethers, Wallet, BigNumber } from 'ethers';
 import * as ContractsModule from '../../contracts';
-import { provider } from '../provider';
+import { CnsProvider } from '../../workers/cns/CnsProvider';
 import * as sinon from 'sinon';
 import { CryptoSmartContracts } from './CryptoSmartContracts';
 import { env } from '../../env';
@@ -14,7 +14,7 @@ export class EthereumTestsHelper {
     address: string,
     amount: BigNumber = FundingAmount,
   ): Promise<void> {
-    const signer = provider.getSigner(0);
+    const signer = CnsProvider.getSigner(0);
     await signer.sendTransaction({
       to: address,
       value: amount,
@@ -23,7 +23,7 @@ export class EthereumTestsHelper {
 
   static async createAccount(): Promise<Wallet> {
     const account = Wallet.createRandom();
-    return account.connect(provider);
+    return account.connect(CnsProvider);
   }
 
   static async mineBlocksForConfirmation(): Promise<void> {

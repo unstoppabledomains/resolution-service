@@ -1,5 +1,5 @@
 import { Factory } from 'typeorm-factory';
-import { CnsRegistryEvent } from '../../models';
+import { CnsRegistryEvent, ZnsTransaction } from '../../models';
 import { randomBytes } from 'crypto';
 
 function randomHex(
@@ -19,3 +19,12 @@ export const CnsRegistryEventFactory = new Factory(CnsRegistryEvent)
     (i) => CnsRegistryEvent.InitialBlock + Math.floor(i * 1.2),
   )
   .attr('returnValues', {});
+
+export const ZnsTransactionFactory = new Factory(ZnsTransaction)
+  .sequence('hash', () => randomHex(32))
+  .sequence('atxuid', (i) => i - 1)
+  .sequence(
+    'blockNumber',
+    (i) => ZnsTransaction.InitialBlock + Math.floor(i * 1.2),
+  )
+  .attr('events', []);

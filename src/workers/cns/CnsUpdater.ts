@@ -1,7 +1,7 @@
 import { logger } from '../../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
-import { provider } from '../../utils/provider';
-import { CnsRegistryEvent, Domain } from '../../models';
+import { CnsProvider } from './CnsProvider';
+import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import { env } from '../../env';
 import { Contract, Event, BigNumber } from 'ethers';
 import { EntityManager, getConnection, Repository } from 'typeorm';
@@ -11,7 +11,6 @@ import { ExecutionRevertedError } from './BlockchainErrors';
 import { CnsResolverError } from '../../errors/CnsResolverError';
 import { CnsUpdaterError } from '../../errors/CnsUpdaterError';
 import { CnsResolver } from './CnsResolver';
-import connect from '../../database/connect';
 
 export class CnsUpdater {
   private registry: Contract = CNS.Registry.getContract();
@@ -19,12 +18,24 @@ export class CnsUpdater {
   private currentSyncBlock = 0;
   private lastProcessedEvent?: Event;
 
-  private async getLatestNetworkBlock() {
-    return await provider.getBlockNumber();
+  static getLatestNetworkBlock(): Promise<number> {
+    return CnsProvider.getBlockNumber();
   }
 
-  private async getLatestMirroredBlock(): Promise<number> {
-    return await CnsRegistryEvent.latestBlock();
+  static getLatestMirroredBlock(): Promise<number> {
+    return WorkerStatus.latestMirroredBlockForWorker('CNS');
+  }
+
+  private saveLastMirroredBlock(
+    blockNumber: number,
+    manager: EntityManager,
+  ): Promise<void> {
+    return WorkerStatus.saveWorkerStatus(
+      'CNS',
+      blockNumber,
+      undefined,
+      manager.getRepository(WorkerStatus),
+    );
   }
 
   private async getRegistryEvents(
@@ -235,9 +246,9 @@ export class CnsUpdater {
 
   public async run(): Promise<void> {
     logger.info('CnsUpdater is pulling updates from Ethereum');
-    const fromBlock = await this.getLatestMirroredBlock();
+    const fromBlock = await CnsUpdater.getLatestMirroredBlock();
     const toBlock =
-      (await this.getLatestNetworkBlock()) -
+      (await CnsUpdater.getLatestNetworkBlock()) -
       env.APPLICATION.ETHEREUM.CNS_CONFIRMATION_BLOCKS;
 
     logger.info(
@@ -266,6 +277,7 @@ export class CnsUpdater {
       await getConnection().transaction(async (manager) => {
         await this.processEvents(events, manager);
         this.currentSyncBlock = fetchBlock;
+        await this.saveLastMirroredBlock(this.currentSyncBlock, manager);
       });
     }
   }

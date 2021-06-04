@@ -1,15 +1,14 @@
 import { BigNumber, Contract } from 'ethers';
 import { randomBytes } from 'crypto';
 import { env } from '../../env';
-import { CnsRegistryEvent, Domain } from '../../models';
-import { provider } from '../../utils/provider';
+import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
+import { CnsProvider } from './CnsProvider';
 import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
 import { CryptoSmartContracts } from '../../utils/testing/CryptoSmartContracts';
 import { CnsUpdater } from './CnsUpdater';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
-import { CnsRegistryEventFactory } from '../../utils/testing/Factories';
 import { CnsUpdaterError } from '../../errors/CnsUpdaterError';
 
 describe('CnsUpdater', () => {
@@ -30,7 +29,7 @@ describe('CnsUpdater', () => {
 
   before(async () => {
     contracts = await EthereumTestsHelper.initializeContractsAndStub();
-    coinbaseAddress = await provider.getSigner().getAddress();
+    coinbaseAddress = await CnsProvider.getSigner().getAddress();
     registry = contracts.registry;
     resolver = contracts.resolver;
     whitelistedMinter = contracts.whitelistedMinter;
@@ -38,34 +37,50 @@ describe('CnsUpdater', () => {
   });
 
   beforeEach(async () => {
+    const blocknumber = await CnsProvider.getBlockNumber();
     sinon
       .stub(
         env.APPLICATION.ETHEREUM,
         'CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK',
       )
-      .value(await provider.getBlockNumber());
+      .value(blocknumber);
     sinon
       .stub(env.APPLICATION.ETHEREUM, 'CNS_REGISTRY_EVENTS_STARTING_BLOCK')
-      .value(await provider.getBlockNumber());
+      .value(blocknumber);
 
     testDomainLabel = randomBytes(16).toString('hex');
     testDomainName = `${testDomainLabel}.crypto`;
     testDomainNode = BigNumber.from(eip137Namehash(testDomainName));
     testTokenId = BigNumber.from(testDomainNode);
-    await CnsRegistryEventFactory.create({
-      blockNumber: await provider.getBlockNumber(),
-    });
+    await WorkerStatus.saveWorkerStatus('CNS', blocknumber);
+
     await whitelistedMinter.functions
       .mintSLDToDefaultResolver(coinbaseAddress, testDomainLabel, [], [])
       .then((receipt) => receipt.wait());
+
     service = new CnsUpdater();
   });
 
   it('should throw if sync block is less than mirrored block', async () => {
-    await CnsRegistryEventFactory.create({
-      blockNumber: (await provider.getBlockNumber()) + 10,
-    });
+    await WorkerStatus.saveWorkerStatus(
+      'CNS',
+      (await CnsProvider.getBlockNumber()) + 10,
+    );
     expect(service.run()).to.be.rejectedWith(CnsUpdaterError);
+  });
+
+  it('should save worker stats', async () => {
+    // test domain is created in beforeEach hook
+    await EthereumTestsHelper.mineBlocksForConfirmation();
+
+    await service.run();
+
+    const workerStatus = await WorkerStatus.findOne({ location: 'CNS' });
+    const expectedBlockNumber =
+      (await CnsProvider.getBlockNumber()) -
+      env.APPLICATION.ETHEREUM.CNS_CONFIRMATION_BLOCKS;
+    expect(workerStatus).to.exist;
+    expect(workerStatus?.lastMirroredBlockNumber).to.eq(expectedBlockNumber);
   });
 
   describe('basic events', () => {
@@ -81,7 +96,7 @@ describe('CnsUpdater', () => {
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Resolve: 1,
-        Transfer: 2,
+        Transfer: 1,
       });
     });
 
@@ -104,7 +119,7 @@ describe('CnsUpdater', () => {
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Resolve: 1,
-        Transfer: 3,
+        Transfer: 2,
       });
     });
 
@@ -135,7 +150,7 @@ describe('CnsUpdater', () => {
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Resolve: 2,
-        Transfer: 2,
+        Transfer: 1,
         Sync: 1,
       });
     });
@@ -166,7 +181,7 @@ describe('CnsUpdater', () => {
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Resolve: 1,
-        Transfer: 3,
+        Transfer: 2,
         Sync: 1,
       });
     });
@@ -185,7 +200,7 @@ describe('CnsUpdater', () => {
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Resolve: 1,
-        Transfer: 2,
+        Transfer: 1,
         Approval: 1,
       });
     });

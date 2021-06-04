@@ -1,6 +1,6 @@
 import ZnsProvider, { ZnsTx } from './ZnsProvider';
-import { EntityManager, getConnection, IsNull, Repository } from 'typeorm';
-import { Domain } from '../../models';
+import { EntityManager, getConnection, Repository } from 'typeorm';
+import { Domain, WorkerStatus } from '../../models';
 import ZnsTransaction, {
   NewDomainEvent,
   ConfiguredEvent,
@@ -24,9 +24,27 @@ export default class ZnsWorker {
     this.provider = new ZnsProvider();
   }
 
+  private async getLastAtxuid() {
+    const lastAtxuid = await WorkerStatus.latestAtxuidForWorker('ZNS');
+    return lastAtxuid === undefined ? -1 : lastAtxuid;
+  }
+
+  private async saveWorkerStatus(
+    latestBlock: number,
+    latestAtxuid: number,
+    manager: EntityManager,
+  ): Promise<void> {
+    const repository = manager.getRepository(WorkerStatus);
+    return WorkerStatus.saveWorkerStatus(
+      'ZNS',
+      latestBlock,
+      latestAtxuid,
+      repository,
+    );
+  }
+
   async run(): Promise<void> {
-    const stats = await this.provider.getChainStats();
-    const lastAtxuid = await ZnsTransaction.latestAtxuid();
+    const lastAtxuid = await this.getLastAtxuid();
     let atxuidFrom = lastAtxuid + 1;
     // eslint-disable-next-line no-constant-condition
     while (true) {
@@ -40,31 +58,21 @@ export default class ZnsWorker {
         for (const transaction of transactions) {
           await this.processTransaction(transaction, manager);
         }
-      });
 
-      if (transactions.length === 0) {
-        await this.createEmptyTransaction(stats.txHeight);
-      }
+        if (transactions && transactions[transactions.length - 1]) {
+          await this.saveWorkerStatus(
+            transactions[transactions.length - 1].blockNumber,
+            transactions[transactions.length - 1].atxuid,
+            manager,
+          );
+        }
+      });
 
       if (transactions.length < this.perPage) {
         break;
       }
       atxuidFrom = transactions[transactions.length - 1].atxuid + 1;
     }
-  }
-
-  private async createEmptyTransaction(blockNumber: number) {
-    const entry = await ZnsTransaction.findOne({
-      where: { blockNumber, atxuid: IsNull(), hash: IsNull() },
-    });
-    if (entry) {
-      return;
-    }
-    const attributes = {
-      blockNumber,
-      events: [],
-    };
-    await ZnsTransaction.persist(attributes);
   }
 
   private async processTransaction(transaction: ZnsTx, manager: EntityManager) {
