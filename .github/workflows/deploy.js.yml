@@ -20,9 +20,6 @@ jobs:
       ETHEREUM_JSON_RPC_API_URL: ${{ secrets.ETHEREUM_JSON_RPC_API_URL}}
       VIEWBLOCK_API_KEY: ${{ secrets.VIEWBLOCK_API_KEY }}
       GCP_SQL_INSTANCE: ${{ secrets.GCP_SQL_INSTANCE }}
-      BUGSNAG_API_KEY: ${{ secrets.BUGSNAG_API_KEY }}
-      NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
-      NEW_RELIC_APP_NAME: ${{ secrets.NEW_RELIC_APP_NAME }}
 
     steps:
       - uses: actions/checkout@v2
@@ -36,7 +33,11 @@ jobs:
 
       - name: Create api.yaml
         shell: bash
-        run: SERVICE_NAME=api RESOLUTION_RUNNING_MODE=API bash create-yaml.sh
+        run:
+          BUGSNAG_API_KEY=${{ secrets.BUGSNAG_API_KEY }} NEW_RELIC_APP_NAME=${{
+          secrets.NEW_RELIC_APP_NAME }} NEW_RELIC_LICENSE_KEY=${{
+          secrets.NEW_RELIC_LICENSE_KEY }} SERVICE_NAME=api
+          RESOLUTION_RUNNING_MODE=API bash create-yaml.sh
 
       - name: Deploy API
         if: contains(github.event.inputs.deployables, 'api')
@@ -53,10 +54,6 @@ jobs:
       ETHEREUM_JSON_RPC_API_URL: ${{ secrets.ETHEREUM_JSON_RPC_API_URL}}
       VIEWBLOCK_API_KEY: ${{ secrets.VIEWBLOCK_API_KEY }}
       GCP_SQL_INSTANCE: ${{ secrets.GCP_SQL_INSTANCE }}
-      BUGSNAG_API_KEY: ${{ secrets.BUGSNAG_API_KEY }}
-      NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
-      NEW_RELIC_APP_NAME: ${{ secrets.NEW_RELIC_APP_NAME }}
-
 
     steps:
       - uses: actions/checkout@v2
@@ -70,7 +67,12 @@ jobs:
 
       - name: Create worker.yaml
         shell: bash
-        run: SERVICE_NAME=workers RESOLUTION_RUNNING_MODE=CNS_WORKER,ZNS_WORKER,MIGRATIONS bash create-yaml.sh
+        run:
+          BUGSNAG_API_KEY=${{ secrets.BUGSNAG_API_KEY }} NEW_RELIC_APP_NAME=${{
+          secrets.NEW_RELIC_APP_NAME }} NEW_RELIC_LICENSE_KEY=${{
+          secrets.NEW_RELIC_LICENSE_KEY }} SERVICE_NAME=workers
+          RESOLUTION_RUNNING_MODE=CNS_WORKER,ZNS_WORKER,MIGRATIONS bash
+          create-yaml.sh
 
       - name: Deploy WORKERS
         if: contains(github.event.inputs.deployables, 'workers')
