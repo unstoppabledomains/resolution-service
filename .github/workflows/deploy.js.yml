@@ -53,6 +53,10 @@ jobs:
       ETHEREUM_JSON_RPC_API_URL: ${{ secrets.ETHEREUM_JSON_RPC_API_URL}}
       VIEWBLOCK_API_KEY: ${{ secrets.VIEWBLOCK_API_KEY }}
       GCP_SQL_INSTANCE: ${{ secrets.GCP_SQL_INSTANCE }}
+      BUGSNAG_API_KEY: ${{ secrets.BUGSNAG_API_KEY }}
+      NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+      NEW_RELIC_APP_NAME: ${{ secrets.NEW_RELIC_APP_NAME }}
+
 
     steps:
       - uses: actions/checkout@v2
