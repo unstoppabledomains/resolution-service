@@ -44,7 +44,7 @@ describe('UnsUpdater', () => {
     testDomainName = `${testDomainLabel}.blockchain`;
     testDomainNode = BigNumber.from(eip137Namehash(testDomainName));
     testTokenId = BigNumber.from(testDomainNode);
-    await WorkerStatus.saveWorkerStatus('UNS', blocknumber);
+    await WorkerStatus.saveWorkerStatus('UNSL1', blocknumber);
 
     await whitelistedMinter.functions
       .mintSLDToDefaultResolver(coinbaseAddress, testDomainLabel, [], [])
@@ -55,7 +55,7 @@ describe('UnsUpdater', () => {
 
   it('should throw if sync block is less than mirrored block', async () => {
     await WorkerStatus.saveWorkerStatus(
-      'UNS',
+      'UNSL1',
       (await UnsProvider.getBlockNumber()) + 10,
     );
     expect(service.run()).to.be.rejectedWith(UnsUpdaterError);
@@ -67,7 +67,7 @@ describe('UnsUpdater', () => {
 
     await service.run();
 
-    const workerStatus = await WorkerStatus.findOne({ location: 'UNS' });
+    const workerStatus = await WorkerStatus.findOne({ location: 'UNSL1' });
     const expectedBlockNumber =
       (await UnsProvider.getBlockNumber()) -
       env.APPLICATION.ETHEREUM.UNS_CONFIRMATION_BLOCKS;
@@ -248,7 +248,7 @@ describe('UnsUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(testDomainName, 'UNS');
+      const domain = await Domain.findOrCreateByName(testDomainName, 'UNSL1');
       expect(domain.resolution).to.be.empty;
     });
 
@@ -268,7 +268,7 @@ describe('UnsUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(testDomainName, 'UNS');
+      const domain = await Domain.findOrCreateByName(testDomainName, 'UNSL1');
       expect(domain.resolution).to.deep.equal({
         'crypto.ETH.address': '0x829BD824B016326A401d083B33D092293333A830',
       });
