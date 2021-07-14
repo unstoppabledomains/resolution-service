@@ -14,7 +14,7 @@
     "src": "./src"
   },
   "scripts": {
-    "test": "GANACHE_PID=$(yarn --silent ethereum:ganache:start) && NODE_ENV=test RESOLUTION_POSTGRES_DATABASE=resolution_service_test ZNS_NETWORK=testnet VIEWBLOCK_API_KEY=test mocha && kill $GANACHE_PID",
+    "test": "GANACHE_PID=$(yarn --silent ethereum:ganache:start) && NODE_ENV=test RESOLUTION_POSTGRES_DATABASE=resolution_service_test UNS_REGISTRY_EVENTS_STARTING_BLOCK=0 ZNS_NETWORK=testnet VIEWBLOCK_API_KEY=test mocha && kill $GANACHE_PID",
     "test:coverage": "NODE_ENV=test nyc --reporter=text yarn test",
     "build": "tsc",
     "start:dev": "ts-node src/index.ts",
