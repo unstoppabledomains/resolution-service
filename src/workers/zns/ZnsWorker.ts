@@ -1,5 +1,5 @@
 import ZnsProvider, { ZnsTx } from './ZnsProvider';
-import { EntityManager, getConnection, Repository } from 'typeorm';
+import { EntityManager, getConnection, Repository, QueryRunner } from 'typeorm';
 import { Domain, WorkerStatus } from '../../models';
 import ZnsTransaction, {
   NewDomainEvent,
@@ -46,6 +46,7 @@ export default class ZnsWorker {
   async run(): Promise<void> {
     const lastAtxuid = await this.getLastAtxuid();
     let atxuidFrom = lastAtxuid + 1;
+    const queryRunner = getConnection().createQueryRunner();
     // eslint-disable-next-line no-constant-condition
     while (true) {
       const atxuidTo = atxuidFrom + this.perPage - 1;
@@ -54,29 +55,33 @@ export default class ZnsWorker {
         atxuidTo,
       );
 
-      await getConnection().transaction(async (manager) => {
-        for (const transaction of transactions) {
-          await this.processTransaction(transaction, manager);
-        }
-
-        if (transactions && transactions[transactions.length - 1]) {
-          await this.saveWorkerStatus(
-            transactions[transactions.length - 1].blockNumber,
-            transactions[transactions.length - 1].atxuid,
-            manager,
+      for (const transaction of transactions) {
+        try {
+          await this.processTransaction(transaction, queryRunner);
+        } catch (error) {
+          Bugsnag.notify(error);
+          logger.error(
+            `Failed to process Transaction ${JSON.stringify(transaction)}`,
           );
+          await queryRunner.rollbackTransaction();
         }
-      });
+      }
 
       if (transactions.length < this.perPage) {
         break;
       }
+
       atxuidFrom = transactions[transactions.length - 1].atxuid + 1;
     }
+    await queryRunner.release();
   }
 
-  private async processTransaction(transaction: ZnsTx, manager: EntityManager) {
-    const domainRepository = manager.getRepository(Domain);
+  private async processTransaction(
+    transaction: ZnsTx,
+    queryRunner: QueryRunner,
+  ) {
+    await queryRunner.startTransaction();
+    const domainRepository = queryRunner.manager.getRepository(Domain);
     const znsTx = new ZnsTransaction({
       hash: transaction.hash,
       blockNumber: transaction.blockNumber,
@@ -109,7 +114,14 @@ export default class ZnsWorker {
         logger.error(error);
       }
     }
-    await znsTx.save();
+
+    await queryRunner.manager.getRepository(ZnsTransaction).save(znsTx);
+    await this.saveWorkerStatus(
+      transaction.blockNumber,
+      transaction.atxuid,
+      queryRunner.manager,
+    );
+    await queryRunner.commitTransaction();
   }
 
   private async parseNewDomainEvent(
