@@ -10,6 +10,7 @@ import { logger } from '../../logger';
 import { isBech32 } from '@zilliqa-js/util/dist/validation';
 import { fromBech32Address } from '@zilliqa-js/crypto';
 import Bugsnag from '@bugsnag/js';
+import { ZnsTransactionEvent } from '../../models/ZnsTransaction';
 
 type ZnsWorkerOptions = {
   perPage?: number;
@@ -81,33 +82,12 @@ export default class ZnsWorker {
     queryRunner: QueryRunner,
   ) {
     await queryRunner.startTransaction();
-    const domainRepository = queryRunner.manager.getRepository(Domain);
-    const znsTx = new ZnsTransaction({
-      hash: transaction.hash,
-      blockNumber: transaction.blockNumber,
-      atxuid: transaction.atxuid,
-      events: transaction.events,
-    });
     const events = transaction.events;
     events.reverse();
+
     for (const event of events) {
       try {
-        switch (event.name) {
-          case 'NewDomain': {
-            await this.parseNewDomainEvent(
-              event as NewDomainEvent,
-              domainRepository,
-            );
-            break;
-          }
-          case 'Configured': {
-            await this.parseConfiguredEvent(
-              event as ConfiguredEvent,
-              domainRepository,
-            );
-            break;
-          }
-        }
+        await this.processTransactionEvent(event, queryRunner);
       } catch (error) {
         Bugsnag.notify(error);
         logger.error(`Failed to process event. ${JSON.stringify(event)}`);
@@ -115,7 +95,7 @@ export default class ZnsWorker {
       }
     }
 
-    await queryRunner.manager.getRepository(ZnsTransaction).save(znsTx);
+    await this.saveZnsTransaction(transaction, queryRunner);
     await this.saveWorkerStatus(
       transaction.blockNumber,
       transaction.atxuid,
@@ -124,11 +104,41 @@ export default class ZnsWorker {
     await queryRunner.commitTransaction();
   }
 
+  private async processTransactionEvent(
+    event: ZnsTransactionEvent,
+    queryRunner: QueryRunner,
+  ): Promise<void> {
+    switch (event.name) {
+      case 'NewDomain': {
+        await this.parseNewDomainEvent(event as NewDomainEvent, queryRunner);
+        break;
+      }
+      case 'Configured': {
+        await this.parseConfiguredEvent(event as ConfiguredEvent, queryRunner);
+        break;
+      }
+    }
+  }
+
+  private async saveZnsTransaction(
+    transaction: ZnsTx,
+    queryRunner: QueryRunner,
+  ): Promise<void> {
+    const znsTx = new ZnsTransaction({
+      hash: transaction.hash,
+      blockNumber: transaction.blockNumber,
+      atxuid: transaction.atxuid,
+      events: transaction.events,
+    });
+    await queryRunner.manager.getRepository(ZnsTransaction).save(znsTx);
+  }
+
   private async parseNewDomainEvent(
     event: NewDomainEvent,
-    repository: Repository<Domain>,
+    queryRunner: QueryRunner,
   ): Promise<void> {
     const { label, parent } = event.params;
+    const repository = queryRunner.manager.getRepository(Domain);
     if (this.isInvalidLabel(label)) {
       throw new Error(
         `Invalid domain label ${label} at NewDomain event for ${parent}`,
@@ -149,9 +159,10 @@ export default class ZnsWorker {
 
   private async parseConfiguredEvent(
     event: ConfiguredEvent,
-    repository: Repository<Domain>,
+    queryRunner: QueryRunner,
   ): Promise<void> {
     const eventParams = event.params;
+    const repository = queryRunner.manager.getRepository(Domain);
     const { node } = eventParams;
     const owner = isBech32(eventParams.owner)
       ? fromBech32Address(eventParams.owner).toLowerCase()
