@@ -1,13 +1,13 @@
 import { logger } from '../../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
-import { UnsRegistryEvent, Domain, WorkerStatus } from '../../models';
+import { UnsEvent, Domain, WorkerStatus } from '../../models';
 import { env } from '../../env';
 import { Contract, Event, BigNumber } from 'ethers';
 import { EntityManager, getConnection, Repository } from 'typeorm';
 import { UNS } from '../../contracts';
 import { eip137Namehash } from '../../utils/namehash';
 import { UnsUpdaterError } from '../../errors/UnsUpdaterError';
-import { UnsProvider } from './UnsProvider';
+import { EthereumProvider } from '../EthereumProvider';
 
 export class UnsUpdater {
   private registry: Contract = UNS.UNSRegistry.getContract();
@@ -15,7 +15,7 @@ export class UnsUpdater {
   private lastProcessedEvent?: Event;
 
   static getLatestNetworkBlock(): Promise<number> {
-    return UnsProvider.getBlockNumber();
+    return EthereumProvider.getBlockNumber();
   }
 
   static getLatestMirroredBlock(): Promise<number> {
@@ -51,7 +51,7 @@ export class UnsUpdater {
     event: Event,
     domainRepository: Repository<Domain>,
   ): Promise<void> {
-    const node = UnsRegistryEvent.tokenIdToNode(event.args?.tokenId);
+    const node = UnsEvent.tokenIdToNode(event.args?.tokenId);
     const domain = await Domain.findByNode(node, domainRepository);
     //Check if it's not a new URI
     if (event.args?.from !== Domain.NullAddress) {
@@ -85,7 +85,7 @@ export class UnsUpdater {
 
     const { uri, tokenId } = event.args;
     const expectedNode = eip137Namehash(uri);
-    const producedNode = UnsRegistryEvent.tokenIdToNode(tokenId);
+    const producedNode = UnsEvent.tokenIdToNode(tokenId);
 
     //Check if the domain name matches tokenID
     if (expectedNode !== producedNode) {
@@ -120,7 +120,7 @@ export class UnsUpdater {
     event: Event,
     domainRepository: Repository<Domain>,
   ): Promise<void> {
-    const node = UnsRegistryEvent.tokenIdToNode(event.args?.tokenId);
+    const node = UnsEvent.tokenIdToNode(event.args?.tokenId);
     const domain = await Domain.findByNode(node, domainRepository);
     if (!domain) {
       throw new UnsUpdaterError(
@@ -131,15 +131,33 @@ export class UnsUpdater {
     await domainRepository.save(domain);
   }
 
+  private async processSet(
+    event: Event,
+    domainRepository: Repository<Domain>,
+  ): Promise<void> {
+    const node = UnsEvent.tokenIdToNode(event.args?.tokenId);
+    const domain = await Domain.findByNode(node, domainRepository);
+    if (!domain) {
+      throw new UnsUpdaterError(
+        `Set event was not processed. Could not find domain for ${node}`,
+      );
+    }
+    domain.resolution = {
+      ...domain.resolution,
+      [event.args?.key]: event.args?.value,
+    };
+    await domainRepository.save(domain);
+  }
+
   private async saveEvent(event: Event, manager: EntityManager): Promise<void> {
     const values: Record<string, string> = {};
     Object.entries(event?.args || []).forEach(([key, value]) => {
       values[key] = BigNumber.isBigNumber(value) ? value.toHexString() : value;
     });
 
-    await manager.getRepository(UnsRegistryEvent).save(
-      new UnsRegistryEvent({
-        type: event.event as UnsRegistryEvent['type'],
+    await manager.getRepository(UnsEvent).save(
+      new UnsEvent({
+        type: event.event as UnsEvent['type'],
         blockNumber: event.blockNumber,
         logIndex: event.logIndex,
         transactionHash: event.transactionHash,
@@ -171,6 +189,10 @@ export class UnsUpdater {
             await this.processResetRecords(event, domainRepository);
             break;
           }
+          case 'Set': {
+            await this.processSet(event, domainRepository);
+            break;
+          }
           case 'Approval':
           case 'ApprovalForAll':
           default:
@@ -194,7 +216,7 @@ export class UnsUpdater {
     logger.info('UnsUpdater is pulling updates from Ethereum');
     const fromBlock = Math.max(
       await UnsUpdater.getLatestMirroredBlock(),
-      UnsRegistryEvent.InitialBlock,
+      UnsEvent.InitialBlock,
     );
     const toBlock =
       (await UnsUpdater.getLatestNetworkBlock()) -
