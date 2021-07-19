@@ -1,7 +1,7 @@
 import { logger } from '../../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
-import { CnsProvider } from './CnsProvider';
-import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
+import { EthereumProvider } from '../EthereumProvider';
+import { CnsEvent, Domain, WorkerStatus } from '../../models';
 import { env } from '../../env';
 import { Contract, Event, BigNumber } from 'ethers';
 import { EntityManager, getConnection, Repository } from 'typeorm';
@@ -19,7 +19,7 @@ export class CnsUpdater {
   private lastProcessedEvent?: Event;
 
   static getLatestNetworkBlock(): Promise<number> {
-    return CnsProvider.getBlockNumber();
+    return EthereumProvider.getBlockNumber();
   }
 
   static getLatestMirroredBlock(): Promise<number> {
@@ -55,7 +55,7 @@ export class CnsUpdater {
     event: Event,
     domainRepository: Repository<Domain>,
   ): Promise<void> {
-    const node = CnsRegistryEvent.tokenIdToNode(event.args?.tokenId);
+    const node = CnsEvent.tokenIdToNode(event.args?.tokenId);
     const domain = await Domain.findByNode(node, domainRepository);
     //Check if it's not a new URI
     if (event.args?.from !== Domain.NullAddress) {
@@ -91,7 +91,7 @@ export class CnsUpdater {
 
     const { uri, tokenId } = event.args;
     const expectedNode = eip137Namehash(uri);
-    const producedNode = CnsRegistryEvent.tokenIdToNode(tokenId);
+    const producedNode = CnsEvent.tokenIdToNode(tokenId);
 
     //Check if the domain name matches tokenID
     if (expectedNode !== producedNode) {
@@ -125,7 +125,7 @@ export class CnsUpdater {
     event: Event,
     domainRepository: Repository<Domain>,
   ): Promise<void> {
-    const node = CnsRegistryEvent.tokenIdToNode(event.args?.tokenId);
+    const node = CnsEvent.tokenIdToNode(event.args?.tokenId);
     const domain = await Domain.findByNode(node, domainRepository);
     if (!domain) {
       throw new CnsUpdaterError(
@@ -140,7 +140,7 @@ export class CnsUpdater {
     event: Event,
     domainRepository: Repository<Domain>,
   ): Promise<void> {
-    const node = CnsRegistryEvent.tokenIdToNode(event.args?.tokenId);
+    const node = CnsEvent.tokenIdToNode(event.args?.tokenId);
     const domain = await Domain.findByNode(node, domainRepository);
     if (!domain) {
       throw new CnsUpdaterError(
@@ -187,9 +187,9 @@ export class CnsUpdater {
       values[key] = BigNumber.isBigNumber(value) ? value.toHexString() : value;
     });
 
-    await manager.getRepository(CnsRegistryEvent).save(
-      new CnsRegistryEvent({
-        type: event.event as CnsRegistryEvent['type'],
+    await manager.getRepository(CnsEvent).save(
+      new CnsEvent({
+        type: event.event as CnsEvent['type'],
         blockNumber: event.blockNumber,
         logIndex: event.logIndex,
         transactionHash: event.transactionHash,

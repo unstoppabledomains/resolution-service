@@ -2,7 +2,7 @@ import { BigNumber, Contract } from 'ethers';
 import { randomBytes } from 'crypto';
 import { env } from '../../env';
 import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
-import { CnsProvider } from './CnsProvider';
+import { EthereumProvider } from '../EthereumProvider';
 import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
 import { CryptoSmartContracts } from '../../utils/testing/CryptoSmartContracts';
 import { CnsUpdater } from './CnsUpdater';
@@ -29,7 +29,7 @@ describe('CnsUpdater', () => {
 
   before(async () => {
     contracts = await EthereumTestsHelper.initializeContractsAndStub();
-    coinbaseAddress = await CnsProvider.getSigner().getAddress();
+    coinbaseAddress = await EthereumProvider.getSigner().getAddress();
     registry = contracts.registry;
     resolver = contracts.resolver;
     whitelistedMinter = contracts.whitelistedMinter;
@@ -37,7 +37,7 @@ describe('CnsUpdater', () => {
   });
 
   beforeEach(async () => {
-    const blocknumber = await CnsProvider.getBlockNumber();
+    const blocknumber = await EthereumProvider.getBlockNumber();
     sinon
       .stub(
         env.APPLICATION.ETHEREUM,
@@ -64,7 +64,7 @@ describe('CnsUpdater', () => {
   it('should throw if sync block is less than mirrored block', async () => {
     await WorkerStatus.saveWorkerStatus(
       'CNS',
-      (await CnsProvider.getBlockNumber()) + 10,
+      (await EthereumProvider.getBlockNumber()) + 10,
     );
     expect(service.run()).to.be.rejectedWith(CnsUpdaterError);
   });
@@ -77,7 +77,7 @@ describe('CnsUpdater', () => {
 
     const workerStatus = await WorkerStatus.findOne({ location: 'CNS' });
     const expectedBlockNumber =
-      (await CnsProvider.getBlockNumber()) -
+      (await EthereumProvider.getBlockNumber()) -
       env.APPLICATION.ETHEREUM.CNS_CONFIRMATION_BLOCKS;
     expect(workerStatus).to.exist;
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(expectedBlockNumber);

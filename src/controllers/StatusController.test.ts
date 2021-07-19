@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import nock from 'nock';
 import { WorkerStatus } from '../models';
 import * as sinon from 'sinon';
-import * as ProviderModule from '../workers/cns/CnsProvider';
+import * as ProviderModule from '../workers/EthereumProvider';
 
 describe('StatusController', () => {
   const sinonSandbox = sinon.createSandbox();
@@ -12,7 +12,7 @@ describe('StatusController', () => {
 
   before(() => {
     sinonSandbox // Nock behaves really weirdly when mocking localhost, so we mock the provider to not use localhost at all
-      .stub(ProviderModule, 'CnsProvider')
+      .stub(ProviderModule, 'EthereumProvider')
       .value(
         new ProviderModule.StaticJsonRpcProvider(mockJsonRpcProviderUrl, {
           name: '',

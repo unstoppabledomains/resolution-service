@@ -1,7 +1,7 @@
 import { Contract, ContractFactory } from 'ethers';
 import { env } from '../../env';
 import { getCryptoConfig } from '../../contracts';
-import { CnsProvider } from '../../workers/cns/CnsProvider';
+import { EthereumProvider } from '../../workers/EthereumProvider';
 
 import registryJson from 'dot-crypto/truffle-artifacts/Registry.json';
 import mintingControllerJson from 'dot-crypto/truffle-artifacts/MintingController.json';
@@ -71,7 +71,7 @@ export class CryptoSmartContracts {
     const factory = new ContractFactory(
       legacyResolverJson.abi,
       legacyResolverJson.bytecode,
-      CnsProvider.getSigner(),
+      EthereumProvider.getSigner(),
     );
     this._legacyResolver = await factory.deploy(
       this.registry.address,
@@ -85,7 +85,7 @@ export class CryptoSmartContracts {
     const registryFactory = new ContractFactory(
       registryJson.abi,
       registryJson.bytecode,
-      CnsProvider.getSigner(),
+      EthereumProvider.getSigner(),
     );
     this._registry = await registryFactory.deploy();
 
@@ -93,21 +93,21 @@ export class CryptoSmartContracts {
     const mintingControllerFactory = new ContractFactory(
       mintingControllerJson.abi,
       mintingControllerJson.bytecode,
-      CnsProvider.getSigner(),
+      EthereumProvider.getSigner(),
     );
     txPromises.push(mintingControllerFactory.deploy(this.registry?.address));
 
     const signatureControllerFactory = new ContractFactory(
       signatureControllerJson.abi,
       signatureControllerJson.bytecode,
-      CnsProvider.getSigner(),
+      EthereumProvider.getSigner(),
     );
     txPromises.push(signatureControllerFactory.deploy(this.registry?.address));
 
     const uriPrefixControllerFactory = new ContractFactory(
       uriPrefixControllerJson.abi,
       uriPrefixControllerJson.bytecode,
-      CnsProvider.getSigner(),
+      EthereumProvider.getSigner(),
     );
     txPromises.push(uriPrefixControllerFactory.deploy(this.registry?.address));
 
@@ -132,7 +132,7 @@ export class CryptoSmartContracts {
     const whitelistedMinterFactory = new ContractFactory(
       whitelistedMinterJson.abi,
       whitelistedMinterJson.bytecode,
-      CnsProvider.getSigner(),
+      EthereumProvider.getSigner(),
     );
     this._whitelistedMinter = await whitelistedMinterFactory.deploy(
       this.mintingController?.address,
@@ -141,7 +141,7 @@ export class CryptoSmartContracts {
     await this.whitelistedMinter?.functions
       .bulkAddWhitelisted([
         ...allowedMintingAddresses,
-        await CnsProvider.getSigner().getAddress(),
+        await EthereumProvider.getSigner().getAddress(),
       ])
       .then((receipt) => receipt.wait());
 
@@ -152,7 +152,7 @@ export class CryptoSmartContracts {
     const resolverFactory = new ContractFactory(
       resolverJson.abi,
       resolverJson.bytecode,
-      CnsProvider.getSigner(),
+      EthereumProvider.getSigner(),
     );
     this._resolver = await resolverFactory.deploy(
       this.registry?.address,
@@ -168,7 +168,7 @@ export class CryptoSmartContracts {
     const domainZoneControllerFactory = new ContractFactory(
       domainZoneControllerJson.abi,
       domainZoneControllerJson.bytecode,
-      CnsProvider.getSigner(),
+      EthereumProvider.getSigner(),
     );
     this._domainZoneController = await domainZoneControllerFactory.deploy(
       this.registry?.address,

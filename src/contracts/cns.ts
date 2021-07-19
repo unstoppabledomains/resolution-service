@@ -8,7 +8,7 @@ import domainZoneControllerJson from 'dot-crypto/truffle-artifacts/DomainZoneCon
 import proxyReaderJson from 'dot-crypto/truffle-artifacts/ProxyReader.json';
 import NetworkConfig from 'dot-crypto/src/network-config/network-config.json';
 
-import { CnsProvider } from '../workers/cns/CnsProvider';
+import { EthereumProvider } from '../workers/EthereumProvider';
 import { env } from '../env';
 
 const abiMap = {
@@ -54,7 +54,7 @@ export const getCryptoConfig = (
             (cache[data.addresss] = new Contract(
               data.address,
               abiMap[key],
-              CnsProvider,
+              EthereumProvider,
             ))
           );
         },

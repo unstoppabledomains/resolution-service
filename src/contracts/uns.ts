@@ -1,7 +1,7 @@
 import { Contract } from 'ethers';
 import registryJson from 'uns/artifacts/Registry.json';
 import NetworkConfig from 'uns/uns-config.json';
-import { UnsProvider } from '../workers/uns/UnsProvider';
+import { EthereumProvider } from '../workers/EthereumProvider';
 import { env } from '../env';
 
 const abiMap = {
@@ -41,7 +41,7 @@ export const getUnsConfig = (
             (cache[data.addresss] = new Contract(
               data.address,
               abiMap[key],
-              UnsProvider,
+              EthereumProvider,
             ))
           );
         },

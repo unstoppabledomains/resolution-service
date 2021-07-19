@@ -4,7 +4,7 @@ import { ResponseSchema } from 'routing-controllers-openapi';
 import { IsNumber, ValidateNested } from 'class-validator';
 import { WorkerStatus } from '../models';
 import ZnsProvider from '../workers/zns/ZnsProvider';
-import { CnsProvider } from '../workers/cns/CnsProvider';
+import { EthereumProvider } from '../workers/EthereumProvider';
 
 class BlockchainStatus {
   @IsNumber()
@@ -36,7 +36,7 @@ export class StatusController {
     statusResponse.CNS.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
       'CNS',
     );
-    statusResponse.CNS.latestNetworkBlock = await CnsProvider.getBlockNumber();
+    statusResponse.CNS.latestNetworkBlock = await EthereumProvider.getBlockNumber();
 
     statusResponse.ZNS.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
       'ZNS',
