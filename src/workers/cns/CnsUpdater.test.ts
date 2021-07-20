@@ -1,10 +1,10 @@
 import { BigNumber, Contract } from 'ethers';
 import { randomBytes } from 'crypto';
 import { env } from '../../env';
-import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
+import { CnsEvent, Domain, WorkerStatus } from '../../models';
 import { EthereumProvider } from '../EthereumProvider';
 import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
-import { CryptoSmartContracts } from '../../utils/testing/CryptoSmartContracts';
+import { CnsSmartContracts } from '../../utils/testing/CnsSmartContracts';
 import { CnsUpdater } from './CnsUpdater';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
@@ -17,7 +17,7 @@ describe('CnsUpdater', () => {
   let resolver: Contract;
   let legacyResolver: Contract;
   let whitelistedMinter: Contract;
-  let contracts: CryptoSmartContracts;
+  let contracts: CnsSmartContracts;
   let coinbaseAddress: string;
 
   let testDomainName: string;
@@ -28,7 +28,7 @@ describe('CnsUpdater', () => {
   const AddressZero = '0x0000000000000000000000000000000000000000';
 
   before(async () => {
-    contracts = await EthereumTestsHelper.initializeContractsAndStub();
+    contracts = await EthereumTestsHelper.initializeCnsContractsAndStub();
     coinbaseAddress = await EthereumProvider.getSigner().getAddress();
     registry = contracts.registry;
     resolver = contracts.resolver;
@@ -93,7 +93,7 @@ describe('CnsUpdater', () => {
       const domain = await Domain.findOne({ name: testDomainName });
       expect(domain).to.not.be.undefined;
 
-      expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
+      expect(await CnsEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Resolve: 1,
         Transfer: 1,
@@ -116,7 +116,7 @@ describe('CnsUpdater', () => {
       expect(domain).to.not.be.undefined;
       expect(domain?.ownerAddress).to.be.equal(recipientAddress.toLowerCase());
 
-      expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
+      expect(await CnsEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Resolve: 1,
         Transfer: 2,
@@ -147,7 +147,7 @@ describe('CnsUpdater', () => {
         },
       });
 
-      expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
+      expect(await CnsEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Resolve: 2,
         Transfer: 1,
@@ -178,7 +178,7 @@ describe('CnsUpdater', () => {
         ownerAddress: null,
       });
 
-      expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
+      expect(await CnsEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Resolve: 1,
         Transfer: 2,
@@ -197,7 +197,7 @@ describe('CnsUpdater', () => {
 
       await service.run();
 
-      expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
+      expect(await CnsEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Resolve: 1,
         Transfer: 1,

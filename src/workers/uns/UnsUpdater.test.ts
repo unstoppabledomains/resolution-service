@@ -1,10 +1,10 @@
 import { BigNumber, Contract } from 'ethers';
 import { randomBytes } from 'crypto';
 import { env } from '../../env';
-import { UnsRegistryEvent, Domain, WorkerStatus } from '../../models';
-import { UnsProvider } from './UnsProvider';
+import { UnsEvent, Domain, WorkerStatus } from '../../models';
+import { EthereumProvider } from '../EthereumProvider';
 import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
-import { CryptoSmartContracts } from '../../utils/testing/CryptoSmartContracts';
+import { UnsSmartContracts } from '../../utils/testing/UnsSmartContracts';
 import { UnsUpdater } from './UnsUpdater';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
@@ -14,10 +14,13 @@ import { UnsUpdaterError } from '../../errors/UnsUpdaterError';
 describe('UnsUpdater', () => {
   let service: UnsUpdater;
   let registry: Contract;
-  let resolver: Contract;
-  let whitelistedMinter: Contract;
-  let contracts: CryptoSmartContracts;
+  let mintingManager: Contract;
+  let contracts: UnsSmartContracts;
   let coinbaseAddress: string;
+
+  let testTld = 'blockchain';
+  let testTldHash =
+    '0x4118ebbd893ecbb9f5d7a817c7d8039c1bd991b56ea243e2ae84d0a1b2c950a7';
 
   let testDomainName: string;
   let testTokenId: BigNumber;
@@ -27,27 +30,30 @@ describe('UnsUpdater', () => {
   const AddressZero = '0x0000000000000000000000000000000000000000';
 
   before(async () => {
-    contracts = await EthereumTestsHelper.initializeContractsAndStub();
-    coinbaseAddress = await UnsProvider.getSigner().getAddress();
+    coinbaseAddress = await EthereumProvider.getSigner().getAddress();
+    contracts = await EthereumTestsHelper.initializeUnsContractsAndStub([
+      coinbaseAddress,
+    ]);
     registry = contracts.registry;
-    resolver = contracts.resolver;
-    whitelistedMinter = contracts.whitelistedMinter;
+    mintingManager = contracts.mintingManager;
   });
 
   beforeEach(async () => {
-    const blocknumber = await UnsProvider.getBlockNumber();
+    const blocknumber = await EthereumProvider.getBlockNumber();
     sinon
       .stub(env.APPLICATION.ETHEREUM, 'UNS_REGISTRY_EVENTS_STARTING_BLOCK')
       .value(blocknumber);
-
+    testTld = 'blockchain';
+    testTldHash =
+      '0x4118ebbd893ecbb9f5d7a817c7d8039c1bd991b56ea243e2ae84d0a1b2c950a7';
     testDomainLabel = randomBytes(16).toString('hex');
-    testDomainName = `${testDomainLabel}.blockchain`;
+    testDomainName = `${testDomainLabel}.${testTld}`;
     testDomainNode = BigNumber.from(eip137Namehash(testDomainName));
     testTokenId = BigNumber.from(testDomainNode);
     await WorkerStatus.saveWorkerStatus('UNSL1', blocknumber);
 
-    await whitelistedMinter.functions
-      .mintSLDToDefaultResolver(coinbaseAddress, testDomainLabel, [], [])
+    await mintingManager.functions
+      .mintSLD(coinbaseAddress, testTldHash, testDomainLabel)
       .then((receipt) => receipt.wait());
 
     service = new UnsUpdater();
@@ -56,7 +62,7 @@ describe('UnsUpdater', () => {
   it('should throw if sync block is less than mirrored block', async () => {
     await WorkerStatus.saveWorkerStatus(
       'UNSL1',
-      (await UnsProvider.getBlockNumber()) + 10,
+      (await EthereumProvider.getBlockNumber()) + 10,
     );
     expect(service.run()).to.be.rejectedWith(UnsUpdaterError);
   });
@@ -69,7 +75,7 @@ describe('UnsUpdater', () => {
 
     const workerStatus = await WorkerStatus.findOne({ location: 'UNSL1' });
     const expectedBlockNumber =
-      (await UnsProvider.getBlockNumber()) -
+      (await EthereumProvider.getBlockNumber()) -
       env.APPLICATION.ETHEREUM.UNS_CONFIRMATION_BLOCKS;
     expect(workerStatus).to.exist;
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(expectedBlockNumber);
@@ -85,7 +91,7 @@ describe('UnsUpdater', () => {
       const domain = await Domain.findOne({ name: testDomainName });
       expect(domain).to.not.be.undefined;
 
-      expect(await UnsRegistryEvent.groupCount('type')).to.deep.equal({
+      expect(await UnsEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Transfer: 1,
       });
@@ -107,7 +113,7 @@ describe('UnsUpdater', () => {
       expect(domain).to.not.be.undefined;
       expect(domain?.ownerAddress).to.be.equal(recipientAddress.toLowerCase());
 
-      expect(await UnsRegistryEvent.groupCount('type')).to.deep.equal({
+      expect(await UnsEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Transfer: 2,
       });
@@ -115,9 +121,6 @@ describe('UnsUpdater', () => {
 
     it('processes resolution events', async () => {
       await registry.functions
-        .resolveTo(resolver.address, testTokenId)
-        .then((receipt) => receipt.wait());
-      await resolver.functions
         .setMany(
           ['crypto.BTC.address'],
           ['qp3gu0flg7tehyv73ua5nznlw8s040nz3uqnyffrcn'],
@@ -131,20 +134,20 @@ describe('UnsUpdater', () => {
       const domain = await Domain.findOne({ name: testDomainName });
       expect(domain).to.containSubset({
         name: testDomainName,
-        resolver: resolver.address.toLowerCase(),
+        resolver: registry.address.toLowerCase(),
         resolution: {
           'crypto.BTC.address': 'qp3gu0flg7tehyv73ua5nznlw8s040nz3uqnyffrcn',
         },
       });
 
-      expect(await UnsRegistryEvent.groupCount('type')).to.deep.equal({
+      expect(await UnsEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Transfer: 1,
       });
     });
 
     it('processes a burn event', async () => {
-      await resolver.functions
+      await registry.functions
         .setMany(
           ['crypto.BTC.address'],
           ['qp3gu0flg7tehyv73ua5nznlw8s040nz3uqnyffrcn'],
@@ -166,7 +169,7 @@ describe('UnsUpdater', () => {
         ownerAddress: null,
       });
 
-      expect(await UnsRegistryEvent.groupCount('type')).to.deep.equal({
+      expect(await UnsEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Transfer: 2,
       });
@@ -183,7 +186,7 @@ describe('UnsUpdater', () => {
 
       await service.run();
 
-      expect(await UnsRegistryEvent.groupCount('type')).to.deep.equal({
+      expect(await UnsEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Transfer: 1,
       });
@@ -194,9 +197,9 @@ describe('UnsUpdater', () => {
     it('should add new domain', async () => {
       const expectedLabel = randomBytes(16).toString('hex');
 
-      const expectedDomainName = `${expectedLabel}.crypto`;
-      await whitelistedMinter.functions
-        .mintSLDToDefaultResolver(coinbaseAddress, expectedLabel, [], [])
+      const expectedDomainName = `${expectedLabel}.${testTld}`;
+      await mintingManager.functions
+        .mintSLD(coinbaseAddress, testTldHash, expectedLabel)
         .then((receipt) => receipt.wait());
       await EthereumTestsHelper.mineBlocksForConfirmation();
 
@@ -208,9 +211,9 @@ describe('UnsUpdater', () => {
 
     it('should not add domain with capital letters', async () => {
       const expectedLabel = `${randomBytes(16).toString('hex')}-AAA`;
-      const expectedDomainName = `${expectedLabel}.crypto`;
-      await whitelistedMinter.functions
-        .mintSLDToDefaultResolver(coinbaseAddress, expectedLabel, [], [])
+      const expectedDomainName = `${expectedLabel}.${testTld}`;
+      await mintingManager.functions
+        .mintSLD(coinbaseAddress, expectedLabel)
         .then((receipt) => receipt.wait());
       await EthereumTestsHelper.mineBlocksForConfirmation();
 
@@ -222,9 +225,9 @@ describe('UnsUpdater', () => {
 
     it('should not add domain with spaces', async () => {
       const expectedLabel = `    ${randomBytes(16).toString('hex')}   `;
-      const expectedDomainName = `${expectedLabel}.blockchain`;
-      await whitelistedMinter.functions
-        .mintSLDToDefaultResolver(coinbaseAddress, expectedDomainName, [], [])
+      const expectedDomainName = `${expectedLabel}.${testTld}`;
+      await mintingManager.functions
+        .mintSLD(coinbaseAddress, testTldHash, expectedDomainName)
         .then((receipt) => receipt.wait());
       await EthereumTestsHelper.mineBlocksForConfirmation();
 
@@ -237,11 +240,11 @@ describe('UnsUpdater', () => {
 
   describe('domain records', () => {
     it('should reset records if Sync event with zero updateId received', async () => {
-      await resolver.functions
+      await registry.functions
         .set('hello', 'world', testTokenId)
         .then((receipt) => receipt.wait());
 
-      await resolver.functions
+      await registry.functions
         .reset(testTokenId)
         .then((receipt) => receipt.wait());
       await EthereumTestsHelper.mineBlocksForConfirmation();
@@ -254,8 +257,8 @@ describe('UnsUpdater', () => {
 
     it('should get all domain records when domain was sent via setOwner method', async () => {
       const account = await EthereumTestsHelper.createAccount();
-      await resolver.functions
-        .reconfigure(
+      await registry.functions
+        .set(
           ['crypto.ETH.address'],
           ['0x829BD824B016326A401d083B33D092293333A830'],
           testTokenId,

@@ -4,7 +4,7 @@ import { env } from '../../env';
 import { EthereumProvider } from '../EthereumProvider';
 import { Domain, WorkerStatus } from '../../models';
 import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
-import { CryptoSmartContracts } from '../../utils/testing/CryptoSmartContracts';
+import { CnsSmartContracts } from '../../utils/testing/CnsSmartContracts';
 import { CnsResolver } from './CnsResolver';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
@@ -17,7 +17,7 @@ describe('CnsResolver', () => {
   let resolver: Contract;
   let legacyResolver: Contract;
   let whitelistedMinter: Contract;
-  let contracts: CryptoSmartContracts;
+  let contracts: CnsSmartContracts;
   let coinbaseAddress: string;
 
   let testDomainName: string;
@@ -68,7 +68,7 @@ describe('CnsResolver', () => {
   const AddressZero = '0x0000000000000000000000000000000000000000';
 
   before(async () => {
-    contracts = await EthereumTestsHelper.initializeContractsAndStub();
+    contracts = await EthereumTestsHelper.initializeCnsContractsAndStub();
     coinbaseAddress = await EthereumProvider.getSigner().getAddress();
     registry = contracts.registry;
     resolver = contracts.resolver;
