@@ -72,7 +72,7 @@ export class UnsSmartContracts {
     const networks = {
       [env.APPLICATION.ETHEREUM.CHAIN_ID]: {
         contracts: {
-          Registry: {
+          UNSRegistry: {
             address: this.registry?.address,
             legacyAddresses: [],
           },

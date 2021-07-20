@@ -1,5 +1,5 @@
 import { Contract } from 'ethers';
-import registryJson from 'uns/artifacts/Registry.json';
+import registryJson from 'uns/artifacts/UNSRegistry.json';
 import NetworkConfig from 'uns/uns-config.json';
 import { EthereumProvider } from '../workers/EthereumProvider';
 import { env } from '../env';
