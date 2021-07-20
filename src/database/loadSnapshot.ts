@@ -2,7 +2,8 @@ import { execSync } from 'child_process';
 import { logger } from '../logger';
 import { env } from '../env';
 import {
-  CnsRegistryEvent,
+  UnsEvent,
+  CnsEvent,
   Domain,
   ZnsTransaction,
   WorkerStatus,
@@ -11,7 +12,8 @@ import {
 export async function loadSnapshot(): Promise<void> {
   // Check if there is data in DB
   if (
-    (await CnsRegistryEvent.count()) > 0 ||
+    (await UnsEvent.count()) > 0 ||
+    (await CnsEvent.count()) > 0 ||
     (await ZnsTransaction.count()) > 0 ||
     (await Domain.count()) > 2
   ) {
@@ -35,7 +37,7 @@ export async function loadSnapshot(): Promise<void> {
 
   // Check snapshot results
   if (
-    (await CnsRegistryEvent.count()) !== env.TYPEORM.SNAPSHOT.cnsEventsCount ||
+    (await CnsEvent.count()) !== env.TYPEORM.SNAPSHOT.cnsEventsCount ||
     (await ZnsTransaction.count()) !==
       env.TYPEORM.SNAPSHOT.znsTransactionsCount ||
     (await Domain.count()) !== env.TYPEORM.SNAPSHOT.domainsCount

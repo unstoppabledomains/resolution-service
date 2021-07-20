@@ -2,13 +2,15 @@ import { ethers, Wallet, BigNumber } from 'ethers';
 import * as ContractsModule from '../../contracts';
 import { EthereumProvider } from '../../workers/EthereumProvider';
 import * as sinon from 'sinon';
-import { CryptoSmartContracts } from './CryptoSmartContracts';
+import { CnsSmartContracts } from './CnsSmartContracts';
+import { UnsSmartContracts } from './UnsSmartContracts';
 import { env } from '../../env';
 
 const FundingAmount: BigNumber = ethers.utils.parseUnits('100', 'ether');
 
 export class EthereumTestsHelper {
-  private static smartContracts?: CryptoSmartContracts;
+  private static cnsSmartContracts?: CnsSmartContracts;
+  private static unsSmartContracts?: UnsSmartContracts;
 
   static async fundAddress(
     address: string,
@@ -35,18 +37,33 @@ export class EthereumTestsHelper {
     }
   }
 
-  static async initializeContractsAndStub(
+  static async initializeCnsContractsAndStub(
     allowedMintingAddresses: string[] = [],
-  ): Promise<CryptoSmartContracts> {
-    if (!EthereumTestsHelper.smartContracts) {
-      EthereumTestsHelper.smartContracts = new CryptoSmartContracts();
-      await EthereumTestsHelper.smartContracts.deployAll(
+  ): Promise<CnsSmartContracts> {
+    if (!EthereumTestsHelper.cnsSmartContracts) {
+      EthereumTestsHelper.cnsSmartContracts = new CnsSmartContracts();
+      await EthereumTestsHelper.cnsSmartContracts.deployAll(
         allowedMintingAddresses,
       );
       sinon
         .stub(ContractsModule, 'CNS')
-        .value(EthereumTestsHelper.smartContracts.getConfig());
+        .value(EthereumTestsHelper.cnsSmartContracts.getConfig());
     }
-    return EthereumTestsHelper.smartContracts;
+    return EthereumTestsHelper.cnsSmartContracts;
+  }
+
+  static async initializeUnsContractsAndStub(
+    allowedMintingAddresses: string[] = [],
+  ): Promise<UnsSmartContracts> {
+    if (!EthereumTestsHelper.unsSmartContracts) {
+      EthereumTestsHelper.unsSmartContracts = new UnsSmartContracts();
+      await EthereumTestsHelper.unsSmartContracts.deployAll(
+        allowedMintingAddresses,
+      );
+      sinon
+        .stub(ContractsModule, 'UNS')
+        .value(EthereumTestsHelper.unsSmartContracts.getConfig());
+    }
+    return EthereumTestsHelper.unsSmartContracts;
   }
 }

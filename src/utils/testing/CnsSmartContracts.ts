@@ -12,7 +12,7 @@ import uriPrefixControllerJson from 'dot-crypto/truffle-artifacts/URIPrefixContr
 import whitelistedMinterJson from 'dot-crypto/truffle-artifacts/WhitelistedMinter.json';
 import domainZoneControllerJson from 'dot-crypto/truffle-artifacts/DomainZoneController.json';
 
-export class CryptoSmartContracts {
+export class CnsSmartContracts {
   private checkContractInitialized(contract: Contract | undefined): Contract {
     if (!contract) {
       throw Error('Contracts not initialized');
