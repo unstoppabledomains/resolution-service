@@ -1,11 +1,13 @@
 import { Contract } from 'ethers';
 import registryJson from 'uns/artifacts/UNSRegistry.json';
+import mintingManagerJson from 'uns/artifacts/MintingManager.json';
 import NetworkConfig from 'uns/uns-config.json';
 import { EthereumProvider } from '../workers/EthereumProvider';
 import { env } from '../env';
 
 const abiMap = {
   UNSRegistry: registryJson.abi,
+  MintingManager: mintingManagerJson.abi,
 } as { [key: string]: any };
 
 const cache = {} as { [key: string]: Contract };

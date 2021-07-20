@@ -1,6 +1,6 @@
 import { Contract, ContractFactory } from 'ethers';
 import { env } from '../../env';
-import { getCryptoConfig } from '../../contracts';
+import { getUnsConfig } from '../../contracts';
 import { EthereumProvider } from '../../workers/EthereumProvider';
 
 import registryJson from 'uns/artifacts/UNSRegistry.json';
@@ -84,9 +84,6 @@ export class UnsSmartContracts {
       },
     };
 
-    return getCryptoConfig(
-      env.APPLICATION.ETHEREUM.CHAIN_ID.toString(),
-      networks,
-    );
+    return getUnsConfig(env.APPLICATION.ETHEREUM.CHAIN_ID.toString(), networks);
   }
 }
