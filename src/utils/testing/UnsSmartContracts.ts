@@ -40,20 +40,17 @@ export class UnsSmartContracts {
     txPromises.push(mintingManagerFactory.deploy());
 
     [this._registry, this._mintingManager] = await Promise.all(txPromises);
-
-    await Promise.all([
-      this.registry?.functions
-        .initialize(this.mintingManager?.address)
-        .then((receipt) => receipt.wait()),
-      this.mintingManager?.functions
-        .initialize(
-          this.registry?.address,
-          '0x0000000000000000000000000000000000000000',
-          '0x0000000000000000000000000000000000000000',
-          '0x0000000000000000000000000000000000000000',
-        )
-        .then((receipt) => receipt.wait()),
-    ]);
+    await this.registry?.functions
+      .initialize(this.mintingManager?.address)
+      .then((receipt) => receipt.wait());
+    await this.mintingManager?.functions
+      .initialize(
+        this.registry?.address,
+        '0x0000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000',
+      )
+      .then((receipt) => receipt.wait());
 
     for (const mintingAddress of allowedMintingAddresses) {
       await this.mintingManager?.functions
