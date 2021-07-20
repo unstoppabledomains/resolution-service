@@ -1,5 +1,5 @@
 import { Factory } from 'typeorm-factory';
-import { CnsRegistryEvent, ZnsTransaction } from '../../models';
+import { CnsEvent, ZnsTransaction } from '../../models';
 import { randomBytes } from 'crypto';
 
 function randomHex(
@@ -9,15 +9,12 @@ function randomHex(
   return (options.prefix ? '0x' : '') + randomBytes(length).toString('hex');
 }
 
-export const CnsRegistryEventFactory = new Factory(CnsRegistryEvent)
+export const CnsEventFactory = new Factory(CnsEvent)
   .attr('type', 'Transfer')
   .sequence('blockchainId', () => `log_${randomHex(8, { prefix: false })}`)
   .sequence('transactionHash', () => randomHex(64))
   .sequence('logIndex', (i) => i - 1)
-  .sequence(
-    'blockNumber',
-    (i) => CnsRegistryEvent.InitialBlock + Math.floor(i * 1.2),
-  )
+  .sequence('blockNumber', (i) => CnsEvent.InitialBlock + Math.floor(i * 1.2))
   .attr('returnValues', {});
 
 export const ZnsTransactionFactory = new Factory(ZnsTransaction)
