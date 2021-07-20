@@ -213,7 +213,7 @@ describe('UnsUpdater', () => {
       const expectedLabel = `${randomBytes(16).toString('hex')}-AAA`;
       const expectedDomainName = `${expectedLabel}.${testTld}`;
       await mintingManager.functions
-        .mintSLD(coinbaseAddress, expectedLabel)
+        .mintSLD(coinbaseAddress, testTldHash, expectedLabel)
         .then((receipt) => receipt.wait());
       await EthereumTestsHelper.mineBlocksForConfirmation();
 
