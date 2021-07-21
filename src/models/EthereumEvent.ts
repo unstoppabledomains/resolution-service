@@ -36,7 +36,12 @@ export const CnsEventTypes = [
   'NewURIPrefix',
 ];
 
-export const UnsDomainOperationTypes = ['Transfer', 'NewURI', 'ResetRecords'];
+export const UnsDomainOperationTypes = [
+  'Transfer',
+  'NewURI',
+  'Set',
+  'ResetRecords',
+];
 export const UnsEventTypes = [
   ...UnsDomainOperationTypes,
   'Approval',
