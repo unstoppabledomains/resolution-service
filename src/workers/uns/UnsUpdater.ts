@@ -64,6 +64,7 @@ export class UnsUpdater {
       if (event.args?.to === Domain.NullAddress) {
         domain.ownerAddress = null;
         domain.resolution = {};
+        domain.resolver = null;
         await domainRepository.save(domain);
       } else {
         const owner = event.args?.to.toLowerCase();
@@ -111,7 +112,7 @@ export class UnsUpdater {
       node: eip137Namehash(uri),
       location: 'UNSL1',
       ownerAddress: this.lastProcessedEvent.args?.to.toLowerCase(),
-      resolver: this.registry.address,
+      resolver: Domain.normalizeResolver(this.registry.address),
     });
     await domainRepository.save(domain);
   }

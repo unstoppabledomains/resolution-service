@@ -114,12 +114,14 @@ describe('UnsUpdater', () => {
       expect(domain?.ownerAddress).to.be.equal(recipientAddress.toLowerCase());
 
       expect(await UnsEvent.groupCount('type')).to.deep.equal({
+        Approval: 1,
         NewURI: 1,
+        ResetRecords: 1,
         Transfer: 2,
       });
     });
 
-    it('processes resolution events', async () => {
+    it('processes set events', async () => {
       await registry.functions
         .setMany(
           ['crypto.BTC.address'],
@@ -134,6 +136,7 @@ describe('UnsUpdater', () => {
       const domain = await Domain.findOne({ name: testDomainName });
       expect(domain).to.containSubset({
         name: testDomainName,
+        location: 'UNSL1',
         resolver: registry.address.toLowerCase(),
         resolution: {
           'crypto.BTC.address': 'qp3gu0flg7tehyv73ua5nznlw8s040nz3uqnyffrcn',
@@ -170,7 +173,9 @@ describe('UnsUpdater', () => {
       });
 
       expect(await UnsEvent.groupCount('type')).to.deep.equal({
+        Approval: 1,
         NewURI: 1,
+        ResetRecords: 1,
         Transfer: 2,
       });
     });
@@ -187,6 +192,7 @@ describe('UnsUpdater', () => {
       await service.run();
 
       expect(await UnsEvent.groupCount('type')).to.deep.equal({
+        Approval: 1,
         NewURI: 1,
         Transfer: 1,
       });
@@ -259,8 +265,8 @@ describe('UnsUpdater', () => {
       const account = await EthereumTestsHelper.createAccount();
       await registry.functions
         .set(
-          ['crypto.ETH.address'],
-          ['0x829BD824B016326A401d083B33D092293333A830'],
+          'crypto.ETH.address',
+          '0x829BD824B016326A401d083B33D092293333A830',
           testTokenId,
         )
         .then((receipt) => receipt.wait());
