@@ -55,6 +55,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
+      NODE_ENV: test
       RESOLUTION_POSTGRES_DATABASE: 'resolution_service_test'
       RESOLUTION_POSTGRES_HOST: 'localhost'
       RESOLUTION_POSTGRES_USERNAME: 'postgres'
