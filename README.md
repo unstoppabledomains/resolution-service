@@ -143,16 +143,14 @@ yarn start:dev
 
 
 ### Running unit tests
-Unit tests can be run using `yarn test:local`. This command will run the tests with ENV variables set in `./local.test.env` file. You could redefine any env variable in yours local environment if needed, for example: `export RESOLUTION_POSTGRES_PASSWORD=password`. Testing command will take this variable first instead of using variable from `./local.test.env` file.  
+
+> Make sure you've started Ethereum emulator before running the tests: `yarn ganache-cli`
+
+Unit tests can be run using `yarn test`. This command will run the tests with ENV variables set in `./local.test.env` file. You could redefine any env variable in yours local environment if needed, for example: `export RESOLUTION_POSTGRES_PASSWORD=password`. Testing command will take this variable first instead of using variable from `./local.test.env` file.  
 
 For checking coverage use `yarn test:coverage`.
 
 Unit/integration tests use a postgres database that is cleaned before each test. By default, the database name is `resolution_service_test`.
-
-The tests also use an Ethereum node to test interaction with smart contracts. By default ganache is used. But geth in dev mode is also available. There are several commands available to start an ethereum node: 
- - `yarn ethereum:docker:start` - starts a `geth` node in docker.
- - `yarn ethereum:docker:stop` - stops a `geth` node that was launched previously.
- - `yarn ethereum:ganache:start` - starts `ganache-cli` in the background. The command outputs PID of the started ganache process so it can be killed later.
 
 ### Service architecture
 

@@ -14,14 +14,10 @@
     "src": "./src"
   },
   "scripts": {
-    "test:ci": "GANACHE_PID=$(yarn --silent ethereum:ganache:start) && mocha && kill $GANACHE_PID",
-    "test:local": "dotenv -e local.test.env -- mocha",
-    "test:coverage": "NODE_ENV=test nyc --reporter=text yarn test:local",
+    "test": "dotenv -e local.test.env -- mocha",
+    "test:coverage": "NODE_ENV=test nyc --reporter=text yarn test",
     "build": "tsc",
     "start:dev": "ts-node src/index.ts",
-    "ethereum:ganache:start": "ganache-cli >/dev/null & GANACHE_PID=$! && echo $GANACHE_PID && sleep 5",
-    "ethereum:docker:start": "docker run -d -p 8545:8545 ethereum/client-go:v1.9.24 -dev -dev.period 0 -rpc -rpcport 8545 --rpcaddr 0.0.0.0 --wsaddr 0.0.0.0  --miner.gastarget 0x2014103 -keystore geth -password '' --allow-insecure-unlock --rpcapi eth,web3,personal",
-    "ethereum:docker:stop": "docker stop `docker ps --filter 'ancestor=ethereum/client-go:v1.9.24' -q`",
     "fix": "yarn prettier:fix && yarn eslint:fix",
     "lint": "yarn build:check && yarn prettier:check && yarn eslint:check",
     "build:check": "tsc --noEmit",
