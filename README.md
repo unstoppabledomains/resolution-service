@@ -54,7 +54,7 @@ This is the minimum required set of configurations for the service. Additional c
 
 ## Running the service
 
-Once the service is started, it will perform initial synchronization with the blockchain networks. It may take more than 24 hours for a full synchronization. To speed up the process, a snapshot of the database is provided by Unstoppable domains: [TBD](snapshot-file-location). The snapshot is loaded by default using the `LOAD_SNAPSHOT` running mode (see [Running modes](README.md#running-modes)).
+Once the service is started, it will perform initial synchronization with the blockchain networks. It may take more than 24 hours for a full synchronization. To speed up the process, a snapshot of the database is provided by Unstoppable domains: [PostgreSQL dump](https://github.com/unstoppabledomains/resolution-service/blob/master/resolution_service.dump). The snapshot is loaded by default using the `LOAD_SNAPSHOT` running mode (see [Running modes](README.md#running-modes)).
 During the initial synchronization the API may not work reliably. The status of synchronization can be checked using the `/status` endpoint. After the synchronization is complete, the service API endpoints can be accessed normally. 
 Note that the service is stateless, so the container doesn't need any persistent storage. All data is stored in the database.
 
@@ -67,6 +67,7 @@ RESOLUTION_POSTGRES_HOST | localhost | :heavy_check_mark:	| Host for the postgre
 RESOLUTION_POSTGRES_USERNAME | postgres | :heavy_check_mark:	| Username that is used to connect to postgres.
 RESOLUTION_POSTGRES_PASSWORD | secret | :heavy_check_mark:	| Password that is used to connect to postgres.
 RESOLUTION_POSTGRES_DATABASE | resolution_service | :heavy_check_mark:	| Database name in postgres.
+RESOLUTION_POSTGRES_PORT | 5432 | :x:	| Port number for Postgres database.
 CNS_CONFIRMATION_BLOCKS | 3 | :x:	| Number of blocks that the service will wait before accepting an event from the CNS contract. This helps to avoid block reorgs, forks, etc.
 CNS_BLOCK_FETCH_LIMIT | 1000 | :x:	| Batch limit for fetching event data from the Ethereum JSON RPC. Note that some API providers may limit the amount of data that can be returned in a single request. So this number should be kept relatively low. However, raising this limit should speed up synchronization if a dedicated node is used with the service.
 CNS_RECORDS_PER_PAGE | 100 | :x:	| Batch limit for fetching domain records from CNS registry smart contract.
@@ -100,7 +101,7 @@ RESOLUTION_RUNNING_MODE=API,CNS_WORKER
 
 ## API reference
 
-The full api reference can be found [here](link-to-openapi-spec)
+The full api reference [OpenAPI specification](http://resolve.unstoppabledomains.com/api-docs/)
 
 Endpoint | Description
 ---------|------------
@@ -126,20 +127,25 @@ nvm use 14.16.1
 yarn install
 ```
 2. Configure environment variables.\
-The required variables are the same as running the service in docker.
+The required variables are the same as running the service in docker. To simplify development it's recommended to set additional ENV variables mentioned in `./local.dev.env` file.
 ```
 RESOLUTION_POSTGRES_HOST=localhost
 RESOLUTION_POSTGRES_USERNAME=postgres
 RESOLUTION_POSTGRES_PASSWORD=password
+RESOLUTION_POSTGRES_DATABASE=password
 ETHEREUM_JSON_RPC_API_URL=localhost
+VIEWBLOCK_API_KEY=apikey
 ```
 3. Run the service
 ```
 yarn start:dev
 ```
 
+
 ### Running unit tests
-Unit tests can be run using `yarn test`. For checking coverage use `yarn test:coverage`.
+Unit tests can be run using `yarn test:local`. This command will run the tests with ENV variables set in `./local.test.env` file. You could redefine any env variable in yours local environment if needed, for example: `export RESOLUTION_POSTGRES_PASSWORD=password`. Testing command will take this variable first instead of using variable from `./local.test.env` file.  
+
+For checking coverage use `yarn test:coverage`.
 
 Unit/integration tests use a postgres database that is cleaned before each test. By default, the database name is `resolution_service_test`.
 
@@ -153,7 +159,7 @@ The tests also use an Ethereum node to test interaction with smart contracts. By
 ![Architecture chart](doc/ResolutionService.png)
 
 The service currently consists of three main components: API, and two workers.
-The API component is a basic HTTP API that allows reading domain data from the database. The OpenAPI specification can be found [here](link-to-openapi-spec).
+The API component is a basic HTTP API that allows reading domain data from the database. The OpenAPI specification: [OpenAPI specification](http://resolve.unstoppabledomains.com/api-docs/).
 
 Currently there are two workers in the resolution service:
  - CNS worker\

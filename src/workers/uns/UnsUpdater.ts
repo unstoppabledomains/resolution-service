@@ -8,6 +8,7 @@ import { UNS } from '../../contracts';
 import { eip137Namehash } from '../../utils/namehash';
 import { UnsUpdaterError } from '../../errors/UnsUpdaterError';
 import { EthereumProvider } from '../EthereumProvider';
+import { unwrap } from '../../utils/option';
 
 export class UnsUpdater {
   private registry: Contract = UNS.UNSRegistry.getContract();
@@ -67,8 +68,7 @@ export class UnsUpdater {
         domain.resolver = null;
         await domainRepository.save(domain);
       } else {
-        const owner = event.args?.to.toLowerCase();
-        domain.ownerAddress = owner;
+        domain.ownerAddress = event.args?.to.toLowerCase();
         await domainRepository.save(domain);
       }
     }
@@ -136,17 +136,17 @@ export class UnsUpdater {
     event: Event,
     domainRepository: Repository<Domain>,
   ): Promise<void> {
-    const node = UnsEvent.tokenIdToNode(event.args?.tokenId);
+    const args = unwrap(event.args);
+    // For some reason ethers got a problem with assigning names for this event.
+    const [tokenId, , , key, value] = args;
+    const node = UnsEvent.tokenIdToNode(tokenId);
     const domain = await Domain.findByNode(node, domainRepository);
     if (!domain) {
       throw new UnsUpdaterError(
         `Set event was not processed. Could not find domain for ${node}`,
       );
     }
-    domain.resolution = {
-      ...domain.resolution,
-      [event.args?.key]: event.args?.value,
-    };
+    domain.resolution[key] = value;
     await domainRepository.save(domain);
   }
 
@@ -217,7 +217,7 @@ export class UnsUpdater {
     logger.info('UnsUpdater is pulling updates from Ethereum');
     const fromBlock = Math.max(
       await UnsUpdater.getLatestMirroredBlock(),
-      UnsEvent.InitialBlock,
+      env.APPLICATION.ETHEREUM.UNS_REGISTRY_EVENTS_STARTING_BLOCK,
     );
     const toBlock =
       (await UnsUpdater.getLatestNetworkBlock()) -

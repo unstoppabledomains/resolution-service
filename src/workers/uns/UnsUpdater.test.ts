@@ -27,8 +27,6 @@ describe('UnsUpdater', () => {
   let testDomainLabel: string;
   let testDomainNode: BigNumber;
 
-  const AddressZero = '0x0000000000000000000000000000000000000000';
-
   before(async () => {
     coinbaseAddress = await EthereumProvider.getSigner().getAddress();
     contracts = await EthereumTestsHelper.initializeUnsContractsAndStub([
@@ -145,6 +143,7 @@ describe('UnsUpdater', () => {
 
       expect(await UnsEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
+        Set: 1,
         Transfer: 1,
       });
     });
@@ -175,6 +174,7 @@ describe('UnsUpdater', () => {
       expect(await UnsEvent.groupCount('type')).to.deep.equal({
         Approval: 1,
         NewURI: 1,
+        Set: 1,
         ResetRecords: 1,
         Transfer: 2,
       });

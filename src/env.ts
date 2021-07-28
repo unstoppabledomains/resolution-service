@@ -8,7 +8,10 @@ if (!process.env.RESOLUTION_POSTGRES_HOST) {
 if (!process.env.RESOLUTION_POSTGRES_USERNAME) {
   requiredEnvNotSet.push('RESOLUTION_POSTGRES_USERNAME');
 }
-if (!process.env.RESOLUTION_POSTGRES_PASSWORD) {
+if (
+  !process.env.RESOLUTION_POSTGRES_PASSWORD &&
+  process.env.RESOLUTION_POSTGRES_PASSWORD != ''
+) {
   requiredEnvNotSet.push('RESOLUTION_POSTGRES_PASSWORD');
 }
 if (!process.env.RESOLUTION_POSTGRES_DATABASE) {
@@ -94,6 +97,7 @@ export const env = {
     username: process.env.RESOLUTION_POSTGRES_USERNAME,
     password: process.env.RESOLUTION_POSTGRES_PASSWORD,
     database: process.env.RESOLUTION_POSTGRES_DATABASE,
+    port: Number(process.env.RESOLUTION_POSTGRES_PORT || 5432),
     entities: [
       path.join(__dirname, './models/index.ts'),
       path.join(__dirname, './models/index.js'),

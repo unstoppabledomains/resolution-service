@@ -59,6 +59,7 @@ jobs:
       RESOLUTION_POSTGRES_HOST: 'localhost'
       RESOLUTION_POSTGRES_USERNAME: 'postgres'
       RESOLUTION_POSTGRES_PASSWORD: secret
+      RESOLUTION_POSTGRES_PORT: 5432
       VIEWBLOCK_API_KEY: 'test'
       ETHEREUM_JSON_RPC_API_URL: 'http://localhost:8545'
 
@@ -104,7 +105,7 @@ jobs:
         run: NODE_ENV=test yarn db:migration:run
 
       - name: Run test
-        run: yarn test
+        run: yarn test:ci
 
       - name: Check snapshot
         run: NODE_ENV=test yarn db:snapshot:check
