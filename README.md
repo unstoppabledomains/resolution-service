@@ -111,6 +111,15 @@ GET /status | Gets the synchronization status.
 GET /api-docs | Returns a swagger documentation page.
 
 ## Development notes
+### Database schema changes
+To change database schema (adding new migrations) you have to create a new database dump with new database schema. In order to do this please follow the next steps:
+1. Run `yarn db:snapshot:load` command to restore database from the dump (`resolution_service.dump`). If command fails - re-create local database and try again.
+2. Create new migrations: `yarn db:migration:sync` or `yarn db:migration:new`
+   **IMPORTANT: make sure that you don't remove any data in the new migrations - avoid `DROP`, `TRUNCATE`, `DELETE` SQL commands.**
+3. Apply new migrations to the database filled with dump data.   
+4. Create a new dump using `yarn db:snapshot:create`
+5. Check snapshot using: `yarn db:snapshot:check`
+
 ### Development pre-requirements
 The dev. environment has generally the same pre-requirements as running the service normally. So, postgres and docker are also necessary.
 For convenience postgres configuration can be the same as defaults (username - postgres, password - secret).
