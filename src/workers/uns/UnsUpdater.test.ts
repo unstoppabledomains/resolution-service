@@ -174,7 +174,6 @@ describe('UnsUpdater', () => {
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         Approval: 1,
         NewURI: 1,
-        Set: 1,
         ResetRecords: 1,
         Transfer: 2,
       });

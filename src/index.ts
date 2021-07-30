@@ -7,7 +7,6 @@ import('newrelic');
 const runningMode = env.APPLICATION.RUNNING_MODE;
 import connect from './database/connect';
 import { startWorker as startUnsWorker } from './workers/uns/UnsUpdater';
-import { startWorker as startCnsWorker } from './workers/cns/CnsUpdater';
 import ZnsUpdater from './workers/ZnsUpdater';
 import { loadSnapshot } from './database/loadSnapshot';
 
@@ -26,11 +25,6 @@ connect().then(async () => {
   if (runningMode.includes('UNS_WORKER')) {
     startUnsWorker();
     logger.info('UNS worker is enabled and running');
-  }
-
-  if (runningMode.includes('CNS_WORKER')) {
-    startCnsWorker();
-    logger.info('CNS worker is enabled and running');
   }
 
   if (runningMode.includes('ZNS_WORKER')) {
