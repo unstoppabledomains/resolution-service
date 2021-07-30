@@ -1,5 +1,5 @@
 import ZnsProvider, { ZnsTx } from './ZnsProvider';
-import { EntityManager, getConnection, Repository } from 'typeorm';
+import { EntityManager, getConnection, Repository, QueryRunner } from 'typeorm';
 import { Domain, WorkerStatus } from '../../models';
 import ZnsTransaction, {
   NewDomainEvent,
@@ -10,6 +10,7 @@ import { logger } from '../../logger';
 import { isBech32 } from '@zilliqa-js/util/dist/validation';
 import { fromBech32Address } from '@zilliqa-js/crypto';
 import Bugsnag from '@bugsnag/js';
+import { ZnsTransactionEvent } from '../../models/ZnsTransaction';
 
 type ZnsWorkerOptions = {
   perPage?: number;
@@ -46,6 +47,7 @@ export default class ZnsWorker {
   async run(): Promise<void> {
     const lastAtxuid = await this.getLastAtxuid();
     let atxuidFrom = lastAtxuid + 1;
+    const queryRunner = getConnection().createQueryRunner();
     // eslint-disable-next-line no-constant-condition
     while (true) {
       const atxuidTo = atxuidFrom + this.perPage - 1;
@@ -54,69 +56,89 @@ export default class ZnsWorker {
         atxuidTo,
       );
 
-      await getConnection().transaction(async (manager) => {
-        for (const transaction of transactions) {
-          await this.processTransaction(transaction, manager);
-        }
-
-        if (transactions && transactions[transactions.length - 1]) {
-          await this.saveWorkerStatus(
-            transactions[transactions.length - 1].blockNumber,
-            transactions[transactions.length - 1].atxuid,
-            manager,
+      for (const transaction of transactions) {
+        try {
+          await this.processTransaction(transaction, queryRunner);
+        } catch (error) {
+          Bugsnag.notify(error);
+          logger.error(
+            `Failed to process Transaction ${JSON.stringify(transaction)}`,
           );
+          await queryRunner.rollbackTransaction();
         }
-      });
+      }
 
       if (transactions.length < this.perPage) {
         break;
       }
+
       atxuidFrom = transactions[transactions.length - 1].atxuid + 1;
     }
+    await queryRunner.release();
   }
 
-  private async processTransaction(transaction: ZnsTx, manager: EntityManager) {
-    const domainRepository = manager.getRepository(Domain);
-    const znsTx = new ZnsTransaction({
-      hash: transaction.hash,
-      blockNumber: transaction.blockNumber,
-      atxuid: transaction.atxuid,
-      events: transaction.events,
-    });
+  private async processTransaction(
+    transaction: ZnsTx,
+    queryRunner: QueryRunner,
+  ) {
+    await queryRunner.startTransaction();
     const events = transaction.events;
     events.reverse();
+
     for (const event of events) {
       try {
-        switch (event.name) {
-          case 'NewDomain': {
-            await this.parseNewDomainEvent(
-              event as NewDomainEvent,
-              domainRepository,
-            );
-            break;
-          }
-          case 'Configured': {
-            await this.parseConfiguredEvent(
-              event as ConfiguredEvent,
-              domainRepository,
-            );
-            break;
-          }
-        }
+        await this.processTransactionEvent(event, queryRunner);
       } catch (error) {
         Bugsnag.notify(error);
         logger.error(`Failed to process event. ${JSON.stringify(event)}`);
         logger.error(error);
       }
     }
-    await znsTx.save();
+
+    await this.saveZnsTransaction(transaction, queryRunner);
+    await this.saveWorkerStatus(
+      transaction.blockNumber,
+      transaction.atxuid,
+      queryRunner.manager,
+    );
+    await queryRunner.commitTransaction();
+  }
+
+  private async processTransactionEvent(
+    event: ZnsTransactionEvent,
+    queryRunner: QueryRunner,
+  ): Promise<void> {
+    switch (event.name) {
+      case 'NewDomain': {
+        await this.parseNewDomainEvent(event as NewDomainEvent, queryRunner);
+        break;
+      }
+      case 'Configured': {
+        await this.parseConfiguredEvent(event as ConfiguredEvent, queryRunner);
+        break;
+      }
+    }
+  }
+
+  private async saveZnsTransaction(
+    transaction: ZnsTx,
+    queryRunner: QueryRunner,
+  ): Promise<void> {
+    const znsTx = new ZnsTransaction({
+      hash: transaction.hash,
+      blockNumber: transaction.blockNumber,
+      atxuid: transaction.atxuid,
+      events: transaction.events,
+    });
+    await queryRunner.manager.getRepository(ZnsTransaction).save(znsTx);
   }
 
   private async parseNewDomainEvent(
     event: NewDomainEvent,
-    repository: Repository<Domain>,
+    queryRunner: QueryRunner,
   ): Promise<void> {
     const { label, parent } = event.params;
+    const repository = queryRunner.manager.getRepository(Domain);
     if (this.isInvalidLabel(label)) {
       throw new Error(
         `Invalid domain label ${label} at NewDomain event for ${parent}`,
@@ -137,9 +159,10 @@ export default class ZnsWorker {
 
   private async parseConfiguredEvent(
     event: ConfiguredEvent,
-    repository: Repository<Domain>,
+    queryRunner: QueryRunner,
   ): Promise<void> {
     const eventParams = event.params;
+    const repository = queryRunner.manager.getRepository(Domain);
     const { node } = eventParams;
     const owner = isBech32(eventParams.owner)
       ? fromBech32Address(eventParams.owner).toLowerCase()
