@@ -45,4 +45,7 @@ export const mochaHooks = {
     await fixtures();
     nock.cleanAll();
   },
+  async afterAll(): Promise<void> {
+    return getConnection().close();
+  },
 };
