@@ -1,7 +1,7 @@
 import { BigNumber, Contract } from 'ethers';
 import { randomBytes } from 'crypto';
 import { env } from '../../env';
-import { UnsEvent, Domain, WorkerStatus } from '../../models';
+import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import { EthereumProvider } from '../EthereumProvider';
 import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
 import { UnsSmartContracts } from '../../utils/testing/UnsSmartContracts';
@@ -89,7 +89,7 @@ describe('UnsUpdater', () => {
       const domain = await Domain.findOne({ name: testDomainName });
       expect(domain).to.not.be.undefined;
 
-      expect(await UnsEvent.groupCount('type')).to.deep.equal({
+      expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Transfer: 1,
       });
@@ -111,7 +111,7 @@ describe('UnsUpdater', () => {
       expect(domain).to.not.be.undefined;
       expect(domain?.ownerAddress).to.be.equal(recipientAddress.toLowerCase());
 
-      expect(await UnsEvent.groupCount('type')).to.deep.equal({
+      expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         Approval: 1,
         NewURI: 1,
         ResetRecords: 1,
@@ -141,7 +141,7 @@ describe('UnsUpdater', () => {
         },
       });
 
-      expect(await UnsEvent.groupCount('type')).to.deep.equal({
+      expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         NewURI: 1,
         Set: 1,
         Transfer: 1,
@@ -171,7 +171,7 @@ describe('UnsUpdater', () => {
         ownerAddress: null,
       });
 
-      expect(await UnsEvent.groupCount('type')).to.deep.equal({
+      expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         Approval: 1,
         NewURI: 1,
         Set: 1,
@@ -191,7 +191,7 @@ describe('UnsUpdater', () => {
 
       await service.run();
 
-      expect(await UnsEvent.groupCount('type')).to.deep.equal({
+      expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         Approval: 1,
         NewURI: 1,
         Transfer: 1,
