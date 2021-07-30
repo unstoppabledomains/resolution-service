@@ -17,6 +17,9 @@ Resolution service provides an API for getting domain data and metadata regardle
 
 The resolution service is provided as a docker image so it can be launched on a variety of platforms and in the cloud.
 
+## Resolution service endpoints
+- Production: http://resolve.unstoppabledomains.com/api-docs/
+
 ## Installation
 ### Pre-requirements
  - **git** - to clone the repository.
