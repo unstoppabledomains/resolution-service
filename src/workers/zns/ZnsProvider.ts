@@ -116,7 +116,9 @@ export default class ZnsProvider {
     });
 
     if (response.status !== 200) {
-      throw new Error(`ViewBlock API error: ${await response.json()}`);
+      throw new Error(
+        `ViewBlock API error: ${JSON.stringify(await response.json())}`,
+      );
     }
     return response.json();
   }
