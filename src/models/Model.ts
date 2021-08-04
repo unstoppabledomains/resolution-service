@@ -1,4 +1,10 @@
-import { IsDate, IsNumber, IsOptional, validate } from 'class-validator';
+import {
+  IsDate,
+  IsNumber,
+  IsOptional,
+  validate,
+  ValidationError,
+} from 'class-validator';
 import { logger } from '../logger';
 import {
   BaseEntity,
@@ -17,6 +23,7 @@ import connect from '../database/connect';
 import { Serialization, Serializer, Serialized } from '../services/Serializer';
 import { Attribute, Attributes, KeysOfType } from '../types/common';
 import ObjectInvalid from '../errors/ObjectInvalid';
+import { RelationMetadata } from 'typeorm/metadata/RelationMetadata';
 
 type ModelConstructor = {
   [P in keyof typeof Model]: typeof Model[P];
@@ -43,7 +50,7 @@ export default abstract class Model extends BaseEntity {
   static async persist<T extends Model>(
     this: ObjectType<T>,
     attributes: Attributes<T>,
-  ) {
+  ): Promise<T> {
     return (await (this as any).create(attributes).save()) as T;
   }
 
@@ -87,7 +94,10 @@ export default abstract class Model extends BaseEntity {
     return Serializer.serializeAll(array, ...attributes) as any;
   }
 
-  static relation<T>(this: ObjectType<T>, name: string) {
+  static relation<T>(
+    this: ObjectType<T>,
+    name: string,
+  ): RelationMetadata | undefined {
     const relations = getConnection().getMetadata(this).relations;
     return relations.find((r) => r.propertyName === name);
   }
@@ -146,25 +156,25 @@ export default abstract class Model extends BaseEntity {
     return data;
   }
 
-  protected async beforeValidate() {
+  protected async beforeValidate(): Promise<void> {
     // Can be overridden in a subclass.
   }
 
   @BeforeInsert()
   @BeforeUpdate()
-  async validateOrReject() {
+  async validateOrReject(): Promise<void> {
     const errors = await this.validate();
     if (errors.length) {
       throw new ObjectInvalid(this, errors);
     }
   }
 
-  async validate() {
+  async validate(): Promise<ValidationError[]> {
     await this.beforeValidate();
     return validate(this);
   }
 
-  async errorsOf(field: Attribute<this>) {
+  async errorsOf(field: Attribute<this>): Promise<ValidationError[]> {
     const errors = await this.validate();
     return errors.filter((e) => e.property === field);
   }
@@ -188,7 +198,9 @@ export default abstract class Model extends BaseEntity {
     return Serializer.serialize(this, ...attributes) as any;
   }
 
-  async update<T extends Model = this>(attributes: Attributes<T>) {
+  async update<T extends Model = this>(
+    attributes: Attributes<T>,
+  ): Promise<this> {
     this.attributes<T>(attributes);
     return this.save();
   }
@@ -206,7 +218,7 @@ export default abstract class Model extends BaseEntity {
     return `${this.constructor.name}#${this.id || 'new'}`;
   }
 
-  async saveNew(options?: SaveOptions) {
+  async saveNew(options?: SaveOptions): Promise<this> {
     return this.hasId() ? this : this.save(options);
   }
 
