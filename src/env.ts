@@ -54,21 +54,15 @@ export const env = {
       ),
       JSON_RPC_API_URL: process.env.ETHEREUM_JSON_RPC_API_URL,
       CHAIN_ID: Number(process.env.ETHEREUM_CHAIN_ID || 1),
-      UNS_CONFIRMATION_BLOCKS: Number(process.env.UNS_CONFIRMATION_BLOCKS || 3),
-      CNS_CONFIRMATION_BLOCKS: Number(process.env.CNS_CONFIRMATION_BLOCKS || 3),
-      CNS_BLOCK_FETCH_LIMIT: Number(process.env.CNS_BLOCK_FETCH_LIMIT || 500),
-      UNS_BLOCK_FETCH_LIMIT: Number(process.env.UNS_BLOCK_FETCH_LIMIT || 500),
+      CONFIRMATION_BLOCKS: Number(
+        process.env.ETHEREUM_CONFIRMATION_BLOCKS || 3,
+      ),
+      BLOCK_FETCH_LIMIT: Number(process.env.ETHEREUM_BLOCK_FETCH_LIMIT || 500),
       CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK: Number(
         process.env.CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK || 9080000,
       ),
-      CNS_RESOLVER_RECORDS_PER_PAGE: Number(
-        process.env.CNS_RECORDS_PER_PAGE || 100,
-      ),
-      UNS_REGISTRY_RECORDS_PER_PAGE: Number(
-        process.env.UNS_REGISTRY_RECORDS_PER_PAGE || 100,
-      ),
-      CNS_FETCH_INTERVAL: Number(process.env.CNS_FETCH_INTERVAL || 5000),
-      UNS_FETCH_INTERVAL: Number(process.env.UNS_FETCH_INTERVAL || 5000),
+      RECORDS_PER_PAGE: Number(process.env.ETHEREUM_RECORDS_PER_PAGE || 100),
+      FETCH_INTERVAL: Number(process.env.ETHEREUM_FETCH_INTERVAL || 5000),
     },
     ZILLIQA: {
       NETWORK: ZnsNetwork,

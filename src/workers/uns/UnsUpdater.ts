@@ -258,14 +258,10 @@ export class UnsUpdater {
     Object.entries(event?.args || []).forEach(([key, value]) => {
       values[key] = BigNumber.isBigNumber(value) ? value.toHexString() : value;
     });
-    let location = 'CNS';
     const contractAddress = event.address.toLowerCase();
-    if (contractAddress === UNS.UNSRegistry.address.toLowerCase()) {
-      location = 'UNSL1';
-    }
     await manager.getRepository(CnsRegistryEvent).save(
       new CnsRegistryEvent({
-        location,
+        contractAddress,
         type: event.event as CnsRegistryEvent['type'],
         blockNumber: event.blockNumber,
         logIndex: event.logIndex,
@@ -334,7 +330,7 @@ export class UnsUpdater {
     const fromBlock = await UnsUpdater.getLatestMirroredBlock();
     const toBlock =
       (await UnsUpdater.getLatestNetworkBlock()) -
-      env.APPLICATION.ETHEREUM.UNS_CONFIRMATION_BLOCKS;
+      env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS;
 
     logger.info(
       `[Current network block ${toBlock}]: Syncing mirror from ${fromBlock} to ${toBlock}`,
@@ -350,7 +346,7 @@ export class UnsUpdater {
 
     while (this.currentSyncBlock < toBlock) {
       const fetchBlock = Math.min(
-        this.currentSyncBlock + env.APPLICATION.ETHEREUM.UNS_BLOCK_FETCH_LIMIT,
+        this.currentSyncBlock + env.APPLICATION.ETHEREUM.BLOCK_FETCH_LIMIT,
         toBlock,
       );
 
@@ -378,5 +374,5 @@ export function startWorker(): void {
         `Unhandled error occured while processing UNS events: ${error}`,
       );
     }
-  }, env.APPLICATION.ETHEREUM.UNS_FETCH_INTERVAL);
+  }, env.APPLICATION.ETHEREUM.FETCH_INTERVAL);
 }

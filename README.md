@@ -68,10 +68,10 @@ RESOLUTION_POSTGRES_USERNAME | postgres | :heavy_check_mark:	| Username that is 
 RESOLUTION_POSTGRES_PASSWORD | secret | :heavy_check_mark:	| Password that is used to connect to postgres.
 RESOLUTION_POSTGRES_DATABASE | resolution_service | :heavy_check_mark:	| Database name in postgres.
 RESOLUTION_POSTGRES_PORT | 5432 | :x:	| Port number for Postgres database.
-CNS_CONFIRMATION_BLOCKS | 3 | :x:	| Number of blocks that the service will wait before accepting an event from the CNS contract. This helps to avoid block reorgs, forks, etc.
-CNS_BLOCK_FETCH_LIMIT | 1000 | :x:	| Batch limit for fetching event data from the Ethereum JSON RPC. Note that some API providers may limit the amount of data that can be returned in a single request. So this number should be kept relatively low. However, raising this limit should speed up synchronization if a dedicated node is used with the service.
-CNS_RECORDS_PER_PAGE | 100 | :x:	| Batch limit for fetching domain records from CNS registry smart contract.
-CNS_FETCH_INTERVAL | 5000 | :x:	| Specifies the interval to fetch data from the CNS registry in milliseconds.
+ETHEREUM_CONFIRMATION_BLOCKS | 3 | :x:	| Number of blocks that the service will wait before accepting an event from the CNS contract. This helps to avoid block reorgs, forks, etc.
+ETHEREUM_BLOCK_FETCH_LIMIT | 1000 | :x:	| Batch limit for fetching event data from the Ethereum JSON RPC. Note that some API providers may limit the amount of data that can be returned in a single request. So this number should be kept relatively low. However, raising this limit should speed up synchronization if a dedicated node is used with the service.
+ETHEREUM_RECORDS_PER_PAGE | 100 | :x:	| Batch limit for fetching domain records from CNS registry smart contract.
+ETHEREUM_FETCH_INTERVAL | 5000 | :x:	| Specifies the interval to fetch data from the CNS registry in milliseconds.
 CNS_REGISTRY_EVENTS_STARTING_BLOCK | 9080000 | :x:	| Starting block that is used to look for events in the CNS registry. This helps to avoid parsing old blockchain data, before the contract was even deployed.
 CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK | 9080000 | :x:	| Starting block that is used to look for events in the CNS registry.
 ETHEREUM_JSON_RPC_API_URL | - | :heavy_check_mark:	| Address of a JSON RPC provider. This can be a public API (e.g. infura), or a local ethereum node with JSON RPC enabled.

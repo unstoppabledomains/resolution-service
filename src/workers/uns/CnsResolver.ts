@@ -11,7 +11,7 @@ import {
 } from './BlockchainErrors';
 import { CnsResolverError } from '../../errors/CnsResolverError';
 
-const RecordsPerPage = env.APPLICATION.ETHEREUM.CNS_RESOLVER_RECORDS_PER_PAGE;
+const RecordsPerPage = env.APPLICATION.ETHEREUM.RECORDS_PER_PAGE;
 
 export class CnsResolver {
   private registry: Contract = CNS.Registry.getContract();
