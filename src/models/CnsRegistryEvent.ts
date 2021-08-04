@@ -8,20 +8,12 @@ import {
   ValidateIf,
   IsOptional,
 } from 'class-validator';
-import {
-  Column,
-  Entity,
-  Index,
-  MoreThan,
-  TableInheritance,
-  Not,
-} from 'typeorm';
+import { Column, Entity, Index, MoreThan, Not } from 'typeorm';
 import ValidateWith from '../services/ValidateWith';
 import { Attributes } from '../types/common';
 import Model from './Model';
 import { BigNumber } from '@ethersproject/bignumber';
-import { Location, DomainLocations } from './Domain';
-import { env } from '../env';
+import { CNS, UNS } from '../contracts';
 
 export const CnsDomainOperationTypes = [
   'Transfer',
@@ -59,16 +51,13 @@ const DomainOperationTypes = [
 type EventType = typeof EventTypes[any];
 
 @Entity({ name: 'cns_registry_events' })
-@TableInheritance({ column: { name: 'location' } })
 @Index(['blockNumber', 'logIndex'], { unique: true })
 export default class CnsRegistryEvent extends Model {
   static EventTypes = EventTypes;
   static DomainOperationTypes = DomainOperationTypes;
-  static location: Location;
 
-  @IsEnum(DomainLocations)
   @Column('text')
-  location: Location;
+  contractAddress: string;
 
   @IsEnum(EventTypes)
   @Column({ type: 'text' })
@@ -138,10 +127,18 @@ export default class CnsRegistryEvent extends Model {
   }
 
   domainOperation(): boolean {
-    if (this.location === 'CNS') {
+    if (
+      this.contractAddress ===
+      UNS.UNSRegistry.getContract().address.toLowerCase()
+    ) {
+      return this.type in UnsDomainOperationTypes;
+    }
+    if (
+      this.contractAddress === CNS.Registry.getContract().address.toLowerCase()
+    ) {
       return this.type in CnsDomainOperationTypes;
     }
-    return this.type in UnsDomainOperationTypes;
+    return false;
   }
 
   tokenId(): string | undefined {
