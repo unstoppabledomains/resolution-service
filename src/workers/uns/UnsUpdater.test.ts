@@ -74,7 +74,7 @@ describe('UnsUpdater', () => {
     const workerStatus = await WorkerStatus.findOne({ location: 'UNSL1' });
     const expectedBlockNumber =
       (await EthereumProvider.getBlockNumber()) -
-      env.APPLICATION.ETHEREUM.UNS_CONFIRMATION_BLOCKS;
+      env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS;
     expect(workerStatus).to.exist;
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(expectedBlockNumber);
   });
