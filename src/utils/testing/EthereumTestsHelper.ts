@@ -29,7 +29,7 @@ export class EthereumTestsHelper {
   }
 
   static async mineBlocksForConfirmation(): Promise<void> {
-    for (let i = 0; i < env.APPLICATION.ETHEREUM.CNS_CONFIRMATION_BLOCKS; i++) {
+    for (let i = 0; i < env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS; i++) {
       await EthereumTestsHelper.fundAddress(
         '0x000000000000000000000000000000000000dEaD',
         BigNumber.from(1),
