@@ -25,7 +25,7 @@ export default class ZnsWorker {
   }
 
   private async getLastAtxuid() {
-    const lastAtxuid = await WorkerStatus.latestAtxuidForWorker('ZNS');
+    const lastAtxuid = await WorkerStatus.latestAtxuidForWorker('ZIL');
     return lastAtxuid === undefined ? -1 : lastAtxuid;
   }
 
@@ -36,7 +36,7 @@ export default class ZnsWorker {
   ): Promise<void> {
     const repository = manager.getRepository(WorkerStatus);
     return WorkerStatus.saveWorkerStatus(
-      'ZNS',
+      'ZIL',
       latestBlock,
       latestAtxuid,
       repository,

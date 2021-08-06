@@ -19,7 +19,7 @@ let worker: ZnsWorker;
 
 describe('ZnsWorker', () => {
   beforeEach(async () => {
-    await WorkerStatus.saveWorkerStatus('CNS', 0, -1);
+    await WorkerStatus.saveWorkerStatus('ETH', 0, -1);
     worker = new ZnsWorker();
   });
 
@@ -54,7 +54,7 @@ describe('ZnsWorker', () => {
       expect(txfromDb?.atxuid).to.eq(transaction.atxuid);
     }
 
-    const workerStatus = await WorkerStatus.findOne({ location: 'ZNS' });
+    const workerStatus = await WorkerStatus.findOne({ location: 'ZIL' });
     expect(workerStatus).to.exist;
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(
       FirstTwoTransactions[0].blockHeight,
