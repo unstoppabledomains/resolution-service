@@ -182,7 +182,8 @@ export class EthUpdater {
     const args = unwrap(event.args);
     // For some reason ethers got a problem with assigning names for this event.
     const [, , , key, value] = args;
-    const node = CnsRegistryEvent.tokenIdToNode(event.args?.tokenId);
+    const tokenId = args[0];
+    const node = CnsRegistryEvent.tokenIdToNode(tokenId);
     const domain = await Domain.findByNode(node, domainRepository);
     if (!domain) {
       throw new EthUpdaterError(
