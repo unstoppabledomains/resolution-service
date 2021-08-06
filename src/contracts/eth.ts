@@ -1,18 +1,21 @@
 import { Contract } from 'ethers';
-import registryJson from 'dot-crypto/truffle-artifacts/Registry.json';
-import resolverJson from 'dot-crypto/truffle-artifacts/Resolver.json';
-import whitelistedMinterJson from 'dot-crypto/truffle-artifacts/WhitelistedMinter.json';
-import uriPrefixControllerJson from 'dot-crypto/truffle-artifacts/URIPrefixController.json';
-import signatureControllerJson from 'dot-crypto/truffle-artifacts/SignatureController.json';
-import domainZoneControllerJson from 'dot-crypto/truffle-artifacts/DomainZoneController.json';
-import proxyReaderJson from 'dot-crypto/truffle-artifacts/ProxyReader.json';
-import NetworkConfig from 'dot-crypto/src/network-config/network-config.json';
-
+import unsRegistryJson from 'uns/artifacts/UNSRegistry.json';
+import cnsRegistryJson from 'uns/artifacts/CNSRegistry.json';
+import mintingManagerJson from 'uns/artifacts/MintingManager.json';
+import signatureControllerJson from 'uns/artifacts/SignatureController.json';
+import whitelistedMinterJson from 'uns/artifacts/WhitelistedMinter.json';
+import uriPrefixControllerJson from 'uns/artifacts/URIPrefixController.json';
+import domainZoneControllerJson from 'uns/artifacts/DomainZoneController.json';
+import resolverJson from 'uns/artifacts/Resolver.json';
+import proxyReaderJson from 'uns/artifacts/ProxyReader.json';
+import NetworkConfig from 'uns/uns-config.json';
 import { EthereumProvider } from '../workers/EthereumProvider';
 import { env } from '../env';
 
 const abiMap = {
-  Registry: registryJson.abi,
+  UNSRegistry: unsRegistryJson.abi,
+  CNSRegistry: cnsRegistryJson.abi,
+  MintingManager: mintingManagerJson.abi,
   SignatureController: signatureControllerJson.abi,
   WhitelistedMinter: whitelistedMinterJson.abi,
   URIPrefixController: uriPrefixControllerJson.abi,
@@ -32,7 +35,7 @@ export type CryptoConfig = Record<
   }
 >;
 
-export const getCryptoConfig = (
+export const getEthConfig = (
   networkId: string,
   networks: { [key: string]: { contracts: any } } = NetworkConfig.networks,
 ): CryptoConfig => {
@@ -64,4 +67,4 @@ export const getCryptoConfig = (
   return cryptoConfig;
 };
 
-export default getCryptoConfig(env.APPLICATION.ETHEREUM.CHAIN_ID.toString());
+export default getEthConfig(env.APPLICATION.ETHEREUM.CHAIN_ID.toString());

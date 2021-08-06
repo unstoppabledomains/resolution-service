@@ -1,10 +1,11 @@
 import { expect } from 'chai';
-import { getCryptoConfig, CryptoConfig } from './cns';
-import NetworkConfig from 'dot-crypto/src/network-config/network-config.json';
+import { getEthConfig, CryptoConfig } from './eth';
+import NetworkConfig from 'uns/uns-config.json';
 
-describe('cns', () => {
+describe('eth', () => {
   const contractKeys: (keyof typeof NetworkConfig.networks['1']['contracts'])[] = [
-    'Registry',
+    'UNSRegistry',
+    'CNSRegistry',
     'SignatureController',
     'WhitelistedMinter',
     'URIPrefixController',
@@ -13,7 +14,10 @@ describe('cns', () => {
     'ProxyReader',
   ];
 
-  function compareNetworkConfig(config: CryptoConfig, networkId: '1' | '4') {
+  function compareNetworkConfig(
+    config: CryptoConfig,
+    networkId: '1' | '4' | '1337',
+  ) {
     const networkConfig = NetworkConfig.networks[networkId].contracts;
 
     contractKeys.forEach((contract) => {
@@ -28,20 +32,31 @@ describe('cns', () => {
     });
   }
 
-  it('should return crypto config for mainnet', () => {
+  it('should return empty config for other networks', async () => {
+    const config = getEthConfig('13327');
+    expect(config).to.be.an('object').that.is.empty;
+  });
+
+  it('should return eth config for mainnet', () => {
     const networkId = '1';
-    const config = getCryptoConfig(networkId);
+    const config = getEthConfig(networkId);
     compareNetworkConfig(config, networkId);
   });
 
-  it('should return crypto config for testnet', () => {
+  it('should return eth config for testnet', () => {
     const networkId = '4';
-    const config = getCryptoConfig(networkId);
+    const config = getEthConfig(networkId);
+    compareNetworkConfig(config, networkId);
+  });
+
+  it('should return eth config for sandbox', () => {
+    const networkId = '1337';
+    const config = getEthConfig(networkId);
     compareNetworkConfig(config, networkId);
   });
 
   it('should return empty config for other networks', async () => {
-    const config = getCryptoConfig('99');
+    const config = getEthConfig('99');
     expect(config).to.be.an('object').that.is.empty;
   });
 });

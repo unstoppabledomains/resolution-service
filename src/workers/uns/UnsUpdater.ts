@@ -4,7 +4,7 @@ import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import { env } from '../../env';
 import { Contract, Event, BigNumber } from 'ethers';
 import { EntityManager, getConnection, Repository } from 'typeorm';
-import { UNS, CNS } from '../../contracts';
+import { ETHContracts } from '../../contracts';
 import { eip137Namehash } from '../../utils/namehash';
 import { UnsUpdaterError } from '../../errors/UnsUpdaterError';
 import { EthereumProvider } from '../EthereumProvider';
@@ -14,8 +14,8 @@ import { ExecutionRevertedError } from './BlockchainErrors';
 import { CnsResolver } from '../uns/CnsResolver';
 
 export class UnsUpdater {
-  private unsRegistry: Contract = UNS.UNSRegistry.getContract();
-  private cnsRegistry: Contract = CNS.Registry.getContract();
+  private unsRegistry: Contract = ETHContracts.UNSRegistry.getContract();
+  private cnsRegistry: Contract = ETHContracts.CNSRegistry.getContract();
   private cnsResolver: CnsResolver = new CnsResolver();
 
   private currentSyncBlock = 0;
@@ -153,7 +153,7 @@ export class UnsUpdater {
     domain.ownerAddress = this.lastProcessedEvent.args?.to.toLowerCase();
 
     const contractAddress = event.address.toLowerCase();
-    if (contractAddress === UNS.UNSRegistry.address.toLowerCase()) {
+    if (contractAddress === ETHContracts.UNSRegistry.address.toLowerCase()) {
       domain.resolver = contractAddress;
       domain.location = 'UNSL1';
     }

@@ -2,7 +2,7 @@ import { env } from '../../env';
 import { Contract, Event, BigNumber, EventFilter, ethers } from 'ethers';
 import { Domain } from '../../models';
 import { Repository } from 'typeorm';
-import { CNS } from '../../contracts';
+import { ETHContracts } from '../../contracts';
 import supportedKeysJson from 'dot-crypto/src/supported-keys/supported-keys.json';
 import {
   InvalidValuesError,
@@ -14,8 +14,8 @@ import { CnsResolverError } from '../../errors/CnsResolverError';
 const RecordsPerPage = env.APPLICATION.ETHEREUM.RECORDS_PER_PAGE;
 
 export class CnsResolver {
-  private registry: Contract = CNS.Registry.getContract();
-  private resolver: Contract = CNS.Resolver.getContract();
+  private registry: Contract = ETHContracts.CNSRegistry.getContract();
+  private resolver: Contract = ETHContracts.CNSResolver.getContract();
   private static DefaultKeysHashes = Object.keys(supportedKeysJson.keys).reduce(
     (a, v) => {
       a[BigNumber.from(ethers.utils.id(v)).toString()] = v;
@@ -25,7 +25,7 @@ export class CnsResolver {
   );
 
   private isNotLegacyResolver(resolver: string) {
-    return !CNS.Resolver.legacyAddresses.find(
+    return !ETHContracts.Resolver.legacyAddresses.find(
       (x) => x.toLowerCase() === resolver.toLowerCase(),
     );
   }
