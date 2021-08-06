@@ -2,12 +2,9 @@ import { Column, Entity, Repository } from 'typeorm';
 import { IsString, IsUUID } from 'class-validator';
 import { Model } from '.';
 import { Attributes } from '../types/common';
-import { randomUUID } from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 
-export const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
-export type Location = typeof DomainLocations[number];
-
-@Entity({ name: 'apikeys' })
+@Entity({ name: 'api_keys' })
 export default class ApiKey extends Model {
   @IsString()
   @Column('text', { unique: true })
@@ -20,13 +17,6 @@ export default class ApiKey extends Model {
   constructor(attributes?: Attributes<ApiKey>) {
     super();
     this.attributes<ApiKey>(attributes);
-  }
-
-  static async checkApiKeyExists(
-    apiKey: string,
-    repository: Repository<ApiKey> = this.getRepository(),
-  ): Promise<boolean> {
-    return (await repository.findOne({ apiKey })) !== undefined;
   }
 
   static async queryApiKey(
@@ -43,7 +33,7 @@ export default class ApiKey extends Model {
     const newKey = new ApiKey();
     newKey.attributes({
       name: name,
-      apiKey: randomUUID(),
+      apiKey: uuidv4(),
     });
     await repository.save(newKey);
     return newKey;
