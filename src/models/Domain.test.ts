@@ -6,15 +6,13 @@ describe('Domain', () => {
     it('should successfully create entity', async () => {
       const domain = Domain.create({
         name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'CNS',
       });
       const domainTwo = Domain.create({
         name: 'test1.zil',
-        node:
-          '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
+        node: '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'ZNS',
       });
@@ -27,9 +25,9 @@ describe('Domain', () => {
     it('should fail on uppercased ownerAddress', async () => {
       const domain = Domain.create({
         name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2'.toUpperCase(),
+        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        ownerAddress:
+          '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2'.toUpperCase(),
         location: 'CNS',
       });
       await expect(domain.save()).to.be.rejectedWith(
@@ -40,8 +38,7 @@ describe('Domain', () => {
     it('should fail validLocation validation', async () => {
       const domain = Domain.create({
         name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'SOMEWHERE_BAD',
       });
@@ -53,8 +50,7 @@ describe('Domain', () => {
     it('should fail nameMatchesNode validation', async () => {
       const domain = Domain.create({
         name: 'test1.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'CNS',
       });
@@ -68,8 +64,7 @@ describe('Domain', () => {
     it('should return label', async () => {
       const domain = Domain.create({
         name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'CNS',
       });
@@ -81,8 +76,7 @@ describe('Domain', () => {
     it('should return extension', async () => {
       const domain = Domain.create({
         name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'CNS',
       });
@@ -94,8 +88,7 @@ describe('Domain', () => {
     it('should find by node', async () => {
       const domainMetaData = {
         name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'CNS',
       };
@@ -136,8 +129,7 @@ describe('Domain', () => {
     it('should create a domain', async () => {
       const expectedDomain = {
         name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         location: 'CNS',
       };
       await Domain.findOrCreateByName(
@@ -152,8 +144,7 @@ describe('Domain', () => {
     it('should find a domain', async () => {
       const expectedDomain = {
         name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'CNS',
       };
@@ -173,8 +164,7 @@ describe('Domain', () => {
     it('should find an existed domain', async () => {
       const domainMetaData = {
         name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'CNS',
       };
@@ -190,8 +180,7 @@ describe('Domain', () => {
         '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303107',
       );
       expect(domainFromDb).to.containSubset({
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303107',
+        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303107',
         resolution: {},
         ownerAddress: null,
         resolver: null,

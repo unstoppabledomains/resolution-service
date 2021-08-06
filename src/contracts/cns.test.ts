@@ -3,15 +3,16 @@ import { getCryptoConfig, CryptoConfig } from './cns';
 import NetworkConfig from 'dot-crypto/src/network-config/network-config.json';
 
 describe('cns', () => {
-  const contractKeys: (keyof typeof NetworkConfig.networks['1']['contracts'])[] = [
-    'Registry',
-    'SignatureController',
-    'WhitelistedMinter',
-    'URIPrefixController',
-    'DomainZoneController',
-    'Resolver',
-    'ProxyReader',
-  ];
+  const contractKeys: (keyof typeof NetworkConfig.networks['1']['contracts'])[] =
+    [
+      'Registry',
+      'SignatureController',
+      'WhitelistedMinter',
+      'URIPrefixController',
+      'DomainZoneController',
+      'Resolver',
+      'ProxyReader',
+    ];
 
   function compareNetworkConfig(config: CryptoConfig, networkId: '1' | '4') {
     const networkConfig = NetworkConfig.networks[networkId].contracts;
