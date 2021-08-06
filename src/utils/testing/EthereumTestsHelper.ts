@@ -1,16 +1,30 @@
 import { ethers, Wallet, BigNumber } from 'ethers';
-import * as ContractsModule from '../../contracts';
 import { EthereumProvider } from '../../workers/EthereumProvider';
 import * as sinon from 'sinon';
-import { CnsSmartContracts } from './CnsSmartContracts';
-import { UnsSmartContracts } from './UnsSmartContracts';
 import { env } from '../../env';
+import Sandbox from 'uns/sandbox';
 
 const FundingAmount: BigNumber = ethers.utils.parseUnits('100', 'ether');
 
 export class EthereumTestsHelper {
-  private static cnsSmartContracts?: CnsSmartContracts;
-  private static unsSmartContracts?: UnsSmartContracts;
+  private static sandbox: any;
+  private static sandboxInitialized = false;
+  private static accounts: Record<string, Wallet> = {};
+
+  static async fundAccounts(...accounts: Wallet[]): Promise<void> {
+    for (const account of accounts) {
+      await EthereumTestsHelper.fundAddress(account.address, FundingAmount);
+    }
+  }
+
+  static async createAccount(): Promise<Wallet> {
+    const account = Wallet.createRandom();
+    return account.connect(EthereumProvider);
+  }
+
+  static async fundFaucet(): Promise<void> {
+    await EthereumTestsHelper.fundAccounts(EthereumTestsHelper.faucet());
+  }
 
   static async fundAddress(
     address: string,
@@ -23,47 +37,46 @@ export class EthereumTestsHelper {
     });
   }
 
-  static async createAccount(): Promise<Wallet> {
-    const account = Wallet.createRandom();
-    return account.connect(EthereumProvider);
-  }
-
   static async mineBlocksForConfirmation(): Promise<void> {
     for (let i = 0; i < env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS; i++) {
-      await EthereumTestsHelper.fundAddress(
+      await EthereumTestsHelper.sandbox.fundAddress(
         '0x000000000000000000000000000000000000dEaD',
         BigNumber.from(1),
       );
     }
   }
 
-  static async initializeCnsContractsAndStub(
-    allowedMintingAddresses: string[] = [],
-  ): Promise<CnsSmartContracts> {
-    if (!EthereumTestsHelper.cnsSmartContracts) {
-      EthereumTestsHelper.cnsSmartContracts = new CnsSmartContracts();
-      await EthereumTestsHelper.cnsSmartContracts.deployAll(
-        allowedMintingAddresses,
-      );
-      sinon
-        .stub(ContractsModule, 'CNS')
-        .value(EthereumTestsHelper.cnsSmartContracts.getConfig());
+  static async startNetwork(): Promise<void> {
+    if (!EthereumTestsHelper.sandboxInitialized) {
+      EthereumTestsHelper.sandboxInitialized = true;
+      const sandbox = await Sandbox.start();
+      const accounts: Record<string, any> = sandbox.accounts;
+
+      EthereumTestsHelper.sandbox = sandbox;
+      Object.keys(accounts).forEach((key: string) => {
+        EthereumTestsHelper.accounts[key] = new Wallet(
+          accounts[key].privateKey,
+          EthereumProvider,
+        );
+      });
     }
-    return EthereumTestsHelper.cnsSmartContracts;
   }
 
-  static async initializeUnsContractsAndStub(
-    allowedMintingAddresses: string[] = [],
-  ): Promise<UnsSmartContracts> {
-    if (!EthereumTestsHelper.unsSmartContracts) {
-      EthereumTestsHelper.unsSmartContracts = new UnsSmartContracts();
-      await EthereumTestsHelper.unsSmartContracts.deployAll(
-        allowedMintingAddresses,
-      );
-      sinon
-        .stub(ContractsModule, 'UNS')
-        .value(EthereumTestsHelper.unsSmartContracts.getConfig());
+  static async stopNetwork(): Promise<void> {
+    if (EthereumTestsHelper.sandboxInitialized) {
+      await EthereumTestsHelper.sandbox.stop();
     }
-    return EthereumTestsHelper.unsSmartContracts;
+  }
+
+  static owner(): Wallet {
+    return EthereumTestsHelper.accounts.owner;
+  }
+
+  static minter(): Wallet {
+    return EthereumTestsHelper.accounts.minter;
+  }
+
+  static faucet(): Wallet {
+    return EthereumTestsHelper.accounts.faucet;
   }
 }

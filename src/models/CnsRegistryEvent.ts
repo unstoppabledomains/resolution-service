@@ -13,7 +13,7 @@ import ValidateWith from '../services/ValidateWith';
 import { Attributes } from '../types/common';
 import Model from './Model';
 import { BigNumber } from '@ethersproject/bignumber';
-import { CNS, UNS } from '../contracts';
+import { ETHContracts } from '../contracts';
 
 export const CnsDomainOperationTypes = [
   'Transfer',
@@ -129,12 +129,13 @@ export default class CnsRegistryEvent extends Model {
   domainOperation(): boolean {
     if (
       this.contractAddress ===
-      UNS.UNSRegistry.getContract().address.toLowerCase()
+      ETHContracts.UNSRegistry.getContract().address.toLowerCase()
     ) {
       return this.type in UnsDomainOperationTypes;
     }
     if (
-      this.contractAddress === CNS.Registry.getContract().address.toLowerCase()
+      this.contractAddress ===
+      ETHContracts.CNSRegistry.getContract().address.toLowerCase()
     ) {
       return this.type in CnsDomainOperationTypes;
     }

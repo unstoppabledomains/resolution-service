@@ -4,12 +4,12 @@ import { env } from '../../env';
 import { EthereumProvider } from '../EthereumProvider';
 import { Domain, WorkerStatus } from '../../models';
 import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
-import { CnsSmartContracts } from '../../utils/testing/CnsSmartContracts';
 import { CnsResolver } from './CnsResolver';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
 import supportedKeysJson from 'dot-crypto/src/supported-keys/supported-keys.json';
+import { ETHContracts } from '../../contracts';
 
 describe('CnsResolver', () => {
   let service: CnsResolver;
@@ -17,7 +17,6 @@ describe('CnsResolver', () => {
   let resolver: Contract;
   let legacyResolver: Contract;
   let whitelistedMinter: Contract;
-  let contracts: CnsSmartContracts;
   let coinbaseAddress: string;
 
   let testDomainName: string;
@@ -68,12 +67,11 @@ describe('CnsResolver', () => {
   const AddressZero = '0x0000000000000000000000000000000000000000';
 
   before(async () => {
-    contracts = await EthereumTestsHelper.initializeCnsContractsAndStub();
-    coinbaseAddress = await EthereumProvider.getSigner().getAddress();
-    registry = contracts.registry;
-    resolver = contracts.resolver;
-    whitelistedMinter = contracts.whitelistedMinter;
-    legacyResolver = contracts.legacyResolver;
+    await EthereumTestsHelper.startNetwork();
+
+    registry = ETHContracts.CNSRegistry.getContract();
+    resolver = ETHContracts.Resolver.getContract();
+    whitelistedMinter = ETHContracts.WhitelistedMinter.getContract();
   });
 
   beforeEach(async () => {

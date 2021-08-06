@@ -9,6 +9,9 @@
       "esModuleInterop": true,
       "strictPropertyInitialization": false
     },
+  "ts-node": {
+    "files": true
+  },
   "include": [
     "./src/**/*.ts",
     "./src/**/*.js", "ormconfig.ts",

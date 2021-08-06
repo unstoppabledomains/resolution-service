@@ -4,18 +4,17 @@ import { env } from '../../env';
 import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import { EthereumProvider } from '../EthereumProvider';
 import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
-import { UnsSmartContracts } from '../../utils/testing/UnsSmartContracts';
 import { UnsUpdater } from './UnsUpdater';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
 import { UnsUpdaterError } from '../../errors/UnsUpdaterError';
+import { ETHContracts } from '../../contracts';
 
 describe('UnsUpdater', () => {
   let service: UnsUpdater;
   let registry: Contract;
   let mintingManager: Contract;
-  let contracts: UnsSmartContracts;
   let coinbaseAddress: string;
 
   let testTld = 'blockchain';
@@ -29,11 +28,9 @@ describe('UnsUpdater', () => {
 
   before(async () => {
     coinbaseAddress = await EthereumProvider.getSigner().getAddress();
-    contracts = await EthereumTestsHelper.initializeUnsContractsAndStub([
-      coinbaseAddress,
-    ]);
-    registry = contracts.registry;
-    mintingManager = contracts.mintingManager;
+    await EthereumTestsHelper.startNetwork();
+    registry = ETHContracts.UNSRegistry.getContract();
+    mintingManager = ETHContracts.MintingManager.getContract();
   });
 
   beforeEach(async () => {
