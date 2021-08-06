@@ -1,4 +1,4 @@
-import { BigNumber, Contract } from 'ethers';
+import { BigNumber, Contract, Wallet } from 'ethers';
 import { randomBytes } from 'crypto';
 import { env } from '../../env';
 import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
@@ -15,7 +15,7 @@ describe('UnsUpdater', () => {
   let service: UnsUpdater;
   let registry: Contract;
   let mintingManager: Contract;
-  let coinbaseAddress: string;
+  let owner: string;
 
   let testTld = 'blockchain';
   let testTldHash =
@@ -27,10 +27,14 @@ describe('UnsUpdater', () => {
   let testDomainNode: BigNumber;
 
   before(async () => {
-    coinbaseAddress = await EthereumProvider.getSigner().getAddress();
     await EthereumTestsHelper.startNetwork();
-    registry = ETHContracts.UNSRegistry.getContract();
-    mintingManager = ETHContracts.MintingManager.getContract();
+    owner = EthereumTestsHelper.owner().address;
+    registry = ETHContracts.UNSRegistry.getContract().connect(
+      EthereumTestsHelper.owner(),
+    );
+    mintingManager = ETHContracts.MintingManager.getContract().connect(
+      EthereumTestsHelper.minter(),
+    );
   });
 
   beforeEach(async () => {
@@ -48,7 +52,7 @@ describe('UnsUpdater', () => {
     await WorkerStatus.saveWorkerStatus('UNSL1', blocknumber);
 
     await mintingManager.functions
-      .mintSLD(coinbaseAddress, testTldHash, testDomainLabel)
+      .mintSLD(owner, testTldHash, testDomainLabel)
       .then((receipt) => receipt.wait());
 
     service = new UnsUpdater();
@@ -97,7 +101,7 @@ describe('UnsUpdater', () => {
       const recipientAddress = await recipient.getAddress();
 
       await registry.functions
-        .transferFrom(coinbaseAddress, recipientAddress, testTokenId)
+        .transferFrom(owner, recipientAddress, testTokenId)
         .then((receipt) => receipt.wait());
 
       await EthereumTestsHelper.mineBlocksForConfirmation();
@@ -201,7 +205,7 @@ describe('UnsUpdater', () => {
 
       const expectedDomainName = `${expectedLabel}.${testTld}`;
       await mintingManager.functions
-        .mintSLD(coinbaseAddress, testTldHash, expectedLabel)
+        .mintSLD(owner, testTldHash, expectedLabel)
         .then((receipt) => receipt.wait());
       await EthereumTestsHelper.mineBlocksForConfirmation();
 
@@ -215,7 +219,7 @@ describe('UnsUpdater', () => {
       const expectedLabel = `${randomBytes(16).toString('hex')}-AAA`;
       const expectedDomainName = `${expectedLabel}.${testTld}`;
       await mintingManager.functions
-        .mintSLD(coinbaseAddress, testTldHash, expectedLabel)
+        .mintSLD(owner, testTldHash, expectedLabel)
         .then((receipt) => receipt.wait());
       await EthereumTestsHelper.mineBlocksForConfirmation();
 
@@ -229,7 +233,7 @@ describe('UnsUpdater', () => {
       const expectedLabel = `    ${randomBytes(16).toString('hex')}   `;
       const expectedDomainName = `${expectedLabel}.${testTld}`;
       await mintingManager.functions
-        .mintSLD(coinbaseAddress, testTldHash, expectedDomainName)
+        .mintSLD(owner, testTldHash, expectedDomainName)
         .then((receipt) => receipt.wait());
       await EthereumTestsHelper.mineBlocksForConfirmation();
 

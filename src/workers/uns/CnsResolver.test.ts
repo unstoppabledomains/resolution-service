@@ -8,23 +8,19 @@ import { CnsResolver } from './CnsResolver';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
-import supportedKeysJson from 'dot-crypto/src/supported-keys/supported-keys.json';
 import { ETHContracts } from '../../contracts';
 
 describe('CnsResolver', () => {
   let service: CnsResolver;
   let registry: Contract;
   let resolver: Contract;
-  let legacyResolver: Contract;
   let whitelistedMinter: Contract;
-  let coinbaseAddress: string;
 
   let testDomainName: string;
   let testTokenId: BigNumber;
   let testDomainLabel: string;
   let testDomainNode: BigNumber;
   const sinonSandbox = sinon.createSandbox();
-  const PredefinedRecordKeys = Object.keys(supportedKeysJson.keys);
 
   const RecordKeys = [
     'crypto.BCH.address',
@@ -69,9 +65,15 @@ describe('CnsResolver', () => {
   before(async () => {
     await EthereumTestsHelper.startNetwork();
 
-    registry = ETHContracts.CNSRegistry.getContract();
-    resolver = ETHContracts.Resolver.getContract();
-    whitelistedMinter = ETHContracts.WhitelistedMinter.getContract();
+    registry = ETHContracts.CNSRegistry.getContract().connect(
+      EthereumTestsHelper.owner(),
+    );
+    resolver = ETHContracts.Resolver.getContract().connect(
+      EthereumTestsHelper.owner(),
+    );
+    whitelistedMinter = ETHContracts.WhitelistedMinter.getContract().connect(
+      EthereumTestsHelper.minter(),
+    );
   });
 
   beforeEach(async () => {
@@ -91,9 +93,13 @@ describe('CnsResolver', () => {
       'CNS',
       await EthereumProvider.getBlockNumber(),
     );
-
     await whitelistedMinter.functions
-      .mintSLDToDefaultResolver(coinbaseAddress, testDomainLabel, [], [])
+      .mintSLDToDefaultResolver(
+        EthereumTestsHelper.owner().address,
+        testDomainLabel,
+        [],
+        [],
+      )
       .then((receipt) => receipt.wait());
     await EthereumTestsHelper.mineBlocksForConfirmation();
 
@@ -218,27 +224,6 @@ describe('CnsResolver', () => {
       });
     });
 
-    it('should fallback to predefined keys set if Resolver does not have NewKey events', async () => {
-      await registry.functions
-        .resolveTo(legacyResolver.address, testTokenId)
-        .then((receipt) => receipt.wait());
-      await legacyResolver.functions
-        .setMany(
-          ['custom-key', 'crypto.BTC.address'],
-          ['custom-value', 'bc1qj5jdpvg0u73qxgvwulc2nkcrjvwvhvm0fnyy85'],
-          testTokenId,
-        )
-        .then((receipt) => receipt.wait());
-
-      const records = await service._getAllDomainRecords(
-        legacyResolver.address,
-        testDomainNode,
-      );
-      expect(records).to.deep.equal({
-        'crypto.BTC.address': 'bc1qj5jdpvg0u73qxgvwulc2nkcrjvwvhvm0fnyy85',
-      });
-    });
-
     it('should search new keys starting from last ResetRecords event', async () => {
       await resolver.functions
         .setMany(
@@ -282,26 +267,6 @@ describe('CnsResolver', () => {
         resetRecordsBlockNumber,
       );
       expect(domainRecords).to.deep.equal({ 'custom-key': 'custom-value' });
-    });
-
-    it('should fallback to predefined keys and start block if use legacy resolver', async () => {
-      await registry.functions
-        .resolveTo(legacyResolver.address, testTokenId)
-        .then((receipt) => receipt.wait());
-      const ethereumCallSpy = sinonSandbox.spy(
-        service,
-        '_getManyDomainRecords',
-      );
-      await service._getAllDomainRecords(
-        legacyResolver.address,
-        testDomainNode,
-        200,
-      );
-      expect(ethereumCallSpy).to.be.calledWith(
-        legacyResolver.address,
-        PredefinedRecordKeys,
-        testDomainNode,
-      );
     });
   });
 });

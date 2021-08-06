@@ -15,7 +15,7 @@ const RecordsPerPage = env.APPLICATION.ETHEREUM.RECORDS_PER_PAGE;
 
 export class CnsResolver {
   private registry: Contract = ETHContracts.CNSRegistry.getContract();
-  private resolver: Contract = ETHContracts.CNSResolver.getContract();
+  private resolver: Contract = ETHContracts.Resolver.getContract();
   private static DefaultKeysHashes = Object.keys(supportedKeysJson.keys).reduce(
     (a, v) => {
       a[BigNumber.from(ethers.utils.id(v)).toString()] = v;

@@ -30,7 +30,7 @@ export class EthereumTestsHelper {
     address: string,
     amount: BigNumber = FundingAmount,
   ): Promise<void> {
-    const signer = EthereumProvider.getSigner(0);
+    const signer = EthereumTestsHelper.faucet();
     await signer.sendTransaction({
       to: address,
       value: amount,
@@ -39,7 +39,7 @@ export class EthereumTestsHelper {
 
   static async mineBlocksForConfirmation(): Promise<void> {
     for (let i = 0; i < env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS; i++) {
-      await EthereumTestsHelper.sandbox.fundAddress(
+      await EthereumTestsHelper.fundAddress(
         '0x000000000000000000000000000000000000dEaD',
         BigNumber.from(1),
       );
