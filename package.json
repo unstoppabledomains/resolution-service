@@ -14,7 +14,7 @@
     "src": "./src"
   },
   "scripts": {
-    "test": "GANACHE_PID=$(yarn --silent ethereum:ganache:start) && NODE_ENV=test RESOLUTION_POSTGRES_DATABASE=resolution_service_test ZNS_NETWORK=testnet VIEWBLOCK_API_KEY=test mocha && kill $GANACHE_PID",
+    "test": "GANACHE_PID=$(yarn --silent ethereum:ganache:start) && NODE_ENV=test TS_NODE_TRANSPILE_ONLY=true RESOLUTION_POSTGRES_DATABASE=resolution_service_test ZNS_NETWORK=testnet VIEWBLOCK_API_KEY=test mocha && kill $GANACHE_PID",
     "test:coverage": "NODE_ENV=test nyc --reporter=text yarn test",
     "build": "tsc",
     "start:dev": "ts-node -T src/index.ts",
@@ -42,6 +42,7 @@
   "dependencies": {
     "@bugsnag/js": "^7.9.2",
     "@bugsnag/plugin-express": "^7.9.2",
+    "@types/uuid": "^8.3.1",
     "@zilliqa-js/crypto": "^2.3.0-alpha.0",
     "@zilliqa-js/util": "^2.2.0",
     "@zilliqa-js/zilliqa": "^2.3.0-alpha.0",
@@ -64,6 +65,7 @@
     "set-interval-async": "^2.0.3",
     "swagger-ui-express": "^4.1.6",
     "typeorm": "^0.2.32",
+    "uuid": "^8.3.2",
     "winston": "^3.3.3",
     "winston-3-bugsnag-transport": "^1.0.2"
   },
