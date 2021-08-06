@@ -5,6 +5,7 @@ import {
 } from 'routing-controllers';
 import { DomainsController } from './controllers/DomainsController';
 import { StatusController } from './controllers/StatusController';
+import { MetaDataController } from './controllers/MetaDataController';
 import swaggerUI from 'swagger-ui-express';
 import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
 import { routingControllersToSpec } from 'routing-controllers-openapi';
@@ -16,7 +17,7 @@ import ErrorHandler from './errors/ErrorHandler';
 export const api = createExpressServer({
   classTransformer: true,
   defaultErrorHandler: false,
-  controllers: [DomainsController, StatusController],
+  controllers: [DomainsController, StatusController, MetaDataController],
   middlewares: [ErrorHandler],
 });
 
