@@ -20,6 +20,7 @@ import * as _ from 'lodash';
 import { Model } from '.';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import { Attributes } from '../types/common';
+import punycode from 'punycode';
 
 export const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
 export type Location = typeof DomainLocations[number];
@@ -28,6 +29,8 @@ export type Location = typeof DomainLocations[number];
 export default class Domain extends Model {
   static AddressRegex = /^0x[a-fA-F0-9]{40}$/;
   static NullAddress = '0x0000000000000000000000000000000000000000';
+  static DefaultImageUrl =
+    'https://storage.googleapis.com/dot-crypto-metadata-api/unstoppabledomains_crypto.png';
 
   @IsString()
   @ValidateWith<Domain>('nameMatchesNode', {
@@ -68,6 +71,10 @@ export default class Domain extends Model {
   @Column('jsonb', { default: {} })
   resolution: Record<string, string> = {};
 
+  @IsString()
+  @Column('text')
+  image = Domain.DefaultImageUrl;
+
   @OneToMany((type) => Domain, (domain) => domain.parent)
   @JoinColumn({ name: 'parent_id' })
   children: Promise<Domain[]>;
@@ -107,6 +114,19 @@ export default class Domain extends Model {
 
   get extension(): string {
     return this.getSplittedName().pop() || '';
+  }
+
+  get levelCount(): number {
+    return this.getSplittedName().length;
+  }
+
+  get unicodeName(): string {
+    return punycode.toUnicode(this.name);
+  }
+
+  get isUnicodeName(): boolean {
+    // eslint-disable-next-line no-control-regex
+    return /[^\u0000-\u00ff]/.test(this.name);
   }
 
   static async findByNode(
