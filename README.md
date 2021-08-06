@@ -122,7 +122,7 @@ GET /domains/:domainName | Gets the resolution of the specified domain.
 GET /status | Gets the synchronization status.
 GET /api-docs | Returns a swagger documentation page.
 
-> Note: The `/domains` endpoints require an API key. The key must be provided as `Bearer` authentication header for requests. New keys must be added manually to the database (see [API keys](#APIkeys) for more info).
+> Note: The `/domains` endpoints require an API key. The key must be provided as `Bearer` authentication header for requests. New keys must be added manually to the database (see [API keys](#api-keys) for more info).
 
 ## Development notes
 ### Development pre-requirements
