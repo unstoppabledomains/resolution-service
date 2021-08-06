@@ -29,6 +29,13 @@ export default class ApiKey extends Model {
     return (await repository.findOne({ apiKey })) !== undefined;
   }
 
+  static async queryApiKey(
+    apiKey: string,
+    repository: Repository<ApiKey> = this.getRepository(),
+  ): Promise<ApiKey | undefined> {
+    return repository.findOne({ apiKey });
+  }
+
   static async createApiKey(
     name: string,
     repository: Repository<ApiKey> = this.getRepository(),

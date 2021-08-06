@@ -1,5 +1,11 @@
 import 'reflect-metadata';
-import { Get, JsonController, Param, QueryParams } from 'routing-controllers';
+import {
+  Get,
+  JsonController,
+  Param,
+  QueryParams,
+  UseBefore,
+} from 'routing-controllers';
 import {
   ArrayNotEmpty,
   IsArray,
@@ -17,6 +23,7 @@ import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
 import { In } from 'typeorm';
 import { DomainLocations, Location } from '../models/Domain';
+import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
 
 class DomainMetadata {
   @IsString()
@@ -78,7 +85,11 @@ class DomainsListResponse {
   data: DomainAttributes[];
 }
 
+@OpenAPI({
+  security: [{ bearer: [] }],
+})
 @JsonController()
+@UseBefore(ApiKeyAuthMiddleware)
 export class DomainsController {
   @Get('/domains/:domainName')
   @ResponseSchema(DomainResponse)
