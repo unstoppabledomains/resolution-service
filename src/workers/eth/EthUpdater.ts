@@ -6,14 +6,14 @@ import { Contract, Event, BigNumber } from 'ethers';
 import { EntityManager, getConnection, Repository } from 'typeorm';
 import { ETHContracts } from '../../contracts';
 import { eip137Namehash } from '../../utils/namehash';
-import { UnsUpdaterError } from '../../errors/UnsUpdaterError';
+import { EthUpdaterError } from '../../errors/EthUpdaterError';
 import { EthereumProvider } from '../EthereumProvider';
 import { unwrap } from '../../utils/option';
 import { CnsResolverError } from '../../errors/CnsResolverError';
 import { ExecutionRevertedError } from './BlockchainErrors';
-import { CnsResolver } from '../uns/CnsResolver';
+import { CnsResolver } from './CnsResolver';
 
-export class UnsUpdater {
+export class EthUpdater {
   private unsRegistry: Contract = ETHContracts.UNSRegistry.getContract();
   private cnsRegistry: Contract = ETHContracts.CNSRegistry.getContract();
   private cnsResolver: CnsResolver = new CnsResolver();
@@ -26,7 +26,7 @@ export class UnsUpdater {
   }
 
   static getLatestMirroredBlock(): Promise<number> {
-    return WorkerStatus.latestMirroredBlockForWorker('UNSL1');
+    return WorkerStatus.latestMirroredBlockForWorker('ETH');
   }
 
   private saveLastMirroredBlock(
@@ -34,7 +34,7 @@ export class UnsUpdater {
     manager: EntityManager,
   ): Promise<void> {
     return WorkerStatus.saveWorkerStatus(
-      'UNSL1',
+      'ETH',
       blockNumber,
       undefined,
       manager.getRepository(WorkerStatus),
@@ -96,7 +96,7 @@ export class UnsUpdater {
     //Check if it's not a new URI
     if (event.args?.from !== Domain.NullAddress) {
       if (!domain) {
-        throw new UnsUpdaterError(
+        throw new EthUpdaterError(
           `Transfer event was not processed. Could not find domain for ${node}`,
         );
       }
@@ -118,7 +118,7 @@ export class UnsUpdater {
     domainRepository: Repository<Domain>,
   ): Promise<void> {
     if (!event.args) {
-      throw new UnsUpdaterError(
+      throw new EthUpdaterError(
         `NewUri event wasn't processed. Invalid event args.`,
       );
     }
@@ -129,7 +129,7 @@ export class UnsUpdater {
 
     //Check if the domain name matches tokenID
     if (expectedNode !== producedNode) {
-      throw new UnsUpdaterError(
+      throw new EthUpdaterError(
         `NewUri event wasn't processed. Invalid domain name: ${uri}`,
       );
     }
@@ -140,7 +140,7 @@ export class UnsUpdater {
       this.lastProcessedEvent.event !== 'Transfer' ||
       this.lastProcessedEvent.args?.from !== Domain.NullAddress
     ) {
-      throw new UnsUpdaterError(
+      throw new EthUpdaterError(
         `NewUri event wasn't processed. Unexpected order of events. Expected last processed event to be 'Transfer', got :'${this.lastProcessedEvent?.event}'`,
       );
     }
@@ -167,7 +167,7 @@ export class UnsUpdater {
     const node = CnsRegistryEvent.tokenIdToNode(event.args?.tokenId);
     const domain = await Domain.findByNode(node, domainRepository);
     if (!domain) {
-      throw new UnsUpdaterError(
+      throw new EthUpdaterError(
         `ResetRecords event was not processed. Could not find domain for ${node}`,
       );
     }
@@ -185,7 +185,7 @@ export class UnsUpdater {
     const node = CnsRegistryEvent.tokenIdToNode(event.args?.tokenId);
     const domain = await Domain.findByNode(node, domainRepository);
     if (!domain) {
-      throw new UnsUpdaterError(
+      throw new EthUpdaterError(
         `Set event was not processed. Could not find domain for ${node}`,
       );
     }
@@ -200,7 +200,7 @@ export class UnsUpdater {
     const node = CnsRegistryEvent.tokenIdToNode(event.args?.tokenId);
     const domain = await Domain.findByNode(node, domainRepository);
     if (!domain) {
-      throw new UnsUpdaterError(
+      throw new EthUpdaterError(
         `Resolve event was not processed. Could not find domain for ${node}`,
       );
     }
@@ -215,12 +215,12 @@ export class UnsUpdater {
     const node = CnsRegistryEvent.tokenIdToNode(event.args?.tokenId);
     const domain = await Domain.findByNode(node, domainRepository);
     if (!domain) {
-      throw new UnsUpdaterError(
+      throw new EthUpdaterError(
         `Sync event was not processed. Could not find domain for node: ${node}`,
       );
     }
     if (event.args?.updateId === undefined) {
-      throw new UnsUpdaterError(
+      throw new EthUpdaterError(
         `Sync event was not processed. Update id not specified.`,
       );
     }
@@ -314,7 +314,7 @@ export class UnsUpdater {
         await this.saveEvent(event, manager);
         this.lastProcessedEvent = event;
       } catch (error) {
-        if (error instanceof UnsUpdaterError) {
+        if (error instanceof EthUpdaterError) {
           logger.error(
             `Failed to process UNS event: ${JSON.stringify(
               event,
@@ -326,10 +326,10 @@ export class UnsUpdater {
   }
 
   public async run(): Promise<void> {
-    logger.info('UnsUpdater is pulling updates from Ethereum');
-    const fromBlock = await UnsUpdater.getLatestMirroredBlock();
+    logger.info('EthUpdater is pulling updates from Ethereum');
+    const fromBlock = await EthUpdater.getLatestMirroredBlock();
     const toBlock =
-      (await UnsUpdater.getLatestNetworkBlock()) -
+      (await EthUpdater.getLatestNetworkBlock()) -
       env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS;
 
     logger.info(
@@ -337,7 +337,7 @@ export class UnsUpdater {
     );
 
     if (toBlock < fromBlock) {
-      throw new UnsUpdaterError(
+      throw new EthUpdaterError(
         `Sync last block ${toBlock} is less than the current mirror block ${fromBlock}`,
       );
     }
@@ -367,8 +367,8 @@ export class UnsUpdater {
 export function startWorker(): void {
   setIntervalAsync(async () => {
     try {
-      logger.info('UnsUpdater is pulling updates from Ethereum');
-      await new UnsUpdater().run();
+      logger.info('EthUpdater is pulling updates from Ethereum');
+      await new EthUpdater().run();
     } catch (error) {
       logger.error(
         `Unhandled error occured while processing UNS events: ${error}`,

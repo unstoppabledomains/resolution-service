@@ -1,18 +1,18 @@
-import { BigNumber, Contract, Wallet } from 'ethers';
+import { BigNumber, Contract } from 'ethers';
 import { randomBytes } from 'crypto';
 import { env } from '../../env';
 import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import { EthereumProvider } from '../EthereumProvider';
 import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
-import { UnsUpdater } from './UnsUpdater';
+import { EthUpdater } from './EthUpdater';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
-import { UnsUpdaterError } from '../../errors/UnsUpdaterError';
+import { EthUpdaterError } from '../../errors/EthUpdaterError';
 import { ETHContracts } from '../../contracts';
 
-describe('UnsUpdater', () => {
-  let service: UnsUpdater;
+describe('EthUpdater', () => {
+  let service: EthUpdater;
   let registry: Contract;
   let mintingManager: Contract;
   let owner: string;
@@ -49,21 +49,21 @@ describe('UnsUpdater', () => {
     testDomainName = `${testDomainLabel}.${testTld}`;
     testDomainNode = BigNumber.from(eip137Namehash(testDomainName));
     testTokenId = BigNumber.from(testDomainNode);
-    await WorkerStatus.saveWorkerStatus('UNSL1', blocknumber);
+    await WorkerStatus.saveWorkerStatus('ETH', blocknumber);
 
     await mintingManager.functions
       .mintSLD(owner, testTldHash, testDomainLabel)
       .then((receipt) => receipt.wait());
 
-    service = new UnsUpdater();
+    service = new EthUpdater();
   });
 
   it('should throw if sync block is less than mirrored block', async () => {
     await WorkerStatus.saveWorkerStatus(
-      'UNSL1',
+      'ETH',
       (await EthereumProvider.getBlockNumber()) + 10,
     );
-    expect(service.run()).to.be.rejectedWith(UnsUpdaterError);
+    expect(service.run()).to.be.rejectedWith(EthUpdaterError);
   });
 
   it('should save worker stats', async () => {
@@ -72,7 +72,7 @@ describe('UnsUpdater', () => {
 
     await service.run();
 
-    const workerStatus = await WorkerStatus.findOne({ location: 'UNSL1' });
+    const workerStatus = await WorkerStatus.findOne({ location: 'ETH' });
     const expectedBlockNumber =
       (await EthereumProvider.getBlockNumber()) -
       env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS;
