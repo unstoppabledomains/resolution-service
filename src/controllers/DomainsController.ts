@@ -86,7 +86,7 @@ class DomainsListResponse {
 }
 
 @OpenAPI({
-  security: [{ bearer: [] }],
+  security: [{ apiKeyAuth: [] }],
 })
 @JsonController()
 @UseBefore(ApiKeyAuthMiddleware)

@@ -38,7 +38,15 @@ const swaggerSpec = routingControllersToSpec(
   storage,
   {},
   {
-    components: { schemas },
+    components: {
+      schemas,
+      securitySchemes: {
+        apiKeyAuth: {
+          scheme: 'bearer',
+          type: 'http',
+        },
+      },
+    },
   },
 );
 

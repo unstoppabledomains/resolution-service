@@ -17,7 +17,7 @@
     "test": "GANACHE_PID=$(yarn --silent ethereum:ganache:start) && NODE_ENV=test RESOLUTION_POSTGRES_DATABASE=resolution_service_test ZNS_NETWORK=testnet VIEWBLOCK_API_KEY=test mocha && kill $GANACHE_PID",
     "test:coverage": "NODE_ENV=test nyc --reporter=text yarn test",
     "build": "tsc",
-    "start:dev": "ts-node src/index.ts",
+    "start:dev": "ts-node -T src/index.ts",
     "ethereum:ganache:start": "ganache-cli >/dev/null & GANACHE_PID=$! && echo $GANACHE_PID && sleep 5",
     "ethereum:docker:start": "docker run -d -p 8545:8545 ethereum/client-go:v1.9.24 -dev -dev.period 0 -rpc -rpcport 8545 --rpcaddr 0.0.0.0 --wsaddr 0.0.0.0  --miner.gastarget 0x2014103 -keystore geth -password '' --allow-insecure-unlock --rpcapi eth,web3,personal",
     "ethereum:docker:stop": "docker stop `docker ps --filter 'ancestor=ethereum/client-go:v1.9.24' -q`",
