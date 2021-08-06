@@ -181,7 +181,7 @@ export class EthUpdater {
   ): Promise<void> {
     const args = unwrap(event.args);
     // For some reason ethers got a problem with assigning names for this event.
-    const [tokenId, , , key, value] = args;
+    const [, , , key, value] = args;
     const node = CnsRegistryEvent.tokenIdToNode(event.args?.tokenId);
     const domain = await Domain.findByNode(node, domainRepository);
     if (!domain) {
@@ -316,7 +316,7 @@ export class EthUpdater {
       } catch (error) {
         if (error instanceof EthUpdaterError) {
           logger.error(
-            `Failed to process UNS event: ${JSON.stringify(
+            `Failed to process ETH event: ${JSON.stringify(
               event,
             )}. Error:  ${error}`,
           );
@@ -371,7 +371,7 @@ export function startWorker(): void {
       await new EthUpdater().run();
     } catch (error) {
       logger.error(
-        `Unhandled error occured while processing UNS events: ${error}`,
+        `Unhandled error occured while processing ETH events: ${error}`,
       );
     }
   }, env.APPLICATION.ETHEREUM.FETCH_INTERVAL);
