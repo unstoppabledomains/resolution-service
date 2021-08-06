@@ -1,4 +1,4 @@
-import defaultAnimals from './defaultanimals.json';
+import defaultAnimals from './defaultAnimals.json';
 import dappAnimals from './dappAnimals.json';
 import nycAnimals from './nycAnimals.json';
 import trustAnimals from './trustAnimals.json';
