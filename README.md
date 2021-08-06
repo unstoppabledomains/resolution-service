@@ -57,7 +57,7 @@ This is the minimum required set of configurations for the service. Additional c
 
 ## Running the service
 
-Once the service is started, it will perform initial synchronization with the blockchain networks. It may take more than 24 hours for a full synchronization. To speed up the process, a snapshot of the database is provided by Unstoppable domains: [TBD](snapshot-file-location). The snapshot is loaded by default using the `LOAD_SNAPSHOT` running mode (see [Running modes](README.md#running-modes)).
+Once the service is started, it will perform initial synchronization with the blockchain networks. It may take more than 24 hours for a full synchronization. To speed up the process, a snapshot of the database is provided by Unstoppable domains: [resolution_service.dump](./resolution_service.dump). The snapshot is loaded by default using the `LOAD_SNAPSHOT` running mode (see [Running modes](README.md#running-modes)).
 During the initial synchronization the API may not work reliably. The status of synchronization can be checked using the `/status` endpoint. After the synchronization is complete, the service API endpoints can be accessed normally. 
 Note that the service is stateless, so the container doesn't need any persistent storage. All data is stored in the database.
 
@@ -101,6 +101,16 @@ For example, to run only the `API` with the `CNS_WORKER`, the following environm
 RESOLUTION_RUNNING_MODE=API,CNS_WORKER
 ```
 
+### API keys
+
+The `/domains` API requires an API key which is simply a version 4 UUID. Currently there are no key management functions in the resolution service. All API keys must be added manually using the database. To generate a random API key run the following query in postgres:
+
+``` sql
+ INSERT INTO api_keys (name, api_key) VALUES ('my API key', md5(clock_timestamp()::text)::uuid);
+```
+
+> Note: The above example should not be used for production API keys as the key which is based on a predictable value. Production keys should be generated externally.
+
 ## API reference
 
 The full api reference can be found [here](link-to-openapi-spec)
@@ -111,6 +121,8 @@ GET /domains | Gets the list of domains.
 GET /domains/:domainName | Gets the resolution of the specified domain.
 GET /status | Gets the synchronization status.
 GET /api-docs | Returns a swagger documentation page.
+
+> Note: The `/domains` endpoints require an API key. The key must be provided as `Bearer` authentication header for requests. New keys must be added manually to the database (see [API keys](#APIkeys) for more info).
 
 ## Development notes
 ### Development pre-requirements
