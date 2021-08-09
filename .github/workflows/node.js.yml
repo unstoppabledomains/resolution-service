@@ -69,9 +69,6 @@ jobs:
       CNS_REGISTRY_EVENTS_STARTING_BLOCK: 0
 
     services:
-      ganache:
-        image: trufflesuite/ganache-cli:v6.12.2
-        ports: ['8545:8545']
       postgres:
         image: postgres:13
         ports: ['5432:5432']
