@@ -63,7 +63,10 @@ jobs:
       RESOLUTION_POSTGRES_PASSWORD: secret
       RESOLUTION_POSTGRES_PORT: 5432
       VIEWBLOCK_API_KEY: 'test'
-      ETHEREUM_JSON_RPC_API_URL: 'http://localhost:8545'
+      ETHEREUM_JSON_RPC_API_URL: 'http://localhost:7545'
+      ETHEREUM_CHAIN_ID: 1337
+      UNS_REGISTRY_EVENTS_STARTING_BLOCK: 0
+      CNS_REGISTRY_EVENTS_STARTING_BLOCK: 0
 
     services:
       ganache:
