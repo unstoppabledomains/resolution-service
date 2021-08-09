@@ -65,6 +65,10 @@ describe('EthUpdater', () => {
     whitelistedMinter = ETHContracts.WhitelistedMinter.getContract().connect(
       EthereumTestsHelper.minter(),
     );
+    await EthereumTestsHelper.fundAccounts(
+      EthereumTestsHelper.owner(),
+      EthereumTestsHelper.minter(),
+    );
   });
 
   beforeEach(async () => {
@@ -208,7 +212,6 @@ describe('EthUpdater', () => {
     });
 
     it('processes uns Set events', async () => {
-      console.log('PROCESSING');
       await unsRegistry.functions
         .setMany(
           ['crypto.BTC.address'],

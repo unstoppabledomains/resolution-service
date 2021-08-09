@@ -74,6 +74,10 @@ describe('CnsResolver', () => {
     whitelistedMinter = ETHContracts.WhitelistedMinter.getContract().connect(
       EthereumTestsHelper.minter(),
     );
+    await EthereumTestsHelper.fundAccounts(
+      EthereumTestsHelper.owner(),
+      EthereumTestsHelper.minter(),
+    );
   });
 
   beforeEach(async () => {
