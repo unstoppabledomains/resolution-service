@@ -238,8 +238,7 @@ describe('DomainsController', () => {
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'CNS',
       });
-      await testDomainOne.save();
-      await testDomainTwo.save();
+      await testDomainOne.save().then(async () => await testDomainTwo.save());
 
       const res = await supertest(api)
         .get('/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2')
@@ -290,8 +289,7 @@ describe('DomainsController', () => {
         location: 'ZNS',
       });
 
-      await testDomainOne.save();
-      await testDomainTwo.save();
+      await testDomainOne.save().then(async () => await testDomainTwo.save());
 
       const res = await supertest(api)
         .get(

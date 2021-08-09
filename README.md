@@ -21,6 +21,9 @@ database for easy retrieval without acessing blockchain APIs.
 The resolution service is provided as a docker image so it can be launched on a
 variety of platforms and in the cloud.
 
+## Resolution service endpoints
+- Production: http://resolve.unstoppabledomains.com/api-docs/
+
 ## Installation
 
 ### Pre-requirements

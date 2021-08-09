@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { getManager } from 'typeorm';
+import { getManager, getConnection } from 'typeorm';
 import ZnsWorker from './ZnsWorker';
 import ZnsTransaction from '../../models/ZnsTransaction';
 import { Domain, WorkerStatus } from '../../models';
@@ -364,7 +364,7 @@ describe('ZnsWorker', () => {
   });
 
   it('should parse the fake transaction', async () => {
-    const manager = getManager();
+    const queryRunner = getConnection().createQueryRunner();
     // const mock = mocks.getMockForTest('should parse the fake transaction');
     const fakeTransaction = {
       hash:
@@ -402,7 +402,7 @@ describe('ZnsWorker', () => {
         id: 1,
         jsonrpc: '2.0',
       });
-    await worker['processTransaction'](fakeTransaction as ZnsTx, manager);
+    await worker['processTransaction'](fakeTransaction as ZnsTx, queryRunner);
     spy.done();
     const txFromDb = await ZnsTransaction.findOne({
       hash: fakeTransaction.hash,
