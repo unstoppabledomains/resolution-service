@@ -1,6 +1,5 @@
 import { ethers, Wallet, BigNumber } from 'ethers';
 import { EthereumProvider } from '../../workers/EthereumProvider';
-import * as sinon from 'sinon';
 import { env } from '../../env';
 import Sandbox from 'uns/sandbox';
 
