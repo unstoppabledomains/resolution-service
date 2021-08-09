@@ -33,12 +33,14 @@ export class StatusController {
     statusResponse.CNS = new BlockchainStatus();
     statusResponse.ZNS = new BlockchainStatus();
 
-    statusResponse.CNS.latestMirroredBlock =
-      await WorkerStatus.latestMirroredBlockForWorker('CNS');
+    statusResponse.CNS.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
+      'CNS',
+    );
     statusResponse.CNS.latestNetworkBlock = await CnsProvider.getBlockNumber();
 
-    statusResponse.ZNS.latestMirroredBlock =
-      await WorkerStatus.latestMirroredBlockForWorker('ZNS');
+    statusResponse.ZNS.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
+      'ZNS',
+    );
     statusResponse.ZNS.latestNetworkBlock = (
       await this.znsProvider.getChainStats()
     ).txHeight;

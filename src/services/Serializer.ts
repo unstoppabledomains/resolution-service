@@ -25,7 +25,7 @@ type SerializationKeys<T> = (T extends Array<infer U>
 export type Serialized<
   T,
   U extends Serialization<T>,
-  V extends string = SerializationKeys<U>,
+  V extends string = SerializationKeys<U>
 > = {
   // TODO improve typing of any
   [P in V]: any;
