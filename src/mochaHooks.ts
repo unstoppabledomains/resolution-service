@@ -12,11 +12,14 @@ import { logger } from './logger';
 chai.use(chaiSubset);
 chai.use(chaiAsPromised);
 chai.use(sinonChai);
-// disallow any 3-rd party http connections
+// disallow any 3-rd party http connections except localhost and google storage
 nock.disableNetConnect();
-// allow calling the localhost for supertest
 nock.enableNetConnect((host) => {
-  return host.includes('127.0.0.1') || host.includes('localhost');
+  return (
+    host.includes('127.0.0.1') ||
+    host.includes('localhost') ||
+    host.includes('storage.googleapis.com')
+  );
 });
 
 if (process.env.NODE_ENV !== 'test') {
