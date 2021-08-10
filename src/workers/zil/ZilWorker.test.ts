@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { getManager, getConnection } from 'typeorm';
-import ZnsWorker from './ZnsWorker';
+import { getConnection } from 'typeorm';
+import ZilWorker from './ZilWorker';
 import ZnsTransaction from '../../models/ZnsTransaction';
 import { Domain, WorkerStatus } from '../../models';
 import nock from 'nock';
@@ -13,14 +13,14 @@ import CorrectNewDomainEvents from '../../../mocks/zns/correctNewDomainEvents.js
 import { env } from '../../env';
 import { isBech32 } from '@zilliqa-js/util/dist/validation';
 import { fromBech32Address } from '@zilliqa-js/crypto';
-import { ZnsTx } from './ZnsProvider';
+import { ZnsTx } from './ZilProvider';
 
-let worker: ZnsWorker;
+let worker: ZilWorker;
 
-describe('ZnsWorker', () => {
+describe('ZilWorker', () => {
   beforeEach(async () => {
     await WorkerStatus.saveWorkerStatus('ETH', 0, -1);
-    worker = new ZnsWorker();
+    worker = new ZilWorker();
   });
 
   it('should init', async () => {
@@ -28,7 +28,7 @@ describe('ZnsWorker', () => {
   });
 
   it('should run for the first 2 transactions', async () => {
-    worker = new ZnsWorker({ perPage: 2 });
+    worker = new ZilWorker({ perPage: 2 });
     const transactionInterceptor = nock('https://api.viewblock.io')
       .get(
         `/v1/zilliqa/addresses/${env.APPLICATION.ZILLIQA.ZNS_REGISTRY_CONTRACT}/txs`,
@@ -64,7 +64,7 @@ describe('ZnsWorker', () => {
   });
 
   it('should not store the domain if parent is missing in db', async () => {
-    worker = new ZnsWorker({ perPage: 2 });
+    worker = new ZilWorker({ perPage: 2 });
 
     const fakeTransaction = {
       ...FirstTwoTransactions[0],
@@ -98,7 +98,7 @@ describe('ZnsWorker', () => {
 
   describe('.ConfiguredEvent', () => {
     it('should process the configured event from transaction', async () => {
-      worker = new ZnsWorker({ perPage: 2 });
+      worker = new ZilWorker({ perPage: 2 });
 
       const fakeTransaction = {
         ...CorrectTransactions[2],
@@ -148,7 +148,7 @@ describe('ZnsWorker', () => {
     });
 
     it('should not update the db due to missing node in db', async () => {
-      worker = new ZnsWorker({ perPage: 2 });
+      worker = new ZilWorker({ perPage: 2 });
 
       const fakeTransaction = {
         ...CorrectTransactions[2],
@@ -201,7 +201,7 @@ describe('ZnsWorker', () => {
 
   describe('.failedNewDomainEvent', () => {
     it('label in newDomain event should not include dots', async () => {
-      worker = new ZnsWorker({ perPage: 2 });
+      worker = new ZilWorker({ perPage: 2 });
       const chainStatsInterceptor = nock('https://api.viewblock.io')
         .get('/v1/zilliqa/stats')
         .query(true)
@@ -236,7 +236,7 @@ describe('ZnsWorker', () => {
     });
 
     it('label in newDomain event should not be empty', async () => {
-      worker = new ZnsWorker({ perPage: 2 });
+      worker = new ZilWorker({ perPage: 2 });
 
       const fakeTransaction = {
         ...FirstTwoTransactions[0],
@@ -267,7 +267,7 @@ describe('ZnsWorker', () => {
     });
 
     it('label in newDomain event should not be capitalized', async () => {
-      worker = new ZnsWorker({ perPage: 2 });
+      worker = new ZilWorker({ perPage: 2 });
 
       const fakeTransaction = {
         ...FirstTwoTransactions[0],
@@ -298,7 +298,7 @@ describe('ZnsWorker', () => {
     });
 
     it('should continue to parse the tx even if one of the newDomain events are failed', async () => {
-      worker = new ZnsWorker({ perPage: 2 });
+      worker = new ZilWorker({ perPage: 2 });
 
       const fakeTransaction = {
         ...FirstTwoTransactions[0],

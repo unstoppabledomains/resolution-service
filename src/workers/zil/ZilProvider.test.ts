@@ -1,13 +1,13 @@
 import { expect } from 'chai';
-import ZnsProvider from './ZnsProvider';
+import ZilProvider from './ZilProvider';
 import firstTwoTransactions from '../../../mocks/zns/firstTwoTransactions.json';
 import nock from 'nock';
 
-let provider: ZnsProvider;
+let provider: ZilProvider;
 
-describe('ZnsProvider', () => {
+describe('ZilProvider', () => {
   beforeEach(() => {
-    provider = new ZnsProvider();
+    provider = new ZilProvider();
   });
 
   it('should init', async () => {

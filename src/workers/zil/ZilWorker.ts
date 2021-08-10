@@ -1,5 +1,5 @@
-import ZnsProvider, { ZnsTx } from './ZnsProvider';
-import { EntityManager, getConnection, Repository, QueryRunner } from 'typeorm';
+import ZnsProvider, { ZnsTx } from './ZilProvider';
+import { EntityManager, getConnection, QueryRunner } from 'typeorm';
 import { Domain, WorkerStatus } from '../../models';
 import ZnsTransaction, {
   NewDomainEvent,
@@ -12,15 +12,15 @@ import { fromBech32Address } from '@zilliqa-js/crypto';
 import Bugsnag from '@bugsnag/js';
 import { ZnsTransactionEvent } from '../../models/ZnsTransaction';
 
-type ZnsWorkerOptions = {
+type ZilWorkerOptions = {
   perPage?: number;
 };
 
-export default class ZnsWorker {
+export default class ZilWorker {
   private provider: ZnsProvider;
   private perPage: number;
 
-  constructor(options?: ZnsWorkerOptions) {
+  constructor(options?: ZilWorkerOptions) {
     this.perPage = options?.perPage || 25;
     this.provider = new ZnsProvider();
   }

@@ -7,7 +7,7 @@ import('newrelic');
 const runningMode = env.APPLICATION.RUNNING_MODE;
 import connect from './database/connect';
 import { startWorker as startEthWorker } from './workers/eth/EthUpdater';
-import ZnsUpdater from './workers/ZnsUpdater';
+import ZilUpdater from './workers/ZilUpdater';
 import { loadSnapshot } from './database/loadSnapshot';
 
 connect().then(async () => {
@@ -27,9 +27,9 @@ connect().then(async () => {
     logger.info('ETH worker is enabled and running');
   }
 
-  if (runningMode.includes('ZNS_WORKER')) {
-    ZnsUpdater();
-    logger.info(`ZNS worker is enabled and running`);
+  if (runningMode.includes('ZIL_WORKER')) {
+    ZilUpdater();
+    logger.info(`ZIL worker is enabled and running`);
   }
 
   if (runningMode.includes('API')) {

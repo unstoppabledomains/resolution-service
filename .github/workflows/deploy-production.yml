@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy production
 
 on:
   workflow_dispatch:
@@ -71,7 +71,7 @@ jobs:
           BUGSNAG_API_KEY=${{ secrets.BUGSNAG_API_KEY }} NEW_RELIC_APP_NAME=${{
           secrets.NEW_RELIC_APP_NAME }} NEW_RELIC_LICENSE_KEY=${{
           secrets.NEW_RELIC_LICENSE_KEY }} SERVICE_NAME=workers
-          RESOLUTION_RUNNING_MODE=CNS_WORKER,ZNS_WORKER,MIGRATIONS bash
+          RESOLUTION_RUNNING_MODE=ETH_WORKER,ZIL_WORKER,MIGRATIONS bash
           create-yaml.sh
 
       - name: Deploy WORKERS

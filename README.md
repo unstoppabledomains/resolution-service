@@ -70,7 +70,7 @@ configuration options are listed in
 
 > ℹ️ By default, the service will use a snapshot of a synchronized database to
 > seed domain data. If you want to synchronize blockchain data from scratch, add
-> `RUNNING_MODE=API,ETH_WORKER,ZNS_WORKER,MIGRATIONS` to the `service.env` file.
+> `RUNNING_MODE=API,ETH_WORKER,ZIL_WORKER,MIGRATIONS` to the `service.env` file.
 
 ## Running the service
 
@@ -92,7 +92,7 @@ database.
 | Option                                      | Default value                                        | required           | Description                                                                                                                                                                                                                                                                                                                 |
 | ------------------------------------------- | ---------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | RESOLUTION_API_PORT                         | 3000                                                 | :x:                | The port for the HTTP API.                                                                                                                                                                                                                                                                                                  |
-| RESOLUTION_RUNNING_MODE                     | API,ETH_WORKER, ZNS_WORKER,MIGRATIONS, LOAD_SNAPSHOT | :x:                | Comma-separated list of running modes of the resolution service (see [Running modes](README.md#running-modes)).                                                                                                                                                                                                             |
+| RESOLUTION_RUNNING_MODE                     | API,ETH_WORKER, ZIL_WORKER,MIGRATIONS, LOAD_SNAPSHOT | :x:                | Comma-separated list of running modes of the resolution service (see [Running modes](README.md#running-modes)).                                                                                                                                                                                                             |
 | RESOLUTION_POSTGRES_HOST                    | localhost                                            | :heavy_check_mark: | Host for the postgres DB. Note that to connect to a postgres instance running on the same server as the container, `host.docker.internal` should be used instead of `localhost` on Windows and MacOS (see https://docs.docker.com/docker-for-windows/networking/#use-cases-and-workarounds).                                |
 | RESOLUTION_POSTGRES_USERNAME                | postgres                                             | :heavy_check_mark: | Username that is used to connect to postgres.                                                                                                                                                                                                                                                                               |
 | RESOLUTION_POSTGRES_PASSWORD                | secret                                               | :heavy_check_mark: | Password that is used to connect to postgres.                                                                                                                                                                                                                                                                               |
@@ -123,7 +123,7 @@ RESOLUTION_RUNNING_MODE environment variable. Available running modes:
 - **API** - Runs the service API.
 - **ETH_WORKER** - Runs the ETH worker to sync data from the Ethereum CNS and
   UNS registry
-- **ZNS_WORKER** - Runs the ZNS worker to sync data from the Zilliqa ZNS
+- **ZIL_WORKER** - Runs the ZIL worker to sync data from the Zilliqa ZNS
   registry
 - **MIGRATIONS** - Runs the migration scripts if necessary.
 - **LOAD_SNAPSHOT** - Loads the snapshot data from `/resolution_service.dump`
@@ -238,7 +238,7 @@ Currently there are two workers in the resolution service:
   Contains a scheduled job that connects to the Ethereum blockchain using JSON RPC
   and pulls CNS (.crypto) and UNS domains and resolution events. The events are parsed
   and saved to the database.
-- ZNS worker\
+- ZIL worker\
   Contains a scheduled job that connects to the Zilliqa blockchain using and pulls
   ZNS (.zil) domains and resolution events. The events are parsed and saved to the
   database.

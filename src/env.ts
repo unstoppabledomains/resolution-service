@@ -37,7 +37,7 @@ export const env = {
     PORT: process.env.RESOLUTION_API_PORT || process.env.PORT || 3000,
     RUNNING_MODE: process.env.RESOLUTION_RUNNING_MODE
       ? process.env.RESOLUTION_RUNNING_MODE.split(',')
-      : ['MIGRATIONS', 'LOAD_SNAPSHOT', 'API', 'ETH_WORKER', 'ZNS_WORKER'],
+      : ['MIGRATIONS', 'LOAD_SNAPSHOT', 'API', 'ETH_WORKER', 'ZIL_WORKER'],
     ETHEREUM: {
       CNS_REGISTRY_EVENTS_STARTING_BLOCK: Number(
         process.env.CNS_REGISTRY_EVENTS_STARTING_BLOCK || 9080000,

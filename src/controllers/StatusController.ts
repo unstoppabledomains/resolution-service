@@ -3,7 +3,7 @@ import 'reflect-metadata';
 import { ResponseSchema } from 'routing-controllers-openapi';
 import { IsNumber, IsString, ValidateNested } from 'class-validator';
 import { WorkerStatus } from '../models';
-import ZnsProvider from '../workers/zns/ZnsProvider';
+import ZilProvider from '../workers/zil/ZilProvider';
 import { EthereumProvider } from '../workers/EthereumProvider';
 import { env } from '../env';
 import chainIdToNetworkName from '../utils/chainIdToNetworkName';
@@ -29,7 +29,7 @@ class StatusResponse {
 
 @JsonController()
 export class StatusController {
-  private znsProvider = new ZnsProvider();
+  private zilProvider = new ZilProvider();
 
   @Get('/status')
   @ResponseSchema(StatusResponse)
@@ -47,7 +47,7 @@ export class StatusController {
       'ZIL',
     );
     statusResponse.ZIL.latestNetworkBlock = (
-      await this.znsProvider.getChainStats()
+      await this.zilProvider.getChainStats()
     ).txHeight;
 
     statusResponse.ETH.network =

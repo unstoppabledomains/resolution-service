@@ -45,9 +45,9 @@ export type ZnsTx = {
 };
 
 /**
- * ZnsProvider is a class that communicates with viewblock and zilliqa api to fetch transactions and domains records
+ * ZilProvider is a class that communicates with viewblock and zilliqa api to fetch transactions and domains records
  */
-export default class ZnsProvider {
+export default class ZilProvider {
   private readonly viewBlockUrl;
   private readonly viewBlockApiKey;
 
