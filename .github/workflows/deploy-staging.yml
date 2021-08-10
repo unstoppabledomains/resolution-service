@@ -1,0 +1,81 @@
+name: Deploy staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployables:
+        description: 'api/workers/dispatch.yaml'
+        default: 'api workers'
+        required: true
+
+jobs:
+  deploy_api:
+    if: contains(github.event.inputs.deployables, 'api')
+    runs-on: ubuntu-latest
+    env:
+      RESOLUTION_POSTGRES_HOST: ${{ secrets.RESOLUTION_STAGING_POSTGRES_HOST }}
+      RESOLUTION_POSTGRES_USERNAME:
+        ${{ secrets.RESOLUTION_STAGING_POSTGRES_USERNAME }}
+      RESOLUTION_POSTGRES_PASSWORD:
+        ${{ secrets.RESOLUTION_STAGING_POSTGRES_PASSWORD }}
+      RESOLUTION_POSTGRES_DATABASE:
+        ${{ secrets.RESOLUTION_STAGING_POSTGRES_DATABASE}}
+      ETHEREUM_JSON_RPC_API_URL: ${{ secrets.ETHEREUM_TESTNET_JSON_RPC_API_URL}}
+      VIEWBLOCK_API_KEY: ${{ secrets.VIEWBLOCK_API_KEY }}
+      GCP_SQL_INSTANCE: ${{ secrets.GCP_STAGING_SQL_INSTANCE }}
+      ETHEREUM_CHAIN_ID: 4
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up gcloud SDK
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.GCP_STAGING_PROJECT_ID }}
+          service_account_key:
+            ${{ secrets.GCP_APP_ENGINE_DEFAULT_SERVICE_ACCOUNT_KEY_STAGING }}
+
+      - name: Create api.yaml
+        shell: bash
+        run: SERVICE_NAME=api RESOLUTION_RUNNING_MODE=API bash create-yaml.sh
+
+      - name: Deploy API
+        if: contains(github.event.inputs.deployables, 'api')
+        run: gcloud app deploy api.yaml
+
+  deploy_workers:
+    runs-on: ubuntu-latest
+    if: contains(github.event.inputs.deployables, 'workers')
+    env:
+      RESOLUTION_POSTGRES_HOST: ${{ secrets.RESOLUTION_STAGING_POSTGRES_HOST }}
+      RESOLUTION_POSTGRES_USERNAME:
+        ${{ secrets.RESOLUTION_STAGING_POSTGRES_USERNAME }}
+      RESOLUTION_POSTGRES_PASSWORD:
+        ${{ secrets.RESOLUTION_STAGING_POSTGRES_PASSWORD }}
+      RESOLUTION_POSTGRES_DATABASE:
+        ${{ secrets.RESOLUTION_STAGING_POSTGRES_DATABASE}}
+      ETHEREUM_JSON_RPC_API_URL: ${{ secrets.ETHEREUM_TESTNET_JSON_RPC_API_URL}}
+      VIEWBLOCK_API_KEY: ${{ secrets.VIEWBLOCK_API_KEY }}
+      GCP_SQL_INSTANCE: ${{ secrets.GCP_STAGING_SQL_INSTANCE }}
+      ETHEREUM_CHAIN_ID: 4
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up gcloud SDK
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.GCP_STAGING_PROJECT_ID }}
+          service_account_key:
+            ${{ secrets.GCP_APP_ENGINE_DEFAULT_SERVICE_ACCOUNT_KEY_STAGING }}
+
+      - name: Create worker.yaml
+        shell: bash
+        run:
+          SERVICE_NAME=workers
+          RESOLUTION_RUNNING_MODE=ETH_WORKER,ZIL_WORKER,MIGRATIONS bash
+          create-yaml.sh
+
+      - name: Deploy WORKERS
+        if: contains(github.event.inputs.deployables, 'workers')
+        run: gcloud app deploy workers.yaml
