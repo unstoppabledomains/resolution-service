@@ -2,6 +2,7 @@ import * as allAnimals from './vocabulary/animals';
 import resellers from './vocabulary/resellers.json';
 import adjectives from './vocabulary/adjectives.json';
 import fs from 'fs';
+import fetch from 'node-fetch';
 import { parse, stringify } from 'svgson';
 import { Domain } from '../../models';
 
