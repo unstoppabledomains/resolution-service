@@ -6,7 +6,7 @@ import fetch from 'node-fetch';
 import { eip137Namehash } from '../utils/namehash';
 import { Attribute } from '../types/common';
 
-describe.only('MetaDataController', () => {
+describe('MetaDataController', () => {
   describe('GET /metadata/:DomainOrToken', () => {
     it('should work', async () => {
       const domain = await DomainTestHelper.createTestDomain({
