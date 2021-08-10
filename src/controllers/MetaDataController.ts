@@ -1,6 +1,7 @@
 import { Get, JsonController, Param } from 'routing-controllers';
 import { ResponseSchema } from 'routing-controllers-openapi';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
+import fetch from 'node-fetch';
 import Domain from '../models/Domain';
 import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
 
@@ -135,7 +136,7 @@ export class MetaDataController {
   }
 
   private getIpfsDescriptionPart(records: Record<string, string>): string {
-    const ipfsHash = records['ipfs.html.value'] || records['dweb.ipfs.hash'];
+    const ipfsHash = records['dweb.ipfs.hash'] || records['ipfs.html.value'];
     if (ipfsHash) {
       return `\nhttps://gateway.pinata.cloud/ipfs/${ipfsHash}`;
     }
@@ -168,8 +169,8 @@ export class MetaDataController {
     attributes.push(...currencies);
 
     const ipfsContent =
-      domain.resolution['ipfs.html.value'] ||
-      domain.resolution['dweb.ipfs.hash'];
+      domain.resolution['dweb.ipfs.hash'] ||
+      domain.resolution['ipfs.html.value'];
     if (ipfsContent) {
       attributes.push({ trait_type: 'IPFS Content', value: ipfsContent });
     }
