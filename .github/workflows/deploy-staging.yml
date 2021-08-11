@@ -41,7 +41,9 @@ jobs:
 
       - name: Create api.yaml
         shell: bash
-        run: SERVICE_NAME=api RESOLUTION_RUNNING_MODE=API bash create-yaml.sh
+        run:
+          ZNS_NETWORK=testnet ETHEREUM_CHAIN_ID=4 SERVICE_NAME=api
+          RESOLUTION_RUNNING_MODE=API bash create-yaml.sh
 
       - name: Deploy API
         if: contains(github.event.inputs.deployables, 'api')
@@ -80,7 +82,7 @@ jobs:
       - name: Create worker.yaml
         shell: bash
         run:
-          SERVICE_NAME=workers
+          ZNS_NETWORK=testnet ETHEREUM_CHAIN_ID=4 SERVICE_NAME=workers
           RESOLUTION_RUNNING_MODE=ETH_WORKER,ZIL_WORKER,MIGRATIONS bash
           create-yaml.sh
 
