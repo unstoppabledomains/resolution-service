@@ -45,12 +45,12 @@ export class EthUpdater {
     fromBlock: number,
     toBlock: number,
   ): Promise<Event[]> {
-    const cnsEvents = await this.unsRegistry.queryFilter(
+    const unsEvents = await this.unsRegistry.queryFilter(
       {},
       fromBlock,
       toBlock,
     );
-    const unsEvents = await this.cnsRegistry.queryFilter(
+    const cnsEvents = await this.cnsRegistry.queryFilter(
       {},
       fromBlock,
       toBlock,
