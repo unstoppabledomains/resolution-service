@@ -39,6 +39,7 @@ describe('Domain', () => {
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2'.toUpperCase(),
+
         location: 'CNS',
       });
       await expect(domain.save()).to.be.rejectedWith(
