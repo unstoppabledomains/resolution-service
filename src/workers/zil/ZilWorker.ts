@@ -153,6 +153,7 @@ export default class ZilWorker {
     domain.attributes({
       name: `${label}.${parentDomain.name}`,
       location: 'ZNS',
+      registry: this.provider.registryAddress,
     });
     await repository.save(domain);
   }
@@ -179,6 +180,7 @@ export default class ZilWorker {
         resolver: resolver !== Domain.NullAddress ? resolver : undefined,
         ownerAddress: owner !== Domain.NullAddress ? owner : undefined,
         resolution: resolution ? resolution : {},
+        registry: this.provider.registryAddress,
       });
       await repository.save(domain);
     }

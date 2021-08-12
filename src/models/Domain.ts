@@ -57,6 +57,10 @@ export default class Domain extends Model {
   @Column('text', { nullable: true })
   resolver: string | null = null;
 
+  @IsString()
+  @Column('text', { nullable: true })
+  registry: string | null = null;
+
   @IsOptional()
   @Index()
   @ManyToOne((type) => Domain, { nullable: true })

@@ -105,6 +105,7 @@ export class EthUpdater {
         domain.ownerAddress = null;
         domain.resolution = {};
         domain.resolver = null;
+        domain.registry = null;
         await domainRepository.save(domain);
       } else {
         domain.ownerAddress = event.args?.to.toLowerCase();
