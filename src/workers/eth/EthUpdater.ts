@@ -145,10 +145,10 @@ export class EthUpdater {
       );
     }
 
-    const domain = new Domain();
+    const node = eip137Namehash(uri);
+    const domain = await Domain.findOrBuildByNode(node);
 
     domain.name = uri;
-    domain.node = eip137Namehash(uri);
     domain.location = 'CNS';
     domain.ownerAddress = this.lastProcessedEvent.args?.to.toLowerCase();
 
