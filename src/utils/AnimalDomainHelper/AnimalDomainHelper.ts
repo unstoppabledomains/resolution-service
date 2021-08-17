@@ -5,28 +5,21 @@ import fs from 'fs';
 import fetch from 'node-fetch';
 import { parse, stringify } from 'svgson';
 import { Domain } from '../../models';
+import { OpenSeaMetadataAttribute } from '../../controllers/MetaDataController';
 
 const bucketEndpoint =
   'https://storage.googleapis.com/dot-crypto-metadata.appspot.com/images';
 
 export default class AnimalDomainHelper {
-  readonly animals: Record<string, string[]> = {};
-  readonly adjectives: string[] = [];
-  readonly resellers: string[] = [];
-
-  constructor() {
-    this.animals = allAnimals;
-    this.adjectives = adjectives;
-    this.resellers = resellers;
-  }
+  readonly animals: Record<string, string[]> = allAnimals;
+  readonly adjectives: string[] = adjectives;
+  readonly resellers: string[] = resellers;
 
   get animalsFlat(): string[] {
     return Object.values(this.animals).flat();
   }
 
-  resellerAnimalAttributes(
-    domain: Domain,
-  ): { trait_type: string; value: string }[] {
+  resellerAnimalAttributes(domain: Domain): OpenSeaMetadataAttribute[] {
     if (domain.extension !== 'crypto') {
       return [{ trait_type: 'type', value: 'standard' }];
     }
@@ -47,13 +40,30 @@ export default class AnimalDomainHelper {
   }
 
   async getResellerAnimalImageData(
-    domain: Domain,
+    attributes: OpenSeaMetadataAttribute[],
   ): Promise<string | undefined> {
-    const matches = this.getResellerAnimalRegex().exec(domain.label);
-    if (matches && domain.extension === 'crypto') {
-      const prefix = matches[1];
-      const animal = matches[2];
+    let domain = '';
+    let prefix = '';
+    let animal = '';
 
+    attributes.forEach((attribute) => {
+      if ('trait_type' in attribute) {
+        domain =
+          attribute.trait_type === 'domain'
+            ? (attribute.value as string)
+            : domain;
+        prefix =
+          attribute.trait_type === 'adjective'
+            ? (attribute.value as string)
+            : prefix;
+        animal =
+          attribute.trait_type === 'animal'
+            ? (attribute.value as string)
+            : animal;
+      }
+    });
+    const extension = domain.split('.').pop();
+    if (extension === 'crypto') {
       if (animal) {
         return await this.generateImageData(prefix, animal);
       }
@@ -140,19 +150,9 @@ export default class AnimalDomainHelper {
   private getResellerAnimalRegex(): RegExp {
     const prefixes = [...this.adjectives, ...this.resellers];
     let regex = '^(';
-    for (const prefix of prefixes) {
-      if (!regex.endsWith('(')) {
-        regex += '|';
-      }
-      regex += `${prefix}`;
-    }
-    regex += ')(';
-    for (const animal of this.animalsFlat) {
-      if (!regex.endsWith('(')) {
-        regex += '|';
-      }
-      regex += `${animal}`;
-    }
+    regex += prefixes.join('|');
+    regex += ')?(';
+    regex += this.animalsFlat.join('|');
     regex += ')[0-9]*$';
     return new RegExp(regex);
   }
