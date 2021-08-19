@@ -4,7 +4,7 @@ import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import fetch from 'node-fetch';
 import Domain from '../models/Domain';
 import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
-import { DefaultImageData, BackgroundColor } from '../utils/generalImage';
+import { DefaultImageData } from '../utils/generalImage';
 import { MetadataImageFontSize } from '../types/common';
 
 export class Erc721Metadata {
@@ -36,7 +36,7 @@ export type OpenSeaMetadataAttribute =
 export class OpenSeaMetadata extends Erc721Metadata {
   external_link?: string;
   image_data?: string;
-  attributes?: Array<OpenSeaMetadataAttribute>;
+  attributes: Array<OpenSeaMetadataAttribute>;
   background_color?: string;
   animation_url?: string;
   youtube_url?: string;
@@ -70,22 +70,19 @@ export class MetaDataController {
     };
 
     if (!this.isDomainWithCustomImage(domain)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       metadata.image_data = await this.generateImageData(
         domain,
-        metadata.attributes!,
+        metadata.attributes,
       );
       metadata.background_color = '4C47F7';
     }
 
     if (!this.isValidDNSDomain(domain.name)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      metadata.attributes!.push({ value: 'invalid' });
+      metadata.attributes.push({ value: 'invalid' });
     }
 
     if (domain.isUnicodeName) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      metadata.attributes!.push({
+      metadata.attributes.push({
         value: 'unicode',
       });
     }
