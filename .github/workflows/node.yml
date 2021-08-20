@@ -111,6 +111,9 @@ jobs:
 
       - name: Run test
         run: yarn test
-
-      - name: Check snapshot
-        run: NODE_ENV=test yarn db:snapshot:check
+# Temporary disable snapshot feature until we implement chain reorg handling functionality.
+# Check the following story and PR for details:
+#  - https://www.pivotaltracker.com/n/projects/2463706/stories/178945048
+#  - https://github.com/unstoppabledomains/unstoppable-domains-website/pull/2908
+#      - name: Check snapshot
+#        run: NODE_ENV=test yarn db:snapshot:check

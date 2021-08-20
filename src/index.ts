@@ -8,19 +8,25 @@ const runningMode = env.APPLICATION.RUNNING_MODE;
 import connect from './database/connect';
 import { startWorker as startEthWorker } from './workers/eth/EthUpdater';
 import ZilUpdater from './workers/ZilUpdater';
-import { loadSnapshot } from './database/loadSnapshot';
 
 connect().then(async () => {
-  if (runningMode.includes('LOAD_SNAPSHOT')) {
-    logger.info('Loading db snapshot');
-    try {
-      await loadSnapshot();
-    } catch (error) {
-      logger.error(error);
-      process.exit(1);
-    }
-    logger.info('Db snapshot loaded');
-  }
+  /**
+   * Temporary disable snapshot feature until we implement chain reorg handling functionality.
+   * Check the following story and PR for details:
+   * - https://www.pivotaltracker.com/n/projects/2463706/stories/178945048
+   * - https://github.com/unstoppabledomains/unstoppable-domains-website/pull/2908
+   */
+
+  // if (runningMode.includes('LOAD_SNAPSHOT')) {
+  //   logger.info('Loading db snapshot');
+  //   try {
+  //     await loadSnapshot();
+  //   } catch (error) {
+  //     logger.error(error);
+  //     process.exit(1);
+  //   }
+  //   logger.info('Db snapshot loaded');
+  // }
 
   if (runningMode.includes('ETH_WORKER')) {
     startEthWorker();
