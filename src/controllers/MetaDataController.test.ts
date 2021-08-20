@@ -291,4 +291,65 @@ describe('MetaDataController', () => {
       });
     });
   });
+
+  describe('GET /image/:domainOrToken', () => {
+    it('should resolve image_data with provided domain', async () => {
+      const domain = await DomainTestHelper.createTestDomain({});
+      const res = await supertest(api)
+        .get(`/image/${domain.name}`)
+        .send()
+        .then((r) => r.body);
+      const defaultImageData = DefaultImageData({
+        label: domain.label,
+        tld: domain.extension,
+        fontSize: 24,
+      });
+      expect(res.image_data).to.equal(defaultImageData);
+    });
+
+    it('should resolve image_data with provided tokenId', async () => {
+      const domain = await DomainTestHelper.createTestDomain({});
+      const res = await supertest(api)
+        .get(`/image/${domain.node}`)
+        .send()
+        .then((r) => r.body);
+      const defaultImageData = DefaultImageData({
+        label: domain.label,
+        tld: domain.extension,
+        fontSize: 24,
+      });
+      expect(res.image_data).to.equal(defaultImageData);
+    });
+
+    it(`should resolve image_data as animal domain`, async () => {
+      const domain = await DomainTestHelper.createTestDomain({
+        name: 'unstoppablelemming.crypto',
+        node: eip137Namehash('unstoppablelemming.crypto'),
+      });
+
+      const res = await supertest(api)
+        .get(`/image/${domain.name}`)
+        .send()
+        .then((r) => r.body);
+
+      const correctImageData = await fetch(
+        'https://storage.googleapis.com/dot-crypto-metadata.appspot.com/images/animals/lemming.svg',
+      ).then((r) => r.text());
+      expect(res.image_data).to.equal(correctImageData);
+    });
+
+    it('should throw an error when no domain is found', async () => {
+      const response = await supertest(api).get('/image/unknown.crypto').send();
+      expect(response.text).to.eq(
+        '{"code":"Error","message":"Entity unknown.crypto is not found","errors":[{}]}',
+      );
+      const token = eip137Namehash('unknown.crypto');
+      const responseWithNode = await supertest(api)
+        .get(`/image/${token}`)
+        .send();
+      expect(responseWithNode.text).to.eq(
+        `{"code":"Error","message":"Entity ${token} is not found","errors":[{}]}`,
+      );
+    });
+  });
 });

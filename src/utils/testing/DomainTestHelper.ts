@@ -2,7 +2,9 @@ import { Domain } from '../../models';
 import { Attributes } from '../../types/common';
 
 export class DomainTestHelper {
-  static async createTestDomain(options: Attributes<Domain>): Promise<Domain> {
+  static async createTestDomain(
+    options: Attributes<Domain> = {},
+  ): Promise<Domain> {
     return Domain.findOrCreate({
       ...options,
       name: options.name ?? 'testdomain.crypto',
