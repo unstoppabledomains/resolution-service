@@ -109,6 +109,9 @@ Endpoint | Description
 ---------|------------
 GET /domains | Gets the list of domains.
 GET /domains/:domainName | Gets the resolution of the specified domain.
+GET /metadata/:domainOrToken | Retrieve erc721 metadata information of the specified domain
+GET /image/:domainOrToken | Retrieve image_data as a svg string
+GET /image-src/:domainOrToken | Retrieve image_data as 'image/svg+xml'
 GET /status | Gets the synchronization status.
 GET /api-docs | Returns a swagger documentation page.
 
