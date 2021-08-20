@@ -1,4 +1,4 @@
-import { Get, JsonController, Param } from 'routing-controllers';
+import { Controller, Get, Header, Param } from 'routing-controllers';
 import { ResponseSchema } from 'routing-controllers-openapi';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import fetch from 'node-fetch';
@@ -6,6 +6,7 @@ import Domain from '../models/Domain';
 import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
 import { DefaultImageData } from '../utils/generalImage';
 import { MetadataImageFontSize } from '../types/common';
+import { pathThatSvg } from 'path-that-svg';
 
 export class Erc721Metadata {
   name: string;
@@ -42,7 +43,11 @@ export class OpenSeaMetadata extends Erc721Metadata {
   youtube_url?: string;
 }
 
-@JsonController()
+export class ImageResponse {
+  image_data: string;
+}
+
+@Controller()
 export class MetaDataController {
   private animalHelper: AnimalDomainHelper = new AnimalDomainHelper();
 
@@ -88,6 +93,46 @@ export class MetaDataController {
     }
 
     return metadata;
+  }
+
+  @Get('/image/:domainOrToken')
+  @ResponseSchema(ImageResponse)
+  async getImage(
+    @Param('domainOrToken') domainOrToken: string,
+  ): Promise<ImageResponse> {
+    const token = this.normalizeDomainOrToken(domainOrToken);
+    const domain = await Domain.findByNode(token);
+    if (!domain) {
+      throw new Error(`Entity ${domainOrToken} is not found`);
+    }
+
+    const domainAttributes = [
+      ...this.getDomainAttributes(domain),
+      ...this.getAnimalAttributes(domain),
+    ];
+    return {
+      image_data: await this.generateImageData(domain, domainAttributes),
+    };
+  }
+
+  @Get('/image-src/:domainOrToken')
+  @Header('Access-Control-Allow-Origin', '*')
+  @Header('Content-Type', 'image/svg+xml')
+  async getImageSrc(
+    @Param('domainOrToken') domainOrToken: string,
+  ): Promise<string> {
+    const token = this.normalizeDomainOrToken(domainOrToken);
+    const domain = await Domain.findByNode(token);
+
+    if (!domain) {
+      throw new Error(`Entity ${domainOrToken} is not found`);
+    }
+    const domainAttributes = [
+      ...this.getDomainAttributes(domain),
+      ...this.getAnimalAttributes(domain),
+    ];
+    const imageData = await this.generateImageData(domain, domainAttributes);
+    return await pathThatSvg(imageData);
   }
 
   private normalizeDomainOrToken(domainOrToken: string): string {
