@@ -13,39 +13,21 @@ import ValidateWith from '../services/ValidateWith';
 import { Attributes } from '../types/common';
 import Model from './Model';
 import { BigNumber } from '@ethersproject/bignumber';
-import { ETHContracts } from '../contracts';
 
-export const CnsDomainOperationTypes = [
+export const DomainOperationTypes = [
   'Transfer',
   'Resolve',
   'NewURI',
   'Sync',
-];
-
-export const CnsEventTypes = [
-  ...CnsDomainOperationTypes,
-  'Approval',
-  'ApprovalForAll',
-  'NewURIPrefix',
-];
-
-export const UnsDomainOperationTypes = [
-  'Transfer',
-  'NewURI',
   'Set',
   'ResetRecords',
-];
-export const UnsEventTypes = [
-  ...UnsDomainOperationTypes,
+] as const;
+
+export const EventTypes = [
+  ...DomainOperationTypes,
   'Approval',
   'ApprovalForAll',
   'NewURIPrefix',
-] as const;
-
-const EventTypes = [...UnsEventTypes, ...CnsEventTypes] as const;
-const DomainOperationTypes = [
-  ...UnsDomainOperationTypes,
-  ...CnsDomainOperationTypes,
 ] as const;
 
 type EventType = typeof EventTypes[any];
@@ -127,19 +109,7 @@ export default class CnsRegistryEvent extends Model {
   }
 
   domainOperation(): boolean {
-    if (
-      this.contractAddress ===
-      ETHContracts.UNSRegistry.getContract().address.toLowerCase()
-    ) {
-      return this.type in UnsDomainOperationTypes;
-    }
-    if (
-      this.contractAddress ===
-      ETHContracts.CNSRegistry.getContract().address.toLowerCase()
-    ) {
-      return this.type in CnsDomainOperationTypes;
-    }
-    return false;
+    return this.type in DomainOperationTypes;
   }
 
   tokenId(): string | undefined {
