@@ -1,17 +1,20 @@
-import { IsEnum, IsNumber, Min, IsOptional, IsObject } from 'class-validator';
+import { IsEnum, IsNumber, Min, IsOptional } from 'class-validator';
 import ValidateWith from '../services/ValidateWith';
 import { Column, Entity, Index, Repository, Unique } from 'typeorm';
 import { Attributes } from '../types/common';
 import Model from './Model';
-import { Location, DomainLocations } from './Domain';
+import { Location } from './Domain';
+
+export const Blockchains = ['ETH', 'ZIL'];
+export type Blockchain = typeof Blockchains[number];
 
 @Entity({ name: 'resolution_worker_status' })
 @Unique(['location'])
 export default class WorkerStatus extends Model {
-  @IsEnum(DomainLocations)
+  @IsEnum(Blockchains)
   @Column('text')
   @Index()
-  location: Location;
+  location: Blockchain;
 
   @IsNumber()
   @Min(0)
@@ -54,14 +57,14 @@ export default class WorkerStatus extends Model {
   }
 
   static async latestMirroredBlockForWorker(
-    location: Location,
+    location: Blockchain,
   ): Promise<number> {
     const status = await WorkerStatus.findOne({ location });
     return status ? status.lastMirroredBlockNumber : 0;
   }
 
   static async latestAtxuidForWorker(
-    location: Location,
+    location: Blockchain,
   ): Promise<number | undefined> {
     const status = await WorkerStatus.findOne({ location });
     return status?.lastAtxuid;

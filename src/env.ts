@@ -8,7 +8,10 @@ if (!process.env.RESOLUTION_POSTGRES_HOST) {
 if (!process.env.RESOLUTION_POSTGRES_USERNAME) {
   requiredEnvNotSet.push('RESOLUTION_POSTGRES_USERNAME');
 }
-if (!process.env.RESOLUTION_POSTGRES_PASSWORD) {
+if (
+  !process.env.RESOLUTION_POSTGRES_PASSWORD &&
+  process.env.RESOLUTION_POSTGRES_PASSWORD != ''
+) {
   requiredEnvNotSet.push('RESOLUTION_POSTGRES_PASSWORD');
 }
 if (!process.env.RESOLUTION_POSTGRES_DATABASE) {
@@ -34,22 +37,25 @@ export const env = {
     PORT: process.env.RESOLUTION_API_PORT || process.env.PORT || 3000,
     RUNNING_MODE: process.env.RESOLUTION_RUNNING_MODE
       ? process.env.RESOLUTION_RUNNING_MODE.split(',')
-      : ['MIGRATIONS', 'LOAD_SNAPSHOT', 'API', 'CNS_WORKER', 'ZNS_WORKER'],
+      : ['MIGRATIONS', 'LOAD_SNAPSHOT', 'API', 'ETH_WORKER', 'ZIL_WORKER'],
     ETHEREUM: {
       CNS_REGISTRY_EVENTS_STARTING_BLOCK: Number(
         process.env.CNS_REGISTRY_EVENTS_STARTING_BLOCK || 9080000,
       ),
+      UNS_REGISTRY_EVENTS_STARTING_BLOCK: Number(
+        process.env.UNS_REGISTRY_EVENTS_STARTING_BLOCK || 12779230,
+      ),
       JSON_RPC_API_URL: process.env.ETHEREUM_JSON_RPC_API_URL,
       CHAIN_ID: Number(process.env.ETHEREUM_CHAIN_ID || 1),
-      CNS_CONFIRMATION_BLOCKS: Number(process.env.CNS_CONFIRMATION_BLOCKS || 3),
-      CNS_BLOCK_FETCH_LIMIT: Number(process.env.CNS_BLOCK_FETCH_LIMIT || 500),
+      CONFIRMATION_BLOCKS: Number(
+        process.env.ETHEREUM_CONFIRMATION_BLOCKS || 20,
+      ),
+      BLOCK_FETCH_LIMIT: Number(process.env.ETHEREUM_BLOCK_FETCH_LIMIT || 500),
       CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK: Number(
         process.env.CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK || 9080000,
       ),
-      CNS_RESOLVER_RECORDS_PER_PAGE: Number(
-        process.env.CNS_RECORDS_PER_PAGE || 100,
-      ),
-      CNS_FETCH_INTERVAL: Number(process.env.CNS_FETCH_INTERVAL || 5000),
+      RECORDS_PER_PAGE: Number(process.env.ETHEREUM_RECORDS_PER_PAGE || 100),
+      FETCH_INTERVAL: Number(process.env.ETHEREUM_FETCH_INTERVAL || 5000),
     },
     ZILLIQA: {
       NETWORK: ZnsNetwork,
@@ -78,6 +84,7 @@ export const env = {
     username: process.env.RESOLUTION_POSTGRES_USERNAME,
     password: process.env.RESOLUTION_POSTGRES_PASSWORD,
     database: process.env.RESOLUTION_POSTGRES_DATABASE,
+    port: Number(process.env.RESOLUTION_POSTGRES_PORT || 5432),
     entities: [
       path.join(__dirname, './models/index.ts'),
       path.join(__dirname, './models/index.js'),

@@ -12,16 +12,24 @@ import { Column, Entity, Index, MoreThan, Not } from 'typeorm';
 import ValidateWith from '../services/ValidateWith';
 import { Attributes } from '../types/common';
 import Model from './Model';
-import { env } from '../env';
 import { BigNumber } from '@ethersproject/bignumber';
 
-const DomainOperationTypes = ['Transfer', 'Resolve', 'NewURI', 'Sync'] as const;
-const EventTypes = [
+export const DomainOperationTypes = [
+  'Transfer',
+  'Resolve',
+  'NewURI',
+  'Sync',
+  'Set',
+  'ResetRecords',
+] as const;
+
+export const EventTypes = [
   ...DomainOperationTypes,
   'Approval',
   'ApprovalForAll',
   'NewURIPrefix',
 ] as const;
+
 type EventType = typeof EventTypes[any];
 
 @Entity({ name: 'cns_registry_events' })
@@ -29,8 +37,9 @@ type EventType = typeof EventTypes[any];
 export default class CnsRegistryEvent extends Model {
   static EventTypes = EventTypes;
   static DomainOperationTypes = DomainOperationTypes;
-  static InitialBlock =
-    env.APPLICATION.ETHEREUM.CNS_REGISTRY_EVENTS_STARTING_BLOCK;
+
+  @Column('text')
+  contractAddress: string;
 
   @IsEnum(EventTypes)
   @Column({ type: 'text' })
@@ -99,7 +108,7 @@ export default class CnsRegistryEvent extends Model {
     }));
   }
 
-  domainOperation() {
+  domainOperation(): boolean {
     return this.type in DomainOperationTypes;
   }
 
@@ -107,7 +116,7 @@ export default class CnsRegistryEvent extends Model {
     return this.returnValues.tokenId;
   }
 
-  async beforeValidate() {
+  async beforeValidate(): Promise<void> {
     const tokenId = this.tokenId();
     this.node = tokenId
       ? CnsRegistryEvent.tokenIdToNode(BigNumber.from(tokenId))
