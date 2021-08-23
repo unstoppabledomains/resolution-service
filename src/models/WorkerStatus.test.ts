@@ -11,7 +11,7 @@ describe('WorkerStatus', () => {
       const status = WorkerStatus.create({
         lastMirroredBlockNumber: 11,
         lastAtxuid: 150,
-        location: 'CNS',
+        location: 'ETH',
       });
       await status.save();
       expect(status.id).to.be.a('number');
@@ -21,7 +21,7 @@ describe('WorkerStatus', () => {
       const status = WorkerStatus.create({
         lastMirroredBlockNumber: 11,
         lastAtxuid: 150,
-        location: 'CNS',
+        location: 'ETH',
       });
       await status.save();
 
@@ -36,7 +36,7 @@ describe('WorkerStatus', () => {
       const status = WorkerStatus.create({
         lastMirroredBlockNumber: 11,
         lastAtxuid: 150,
-        location: 'CNS',
+        location: 'ETH',
       });
       await status.save();
 
@@ -53,17 +53,17 @@ describe('WorkerStatus', () => {
       const expectedBlockNumber = 11;
       const status = WorkerStatus.create({
         lastMirroredBlockNumber: expectedBlockNumber,
-        location: 'CNS',
+        location: 'ETH',
       });
       await status.save();
 
-      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker('CNS');
+      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker('ETH');
       expect(lastBlock).to.equal(expectedBlockNumber);
     });
 
     it('should return zero if no stats are saved', async () => {
       const expectedBlockNumber = 0;
-      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker('CNS');
+      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker('ETH');
       expect(lastBlock).to.equal(expectedBlockNumber);
     });
   });
@@ -74,16 +74,16 @@ describe('WorkerStatus', () => {
       const status = WorkerStatus.create({
         lastMirroredBlockNumber: 0,
         lastAtxuid: expectedAtxuid,
-        location: 'ZNS',
+        location: 'ZIL',
       });
       await status.save();
 
-      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker('ZNS');
+      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker('ZIL');
       expect(lastAtxuid).to.equal(expectedAtxuid);
     });
 
     it('should return undefined if no stats are saved', async () => {
-      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker('ZNS');
+      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker('ZIL');
       expect(lastAtxuid).to.be.undefined;
     });
   });
@@ -91,7 +91,7 @@ describe('WorkerStatus', () => {
   describe('saveWorkerStatus', () => {
     it('should save stats if entry exists', async () => {
       const status = WorkerStatus.create({
-        location: 'CNS',
+        location: 'ETH',
         lastAtxuid: 150,
         lastMirroredBlockNumber: 11,
       });
@@ -101,13 +101,13 @@ describe('WorkerStatus', () => {
       const expectedBlockNumber = 15;
 
       await WorkerStatus.saveWorkerStatus(
-        'CNS',
+        'ETH',
         expectedBlockNumber,
         expectedlastAtxuid,
       );
 
-      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker('CNS');
-      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker('CNS');
+      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker('ETH');
+      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker('ETH');
 
       expect(lastBlock).to.equal(expectedBlockNumber);
       expect(lastAtxuid).to.deep.equal(expectedlastAtxuid);
@@ -118,13 +118,13 @@ describe('WorkerStatus', () => {
       const expectedBlockNumber = 15;
 
       await WorkerStatus.saveWorkerStatus(
-        'CNS',
+        'ETH',
         expectedBlockNumber,
         expectedlastAtxuid,
       );
 
-      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker('CNS');
-      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker('CNS');
+      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker('ETH');
+      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker('ETH');
 
       expect(lastBlock).to.equal(expectedBlockNumber);
       expect(lastAtxuid).to.deep.equal(expectedlastAtxuid);

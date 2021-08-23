@@ -1,1 +1,1 @@
-export { default as CNS, getCryptoConfig } from './cns';
+export { default as ETHContracts, getEthConfig } from './eth';
