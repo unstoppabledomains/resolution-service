@@ -99,7 +99,7 @@ describe('MetaDataController', () => {
         'https://unstoppabledomains.com/search?searchTerm=unstoppablelemming.crypto',
       );
       expect(response.image).to.eq(
-        'https://storage.googleapis.com/dot-crypto-metadata-api/unstoppabledomains_crypto.png',
+        'https://storage.googleapis.com/dot-crypto-metadata.appspot.com/images/animals/lemming.svg',
       );
 
       const correctAttributes = [
@@ -158,7 +158,6 @@ describe('MetaDataController', () => {
     });
 
     it('should work with special domains', async () => {
-      // These domains should contain the correct image in the database after the 1628218575346-AddImageFieldToDomain migration
       const CUSTOM_IMAGE_URL = 'https://storage.googleapis.com/dot-crypto-metadata.appspot.com/images/custom' as const;
       const domainsWithCustomImage: Record<string, string> = {
         'code.crypto': 'code.svg',
@@ -190,7 +189,6 @@ describe('MetaDataController', () => {
                       'QmQq1ydvSmzrZPkr4CJJtetNSb9eSBucqQ4QoNmiRdMHzM',
                   }
                 : {},
-            image: `${CUSTOM_IMAGE_URL}/${domainsWithCustomImage[domain]}`,
           });
         }),
       );

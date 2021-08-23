@@ -71,6 +71,39 @@ export default class AnimalDomainHelper {
     return undefined;
   }
 
+  getAnimalImageUrl(prefix: string, animal: string): string | undefined {
+    switch (this.normalizePrefix(prefix)) {
+      case 'trust':
+        return 'https://storage.googleapis.com/dot-crypto-metadata-api/unstoppabledomains_crypto.png';
+      case 'switcheo':
+      case 'opera':
+      case 'dapp':
+      case 'nyc':
+      case 'qtum':
+      case 'dchat':
+      case 'atomic':
+      case 'harmony':
+      case 'bounty':
+      case 'zilliqa':
+      case 'equal':
+      case 'elja':
+      case 'btg': {
+        if (!this.animals[`${prefix}Animals`].includes(animal)) {
+          return undefined;
+        }
+        return bucketEndpoint + `/${prefix}/${animal}.svg`;
+      }
+      default:
+        if (this.animals.ethDenverAnimals.includes(animal)) {
+          return bucketEndpoint + `/ethdenver/${animal}.svg`;
+        }
+        if (this.animals.defaultAnimals.includes(animal)) {
+          return bucketEndpoint + `/animals/${animal}.svg`;
+        }
+        return undefined;
+    }
+  }
+
   private async generateImageData(
     prefix: string,
     animal: string,

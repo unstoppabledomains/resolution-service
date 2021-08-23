@@ -231,7 +231,15 @@ export class MetaDataController {
   }
 
   private isDomainWithCustomImage(domain: Domain): boolean {
-    return domain.image !== Domain.DefaultImageUrl;
+    const domainsWithCustomImage = [
+      'code.crypto',
+      'web3.crypto',
+      'privacy.crypto',
+      'surf.crypto',
+      'hosting.crypto',
+      'india.crypto',
+    ];
+    return domainsWithCustomImage.includes(domain.name);
   }
 
   private isValidDNSDomain(domain: string): boolean {

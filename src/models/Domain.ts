@@ -21,6 +21,7 @@ import { Model } from '.';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import { Attributes } from '../types/common';
 import punycode from 'punycode';
+import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
 
 export const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
 export type Location = typeof DomainLocations[number];
@@ -29,8 +30,7 @@ export type Location = typeof DomainLocations[number];
 export default class Domain extends Model {
   static AddressRegex = /^0x[a-fA-F0-9]{40}$/;
   static NullAddress = '0x0000000000000000000000000000000000000000';
-  static DefaultImageUrl =
-    'https://storage.googleapis.com/dot-crypto-metadata-api/unstoppabledomains_crypto.png';
+  static AnimalHelper = new AnimalDomainHelper();
 
   @IsString()
   @ValidateWith<Domain>('nameMatchesNode', {
@@ -70,10 +70,6 @@ export default class Domain extends Model {
   })
   @Column('jsonb', { default: {} })
   resolution: Record<string, string> = {};
-
-  @IsString()
-  @Column('text')
-  image = Domain.DefaultImageUrl;
 
   @OneToMany((type) => Domain, (domain) => domain.parent)
   @JoinColumn({ name: 'parent_id' })
@@ -127,6 +123,45 @@ export default class Domain extends Model {
   get isUnicodeName(): boolean {
     // eslint-disable-next-line no-control-regex
     return /[^\u0000-\u00ff]/.test(this.name);
+  }
+
+  get image(): string {
+    const DEFAULT_IMAGE_URL = 'https://storage.googleapis.com/dot-crypto-metadata-api/unstoppabledomains_crypto.png' as const;
+    const CUSTOM_IMAGE_URL = 'https://storage.googleapis.com/dot-crypto-metadata.appspot.com/images/custom' as const;
+
+    const domainsWithCustomImage: Record<string, string> = {
+      'code.crypto': 'code.svg',
+      'web3.crypto': 'web3.svg',
+      'privacy.crypto': 'privacy.svg',
+      'surf.crypto': 'surf.svg',
+      'hosting.crypto': 'hosting.svg',
+      'india.crypto': 'india.jpg',
+    };
+    if (domainsWithCustomImage[this.name]) {
+      return `${CUSTOM_IMAGE_URL}/${domainsWithCustomImage[this.name]}`;
+    }
+
+    const domainAttributes = Domain.AnimalHelper.resellerAnimalAttributes(this);
+    const animalAttribute = domainAttributes.find((d) => {
+      if ('trait_type' in d) {
+        return d.trait_type === 'animal';
+      }
+    });
+    if (animalAttribute) {
+      const adjectiveAttribute = domainAttributes.find((d) => {
+        if ('trait_type' in d) {
+          return d.trait_type === 'adjective';
+        }
+      });
+      const prefix = adjectiveAttribute?.value as string;
+      return (
+        Domain.AnimalHelper.getAnimalImageUrl(
+          prefix,
+          animalAttribute.value as string,
+        ) ?? ''
+      );
+    }
+    return DEFAULT_IMAGE_URL;
   }
 
   static async findByNode(
