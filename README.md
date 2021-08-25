@@ -135,6 +135,16 @@ environment configuration can be used:
 RESOLUTION_RUNNING_MODE=API,ETH_WORKER
 ```
 
+### API keys
+
+The `/domains` API requires an API key which is simply a version 4 UUID. Currently there are no key management functions in the resolution service. All API keys must be added manually using the database. To generate a random API key run the following query in postgres:
+
+``` sql
+ INSERT INTO api_keys (name, api_key) VALUES ('my API key', md5(clock_timestamp()::text)::uuid);
+```
+
+> Note: The above example should not be used for production API keys as the key which is based on a predictable value. Production keys should be generated externally.
+
 ## API reference
 
 The full api reference
@@ -146,6 +156,8 @@ The full api reference
 | GET /domains/:domainName | Gets the resolution of the specified domain. |
 | GET /status              | Gets the synchronization status.             |
 | GET /api-docs            | Returns a swagger documentation page.        |
+
+> Note: The `/domains` endpoints require an API key. The key must be provided as `Bearer` authentication header for requests. New keys must be added manually to the database (see [API keys](#api-keys) for more info).
 
 ## Development notes
 

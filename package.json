@@ -39,6 +39,7 @@
   "dependencies": {
     "@bugsnag/js": "^7.9.2",
     "@bugsnag/plugin-express": "^7.9.2",
+    "@types/uuid": "^8.3.1",
     "@zilliqa-js/crypto": "^2.3.0-alpha.0",
     "@zilliqa-js/util": "^2.2.0",
     "@zilliqa-js/zilliqa": "^2.3.0-alpha.0",
@@ -61,6 +62,7 @@
     "set-interval-async": "^2.0.3",
     "swagger-ui-express": "^4.1.6",
     "typeorm": "^0.2.32",
+    "uuid": "^8.3.2",
     "uns": "https://github.com/unstoppabledomains/uns.git#1ee37ef421bb9539b7254b9b0add5215c94282ec",
     "winston": "^3.3.3",
     "winston-3-bugsnag-transport": "^1.0.2"
