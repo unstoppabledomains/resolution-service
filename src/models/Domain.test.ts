@@ -18,10 +18,19 @@ describe('Domain', () => {
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'ZNS',
       });
+      const domainThree = Domain.create({
+        name: 'test1.x',
+        node:
+          '0xd40233894d702a593754963512f52ff891dbe215dd06195717dace1212a03fa7',
+        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        location: 'UNSL1',
+      });
       await domain.save();
       await domainTwo.save();
+      await domainThree.save();
       expect(domain.id).to.be.a('number');
       expect(domainTwo.id).to.be.a('number');
+      expect(domainThree.id).to.be.a('number');
     });
 
     it('should fail on uppercased ownerAddress', async () => {

@@ -1,10 +1,12 @@
 import { Get, JsonController } from 'routing-controllers';
 import 'reflect-metadata';
 import { ResponseSchema } from 'routing-controllers-openapi';
-import { IsNumber, ValidateNested } from 'class-validator';
+import { IsNumber, IsString, ValidateNested } from 'class-validator';
 import { WorkerStatus } from '../models';
-import ZnsProvider from '../workers/zns/ZnsProvider';
-import { CnsProvider } from '../workers/cns/CnsProvider';
+import ZilProvider from '../workers/zil/ZilProvider';
+import { EthereumProvider } from '../workers/EthereumProvider';
+import { env } from '../env';
+import chainIdToNetworkName from '../utils/chainIdToNetworkName';
 
 class BlockchainStatus {
   @IsNumber()
@@ -12,38 +14,45 @@ class BlockchainStatus {
 
   @IsNumber()
   latestMirroredBlock = 0;
+
+  @IsString()
+  network: string;
 }
 
 class StatusResponse {
   @ValidateNested()
-  CNS: BlockchainStatus;
+  ETH: BlockchainStatus;
 
   @ValidateNested()
-  ZNS: BlockchainStatus;
+  ZIL: BlockchainStatus;
 }
 
 @JsonController()
 export class StatusController {
-  private znsProvider = new ZnsProvider();
+  private zilProvider = new ZilProvider();
 
   @Get('/status')
   @ResponseSchema(StatusResponse)
   async getStatus(): Promise<StatusResponse> {
     const statusResponse = new StatusResponse();
-    statusResponse.CNS = new BlockchainStatus();
-    statusResponse.ZNS = new BlockchainStatus();
+    statusResponse.ETH = new BlockchainStatus();
+    statusResponse.ZIL = new BlockchainStatus();
 
-    statusResponse.CNS.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
-      'CNS',
+    statusResponse.ETH.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
+      'ETH',
     );
-    statusResponse.CNS.latestNetworkBlock = await CnsProvider.getBlockNumber();
+    statusResponse.ETH.latestNetworkBlock = await EthereumProvider.getBlockNumber();
 
-    statusResponse.ZNS.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
-      'ZNS',
+    statusResponse.ZIL.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
+      'ZIL',
     );
-    statusResponse.ZNS.latestNetworkBlock = (
-      await this.znsProvider.getChainStats()
+    statusResponse.ZIL.latestNetworkBlock = (
+      await this.zilProvider.getChainStats()
     ).txHeight;
+
+    statusResponse.ETH.network =
+      chainIdToNetworkName[env.APPLICATION.ETHEREUM.CHAIN_ID];
+    statusResponse.ZIL.network = env.APPLICATION.ZILLIQA.NETWORK;
 
     return statusResponse;
   }

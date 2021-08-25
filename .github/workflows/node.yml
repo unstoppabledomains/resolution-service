@@ -1,0 +1,119 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: Node.js CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  NODE_VERSION: 14.16.1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Get yarn cache path
+        id: yarn-cache
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - name: Add yarn cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ steps.yarn-cache.outputs.dir }}
+            backend/node_modules
+          key:
+            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-${{
+            hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-${{ hashFiles('**/yarn.lock') }}
+            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-
+
+      - name: Install dependencies
+        run: yarn install --freeze-dependencies
+
+      - name: Run prettier check
+        run: yarn prettier:check
+
+      - name: Run eslint check
+        run: yarn eslint:check
+
+      - name: Run typescript build check
+        run: yarn build:check
+
+  test:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      ZNS_NETWORK: testnet
+      RESOLUTION_POSTGRES_DATABASE: 'resolution_service_test'
+      RESOLUTION_POSTGRES_HOST: 'localhost'
+      RESOLUTION_POSTGRES_USERNAME: 'postgres'
+      RESOLUTION_POSTGRES_PASSWORD: secret
+      RESOLUTION_POSTGRES_PORT: 5432
+      VIEWBLOCK_API_KEY: 'test'
+      ETHEREUM_JSON_RPC_API_URL: 'http://localhost:7545'
+      ETHEREUM_CHAIN_ID: 1337
+      UNS_REGISTRY_EVENTS_STARTING_BLOCK: 0
+      CNS_REGISTRY_EVENTS_STARTING_BLOCK: 0
+
+    services:
+      postgres:
+        image: postgres:13
+        ports: ['5432:5432']
+        options:
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s
+          --health-retries 5
+        env:
+          POSTGRES_DB: 'resolution_service_test'
+          POSTGRES_PASSWORD: 'secret'
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Get yarn cache path
+        id: yarn-cache
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - name: Add yarn cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ steps.yarn-cache.outputs.dir }}
+            backend/node_modules
+          key:
+            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-${{
+            hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-${{ hashFiles('**/yarn.lock') }}
+            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-
+
+      - name: Install dependencies
+        run: yarn install --freeze-dependencies
+
+      - name: Run typeorm migrations
+        run: NODE_ENV=test yarn db:migration:run
+
+      - name: Run test
+        run: yarn test
+# Temporary disable snapshot feature until we implement chain reorg handling functionality.
+# Check the following story and PR for details:
+#  - https://www.pivotaltracker.com/n/projects/2463706/stories/178945048
+#  - https://github.com/unstoppabledomains/unstoppable-domains-website/pull/2908
+#      - name: Check snapshot
+#        run: NODE_ENV=test yarn db:snapshot:check

@@ -5,3 +5,5 @@ yarn-error.log
 .eslintcache
 build
 .nyc_output
+.env
+.sandbox

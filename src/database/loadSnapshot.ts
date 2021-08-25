@@ -13,7 +13,7 @@ export async function loadSnapshot(): Promise<void> {
   if (
     (await CnsRegistryEvent.count()) > 0 ||
     (await ZnsTransaction.count()) > 0 ||
-    (await Domain.count()) > 2
+    (await Domain.count()) > 9
   ) {
     logger.warn('Database is not empty, skipped snapshot loading!');
     return;

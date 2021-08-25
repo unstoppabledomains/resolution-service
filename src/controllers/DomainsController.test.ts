@@ -198,9 +198,9 @@ describe('DomainsController', () => {
     });
     it('should return list of test domain', async () => {
       const testDomain = Domain.create({
-        name: 'test.crypto',
+        name: 'test1.crypto',
         node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+          '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'CNS',
       });
