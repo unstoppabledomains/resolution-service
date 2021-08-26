@@ -57,9 +57,9 @@ export default class Domain extends Model {
   @Column('text', { nullable: true })
   resolver: string | null = null;
 
-  @IsOptional()
+  @IsString()
   @Column('text', { nullable: true })
-  registry: string | null = null;
+  registry: string;
 
   @IsOptional()
   @Index()
