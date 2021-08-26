@@ -89,7 +89,7 @@ describe('DomainsController', () => {
       });
     });
 
-    it.only('should return correct registry for all locations domains', async () => {
+    it('should return correct registry for all locations domains', async () => {
       const znsDomain = await DomainTestHelper.createTestDomain({
         name: 'test.zil',
         node: znsNamehash('test.zil'),
