@@ -51,3 +51,4 @@ export type Serializable = {
   [k: string]: SerializableBase | Serializable | SerializableArray;
 };
 export type SerializableArray = (SerializableBase | Serializable)[];
+export type MetadataImageFontSize = 24 | 20 | 18 | 16;

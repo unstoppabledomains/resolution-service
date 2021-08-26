@@ -150,12 +150,15 @@ The `/domains` API requires an API key which is simply a version 4 UUID. Current
 The full api reference
 [OpenAPI specification](http://resolve.unstoppabledomains.com/api-docs/)
 
-| Endpoint                 | Description                                  |
-| ------------------------ | -------------------------------------------- |
-| GET /domains             | Gets the list of domains.                    |
-| GET /domains/:domainName | Gets the resolution of the specified domain. |
-| GET /status              | Gets the synchronization status.             |
-| GET /api-docs            | Returns a swagger documentation page.        |
+| Endpoint                      | Description                                                      |
+| ----------------------------- | -----------------------------------------------------------------|
+| GET /domains                  | Gets the list of domains.                                        |
+| GET /domains/:domainName      | Gets the resolution of the specified domain.                     |
+| GET /metadata/:domainOrToken  | Retrieve erc721 metadata information of the specified domain     |
+| GET /image/:domainOrToken     | Retrieve image_data as a svg string                              |
+| GET /image-src/:domainOrToken | Retrieve image_data as 'image/svg+xml'                           |
+| GET /status                   | Gets the synchronization status.                                 |
+| GET /api-docs                 | Returns a swagger documentation page.                            |
 
 > Note: The `/domains` endpoints require an API key. The key must be provided as `Bearer` authentication header for requests. New keys must be added manually to the database (see [API keys](#api-keys) for more info).
 
