@@ -1,8 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddRegistryFieldToDomain1628727191522
+export class AddRegistryFieldToDomain1630013230000
   implements MigrationInterface {
-  name = 'AddRegistryFieldToDomain1628727191522';
+  name = 'AddRegistryFieldToDomain1630013230000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "domains" ADD "registry" text`);
@@ -11,6 +11,9 @@ export class AddRegistryFieldToDomain1628727191522
     );
     await queryRunner.query(
       `UPDATE domains SET registry = '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe' WHERE location = 'CNS'`,
+    );
+    await queryRunner.query(
+      `UPDATE domains SET registry = '0x049aba7510f45ba5b64ea9e658e342f904db358d' WHERE location = 'UNSL1'`,
     );
   }
 

@@ -2,6 +2,8 @@ import supertest from 'supertest';
 import { api } from '../api';
 import { expect } from 'chai';
 import { ApiKey, Domain } from '../models';
+import { DomainTestHelper } from '../utils/testing/DomainTestHelper';
+import { znsNamehash, eip137Namehash } from '../utils/namehash';
 
 describe('DomainsController', () => {
   let testApiKey: ApiKey;
@@ -85,6 +87,49 @@ describe('DomainsController', () => {
           'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
         },
       });
+    });
+
+    it.only('should return correct registry for all locations domains', async () => {
+      const znsDomain = await DomainTestHelper.createTestDomain({
+        name: 'test.zil',
+        node: znsNamehash('test.zil'),
+        registry: Domain.getRegistryAddressFromLocation('ZNS'),
+        location: 'ZNS',
+      });
+      const cnsDomain = await DomainTestHelper.createTestDomain();
+      const unsDomain = await DomainTestHelper.createTestDomain({
+        name: 'test.nft',
+        node: eip137Namehash('test.nft'),
+        registry: Domain.getRegistryAddressFromLocation('UNSL1'),
+        location: 'UNSL1',
+      });
+
+      const znsResult = await supertest(api)
+        .get(`/domains/${znsDomain.name}`)
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(znsResult.status).eq(200);
+      expect(znsResult.body.meta.registry).eq(
+        Domain.getRegistryAddressFromLocation('ZNS'),
+      );
+
+      const cnsResult = await supertest(api)
+        .get(`/domains/${cnsDomain.name}`)
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(cnsResult.status).eq(200);
+      expect(cnsResult.body.meta.registry).eq(
+        Domain.getRegistryAddressFromLocation('CNS'),
+      );
+
+      const unsResult = await supertest(api)
+        .get(`/domains/${unsDomain.name}`)
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(unsResult.status).eq(200);
+      expect(unsResult.body.meta.registry).eq(
+        Domain.getRegistryAddressFromLocation('UNSL1'),
+      );
     });
 
     it('should return non-minted domain ending on .zil', async () => {

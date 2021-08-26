@@ -153,9 +153,9 @@ export class EthUpdater {
     domain.registry = this.cnsRegistry.address;
 
     const contractAddress = event.address.toLowerCase();
-    if (contractAddress === ETHContracts.UNSRegistry.address.toLowerCase()) {
+    if (contractAddress === this.unsRegistry.address.toLowerCase()) {
       domain.resolver = contractAddress;
-      domain.registry = ETHContracts.UNSRegistry.address.toLowerCase();
+      domain.registry = this.unsRegistry.address.toLowerCase();
       domain.location = 'UNSL1';
     }
     await domainRepository.save(domain);
