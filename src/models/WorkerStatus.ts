@@ -3,9 +3,8 @@ import ValidateWith from '../services/ValidateWith';
 import { Column, Entity, Index, Repository, Unique } from 'typeorm';
 import { Attributes } from '../types/common';
 import Model from './Model';
-import { Location } from './Domain';
 
-export const Blockchains = ['ETH', 'ZIL'];
+export const Blockchains = ['ETH', 'ZIL'] as const;
 export type Blockchain = typeof Blockchains[number];
 
 @Entity({ name: 'resolution_worker_status' })
@@ -71,7 +70,7 @@ export default class WorkerStatus extends Model {
   }
 
   static async saveWorkerStatus(
-    location: Location,
+    location: Blockchain,
     latestBlock: number,
     lastAtxuid?: number,
     repository: Repository<WorkerStatus> = WorkerStatus.getRepository(),
