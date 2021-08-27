@@ -39,6 +39,10 @@ class DomainMetadata {
 
   @IsEnum(DomainLocations)
   location: Location;
+
+  @IsOptional()
+  @IsString()
+  registry: string | null = null;
 }
 
 class DomainResponse {
@@ -105,6 +109,7 @@ export class DomainsController {
         location: domain.location,
         owner: domain.ownerAddress,
         resolver: domain.resolver,
+        registry: domain.registry,
       };
       response.records = domain.resolution;
       return response;
@@ -114,6 +119,7 @@ export class DomainsController {
         domain: domainName,
         owner: null,
         resolver: null,
+        registry: null,
         location: 'UNMINTED',
       },
       records: {},
@@ -164,6 +170,7 @@ export class DomainsController {
             location: domain.location,
             owner: domain.ownerAddress,
             resolver: domain.resolver,
+            registry: domain.registry,
             domain: domain.name,
           },
           records: domain.resolution,

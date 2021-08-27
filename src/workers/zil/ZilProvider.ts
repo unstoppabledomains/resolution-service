@@ -1,8 +1,9 @@
 import qs from 'qs';
 import { ZnsTransactionEvent } from '../../models/ZnsTransaction';
 import fetch from 'node-fetch';
-import { Zilliqa } from '@zilliqa-js/zilliqa';
+import { fromBech32Address, Zilliqa } from '@zilliqa-js/zilliqa';
 import { env } from '../../env';
+import { isBech32 } from '@zilliqa-js/util/dist/validation';
 
 // This type is being returned from viewblock api when chain stats are fetched
 type ZilStatsResponse = {
@@ -65,6 +66,13 @@ export default class ZilProvider {
       throw new Error('VIEWBLOCK_API_KEY is not set');
     }
     this.viewBlockApiKey = key;
+  }
+
+  get registryAddress(): string {
+    const addr = isBech32(this.zilliqaRegistryAddress)
+      ? fromBech32Address(this.zilliqaRegistryAddress)
+      : this.zilliqaRegistryAddress;
+    return addr.toLowerCase();
   }
 
   async getLatestTransactions(from: number, to: number): Promise<ZnsTx[]> {

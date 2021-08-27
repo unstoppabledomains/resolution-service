@@ -105,6 +105,7 @@ export class EthUpdater {
         domain.ownerAddress = null;
         domain.resolution = {};
         domain.resolver = null;
+        domain.registry = null;
         await domainRepository.save(domain);
       } else {
         domain.ownerAddress = event.args?.to.toLowerCase();
@@ -145,16 +146,16 @@ export class EthUpdater {
       );
     }
 
-    const node = eip137Namehash(uri);
-    const domain = await Domain.findOrBuildByNode(node);
-
+    const domain = await Domain.findOrBuildByNode(producedNode);
     domain.name = uri;
     domain.location = 'CNS';
     domain.ownerAddress = this.lastProcessedEvent.args?.to.toLowerCase();
+    domain.registry = this.cnsRegistry.address;
 
     const contractAddress = event.address.toLowerCase();
-    if (contractAddress === ETHContracts.UNSRegistry.address.toLowerCase()) {
+    if (contractAddress === this.unsRegistry.address.toLowerCase()) {
       domain.resolver = contractAddress;
+      domain.registry = this.unsRegistry.address.toLowerCase();
       domain.location = 'UNSL1';
     }
     await domainRepository.save(domain);

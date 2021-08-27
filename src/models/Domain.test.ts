@@ -9,6 +9,7 @@ describe('Domain', () => {
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'CNS',
       });
       const domainTwo = Domain.create({
@@ -16,6 +17,7 @@ describe('Domain', () => {
         node:
           '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0x9611c53be6d1b32058b2747bdececed7e1216793',
         location: 'ZNS',
       });
       const domainThree = Domain.create({
@@ -23,6 +25,7 @@ describe('Domain', () => {
         node:
           '0xd40233894d702a593754963512f52ff891dbe215dd06195717dace1212a03fa7',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0x049aba7510f45ba5b64ea9e658e342f904db358d',
         location: 'UNSL1',
       });
       await domain.save();
@@ -39,6 +42,7 @@ describe('Domain', () => {
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2'.toUpperCase(),
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'CNS',
       });
       await expect(domain.save()).to.be.rejectedWith(
@@ -52,6 +56,7 @@ describe('Domain', () => {
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'SOMEWHERE_BAD',
       });
       await expect(domain.save()).to.be.rejectedWith(
@@ -65,6 +70,7 @@ describe('Domain', () => {
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'CNS',
       });
       await expect(domain.save()).to.be.rejectedWith(
@@ -80,6 +86,7 @@ describe('Domain', () => {
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'CNS',
       });
       expect(domain.label).to.equal('test');
@@ -93,6 +100,7 @@ describe('Domain', () => {
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'CNS',
       });
       expect(domain.extension).to.equal('crypto');
@@ -106,6 +114,7 @@ describe('Domain', () => {
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'CNS',
       };
       const domain = Domain.create(domainMetaData);
@@ -164,6 +173,7 @@ describe('Domain', () => {
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'CNS',
       };
       const domain = Domain.create(expectedDomain);
@@ -185,6 +195,7 @@ describe('Domain', () => {
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'CNS',
       };
       await Domain.create(domainMetaData).save();

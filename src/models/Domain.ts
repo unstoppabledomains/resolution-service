@@ -58,6 +58,10 @@ export default class Domain extends Model {
   resolver: string | null = null;
 
   @IsOptional()
+  @Column('text', { nullable: true })
+  registry: string | null = null;
+
+  @IsOptional()
   @Index()
   @ManyToOne((type) => Domain, { nullable: true })
   @JoinColumn()
@@ -211,12 +215,27 @@ export default class Domain extends Model {
     }
 
     const newDomain = new Domain();
+    const registry = this.getRegistryAddressFromLocation(location);
     newDomain.attributes({
       name: name,
       node: eip137Namehash(name),
       location: location,
+      registry,
     });
     await repository.save(newDomain);
     return newDomain;
+  }
+
+  static getRegistryAddressFromLocation(location: string): string {
+    switch (location) {
+      case 'CNS':
+        return '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe';
+      case 'ZNS':
+        return '0x9611c53be6d1b32058b2747bdececed7e1216793';
+      case 'UNSL1':
+        return '0x049aba7510f45ba5b64ea9e658e342f904db358d';
+      default:
+        return Domain.NullAddress;
+    }
   }
 }
