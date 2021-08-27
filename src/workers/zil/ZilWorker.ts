@@ -37,7 +37,7 @@ export default class ZilWorker {
   ): Promise<void> {
     const repository = manager.getRepository(WorkerStatus);
     return WorkerStatus.saveWorkerStatus(
-      'ZIL',
+      'ZNS',
       latestBlock,
       latestAtxuid,
       repository,
@@ -177,10 +177,11 @@ export default class ZilWorker {
         resolver,
       );
       domain.attributes({
-        resolver: resolver !== Domain.NullAddress ? resolver : undefined,
-        ownerAddress: owner !== Domain.NullAddress ? owner : undefined,
+        resolver: resolver !== Domain.NullAddress ? resolver : null,
+        ownerAddress: owner !== Domain.NullAddress ? owner : null,
         resolution: resolution ? resolution : {},
-        registry: this.provider.registryAddress,
+        registry:
+          owner !== Domain.NullAddress ? this.provider.registryAddress : null,
       });
       await repository.save(domain);
     }
