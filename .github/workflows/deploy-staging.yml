@@ -30,7 +30,10 @@ jobs:
       CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK: 7484112
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout staging branch
+        uses: actions/checkout@v2
+        with:
+          ref: 'refs/heads/staging'
 
       - name: Set up gcloud SDK
         uses: google-github-actions/setup-gcloud@master
