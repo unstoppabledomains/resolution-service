@@ -37,7 +37,7 @@ export default class ZilWorker {
   ): Promise<void> {
     const repository = manager.getRepository(WorkerStatus);
     return WorkerStatus.saveWorkerStatus(
-      'ZNS',
+      'ZIL',
       latestBlock,
       latestAtxuid,
       repository,
