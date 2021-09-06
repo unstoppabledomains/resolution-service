@@ -2,12 +2,13 @@ import { Controller, Get, Header, Param } from 'routing-controllers';
 import { ResponseSchema } from 'routing-controllers-openapi';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import fetch from 'node-fetch';
-import Domain from '../models/Domain';
+import Domain, { DomainsWithCustomImage } from '../models/Domain';
 import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
 import { DefaultImageData } from '../utils/generalImage';
 import { MetadataImageFontSize } from '../types/common';
 import { pathThatSvg } from 'path-that-svg';
 import { IsArray, IsOptional, IsString } from 'class-validator';
+import { OpenSeaMetadataAttribute } from '../utils/AnimalDomainHelper/AnimalDomainHelper';
 
 class Erc721Metadata {
   @IsString()
@@ -22,25 +23,6 @@ class Erc721Metadata {
   @IsString()
   external_url: string;
 }
-
-type OpenSeaMetadataAttribute =
-  | {
-      value: string | number;
-    }
-  | {
-      trait_type: string;
-      value: string | number;
-    }
-  | {
-      display_type:
-        | 'number'
-        | 'date'
-        | 'boost_number'
-        | 'boost_percentage'
-        | 'ranking';
-      trait_type: string;
-      value: number;
-    };
 
 class OpenSeaMetadata extends Erc721Metadata {
   @IsOptional()
@@ -256,15 +238,7 @@ export class MetaDataController {
   }
 
   private isDomainWithCustomImage(domain: Domain): boolean {
-    const domainsWithCustomImage = [
-      'code.crypto',
-      'web3.crypto',
-      'privacy.crypto',
-      'surf.crypto',
-      'hosting.crypto',
-      'india.crypto',
-    ];
-    return domainsWithCustomImage.includes(domain.name);
+    return Boolean(DomainsWithCustomImage[domain.name]);
   }
 
   private isValidDNSDomain(domain: string): boolean {

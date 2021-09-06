@@ -71,6 +71,10 @@ export const env = {
       VIEWBLOCK_API_URL: 'https://api.viewblock.io/v1/zilliqa',
       FETCH_INTERVAL: Number(process.env.ZNS_FETCH_INTERVAL || 5000),
     },
+    ERC721_METADATA: {
+      GOOGLE_CLOUD_STORAGE_BASE_URL:
+        'https://storage.googleapis.com/dot-crypto-metadata-api',
+    },
     NEW_RELIC_LICENSE_KEY: process.env.NEW_RELIC_LICENSE_KEY || '',
     NEW_RELIC_APP_NAME: process.env.NEW_RELIC_APP_NAME || '',
     BUGSNAG_API_KEY: process.env.BUGSNAG_API_KEY || '',
