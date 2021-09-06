@@ -99,7 +99,7 @@ describe('MetaDataController', () => {
         'https://unstoppabledomains.com/search?searchTerm=unstoppablelemming.crypto',
       );
       expect(response.image).to.eq(
-        'https://storage.googleapis.com/dot-crypto-metadata.appspot.com/images/animals/lemming.svg',
+        'https://storage.googleapis.com/dot-crypto-metadata-api/images/animals/lemming.svg',
       );
 
       const correctAttributes = [
@@ -136,7 +136,7 @@ describe('MetaDataController', () => {
       expect(response.attributes).to.have.deep.members(correctAttributes);
       expect(response.background_color).to.eq('4C47F7');
       const correctImageData = await fetch(
-        'https://storage.googleapis.com/dot-crypto-metadata.appspot.com/images/animals/lemming.svg',
+        'https://storage.googleapis.com/dot-crypto-metadata-api/images/animals/lemming.svg',
       ).then((r) => r.text());
       expect(response.image_data).to.eq(correctImageData);
     });
@@ -158,7 +158,7 @@ describe('MetaDataController', () => {
     });
 
     it('should work with special domains', async () => {
-      const CUSTOM_IMAGE_URL = 'https://storage.googleapis.com/dot-crypto-metadata.appspot.com/images/custom' as const;
+      const CUSTOM_IMAGE_URL = 'https://storage.googleapis.com/dot-crypto-metadata-api/images/custom' as const;
       const domainsWithCustomImage: Record<string, string> = {
         'code.crypto': 'code.svg',
         'web3.crypto': 'web3.svg',
@@ -331,7 +331,7 @@ describe('MetaDataController', () => {
         .then((r) => r.body);
 
       const correctImageData = await fetch(
-        'https://storage.googleapis.com/dot-crypto-metadata.appspot.com/images/animals/lemming.svg',
+        'https://storage.googleapis.com/dot-crypto-metadata-api/images/animals/lemming.svg',
       ).then((r) => r.text());
       expect(res.image_data).to.equal(correctImageData);
     });

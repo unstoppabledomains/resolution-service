@@ -1,14 +1,30 @@
 import * as allAnimals from './vocabulary/animals';
 import resellers from './vocabulary/resellers.json';
 import adjectives from './vocabulary/adjectives.json';
-import fs from 'fs';
 import fetch from 'node-fetch';
-import { parse, stringify } from 'svgson';
 import { Domain } from '../../models';
-import { OpenSeaMetadataAttribute } from '../../controllers/MetaDataController';
+import { env } from '../../env';
 
-const bucketEndpoint =
-  'https://storage.googleapis.com/dot-crypto-metadata.appspot.com/images';
+export type OpenSeaMetadataAttribute =
+  | {
+      value: string | number;
+    }
+  | {
+      trait_type: string;
+      value: string | number;
+    }
+  | {
+      display_type:
+        | 'number'
+        | 'date'
+        | 'boost_number'
+        | 'boost_percentage'
+        | 'ranking';
+      trait_type: string;
+      value: number;
+    };
+
+const imagesEndpoint = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images`;
 
 export default class AnimalDomainHelper {
   readonly animals: Record<string, string[]> = allAnimals;
@@ -74,7 +90,7 @@ export default class AnimalDomainHelper {
   getAnimalImageUrl(prefix: string, animal: string): string | undefined {
     switch (this.normalizePrefix(prefix)) {
       case 'trust':
-        return 'https://storage.googleapis.com/dot-crypto-metadata-api/unstoppabledomains_crypto.png';
+        return `${imagesEndpoint}/unstoppabledomains_crypto.png`;
       case 'switcheo':
       case 'opera':
       case 'dapp':
@@ -91,14 +107,14 @@ export default class AnimalDomainHelper {
         if (!this.animals[`${prefix}Animals`].includes(animal)) {
           return undefined;
         }
-        return bucketEndpoint + `/${prefix}/${animal}.svg`;
+        return imagesEndpoint + `/${prefix}/${animal}.svg`;
       }
       default:
         if (this.animals.ethDenverAnimals.includes(animal)) {
-          return bucketEndpoint + `/ethdenver/${animal}.svg`;
+          return imagesEndpoint + `/ethdenver/${animal}.svg`;
         }
         if (this.animals.defaultAnimals.includes(animal)) {
-          return bucketEndpoint + `/animals/${animal}.svg`;
+          return imagesEndpoint + `/animals/${animal}.svg`;
         }
         return undefined;
     }
@@ -110,7 +126,6 @@ export default class AnimalDomainHelper {
   ): Promise<string | undefined> {
     switch (this.normalizePrefix(prefix)) {
       case 'trust':
-        return this.generateTrustAnimalImageData(animal);
       case 'switcheo':
       case 'opera':
       case 'dapp':
@@ -163,21 +178,8 @@ export default class AnimalDomainHelper {
     prefix: string,
     animal: string,
   ): Promise<string> {
-    const ret = await fetch(bucketEndpoint + `/${prefix}/${animal}.svg`);
+    const ret = await fetch(imagesEndpoint + `/${prefix}/${animal}.svg`);
     return await ret.text();
-  }
-
-  //todo move these pictures to the bucket and use safeGetImageDataFromBucket instead
-  private async generateTrustAnimalImageData(animal: string) {
-    const animalSvg = fs.readFileSync(
-      __dirname + `/trustAnimals/${animal}.svg`,
-      'utf8',
-    );
-    const logo = fs.readFileSync(__dirname + `/trustAnimals/logo.svg`, 'utf8');
-    const parsedAnimal = await parse(animalSvg);
-    const parsedLogo = await parse(logo);
-    parsedAnimal.children.push(parsedLogo);
-    return stringify(parsedAnimal);
   }
 
   private getResellerAnimalRegex(): RegExp {
