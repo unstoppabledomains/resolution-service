@@ -7096,7 +7096,7 @@ natural-compare@^1.4.0:
   resolved "https://registry.yarnpkg.com/natural-compare/-/natural-compare-1.4.0.tgz#4abebfeed7541f2c27acfb29bdbbd15c8d5ba4f7"
   integrity sha1-Sr6/7tdUHywnrPspvbvRXI1bpPc=
 
-negotiator@0.6.2:
+negotiator@^0.6.2:
   version "0.6.2"
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.2.tgz#feacf7ccf525a77ae9634436a64883ffeca346fb"
   integrity sha512-hZXc7K2e+PgeI1eDBe/10Ard4ekbfrrqG8Ep+8Jmf4JID2bNg7NvCPOZN+kfF574pFQI7mum2AUqDidoKqcTOw==
@@ -9204,15 +9204,6 @@ svgson@^4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/svgson/-/svgson-4.1.0.tgz#eb70dac8d0075c61e5bfd45411a56014e2d3610e"
   integrity sha512-DodISxHtdLKUghDYA+PGK4Qq350+CbBAkdvGLkBFSmWd9WKSg4dijgjB1IiRPTmsUCd+a7KYe+ILHtklYgQyzQ==
-  dependencies:
-    deep-rename-keys "^0.2.1"
-    omit-deep "0.3.0"
-    xml-reader "2.4.3"
-
-svgson@^5.2.1:
-  version "5.2.1"
-  resolved "https://registry.yarnpkg.com/svgson/-/svgson-5.2.1.tgz#7481fb1af4a58be542a6bd2020c168c6b71381cb"
-  integrity sha512-nbM6QuyZiKzQ0Uo51VDta93YJAr96ikyT40PsgJRrzynOGsOlnmJ6zAK5hUFyE5gnxcg7yuOPUWbUlmV9K0+Dg==
   dependencies:
     deep-rename-keys "^0.2.1"
     omit-deep "0.3.0"
