@@ -7,15 +7,23 @@ import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
 import { DefaultImageData } from '../utils/generalImage';
 import { MetadataImageFontSize } from '../types/common';
 import { pathThatSvg } from 'path-that-svg';
+import { IsArray, IsOptional, IsString } from 'class-validator';
 
-export class Erc721Metadata {
+class Erc721Metadata {
+  @IsString()
   name: string;
+
+  @IsString()
   description: string;
+
+  @IsString()
   image: string;
+
+  @IsString()
   external_url: string;
 }
 
-export type OpenSeaMetadataAttribute =
+type OpenSeaMetadataAttribute =
   | {
       value: string | number;
     }
@@ -34,16 +42,33 @@ export type OpenSeaMetadataAttribute =
       value: number;
     };
 
-export class OpenSeaMetadata extends Erc721Metadata {
+class OpenSeaMetadata extends Erc721Metadata {
+  @IsOptional()
+  @IsString()
   external_link?: string;
+
+  @IsOptional()
+  @IsString()
   image_data?: string;
+
+  @IsArray()
   attributes: Array<OpenSeaMetadataAttribute>;
+
+  @IsOptional()
+  @IsString()
   background_color?: string;
+
+  @IsOptional()
+  @IsString()
   animation_url?: string;
+
+  @IsOptional()
+  @IsString()
   youtube_url?: string;
 }
 
-export class ImageResponse {
+class ImageResponse {
+  @IsString()
   image_data: string;
 }
 
