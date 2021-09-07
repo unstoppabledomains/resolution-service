@@ -2,13 +2,27 @@ import { Controller, Get, Header, Param } from 'routing-controllers';
 import { ResponseSchema } from 'routing-controllers-openapi';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import fetch from 'node-fetch';
-import Domain, { DomainsWithCustomImage } from '../models/Domain';
+import Domain from '../models/Domain';
 import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
 import { DefaultImageData } from '../utils/generalImage';
 import { MetadataImageFontSize } from '../types/common';
 import { pathThatSvg } from 'path-that-svg';
 import { IsArray, IsOptional, IsString } from 'class-validator';
 import { OpenSeaMetadataAttribute } from '../utils/AnimalDomainHelper/AnimalDomainHelper';
+import { env } from '../env';
+import { logger } from '../logger';
+
+const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/unstoppabledomains_crypto.png` as const;
+const CUSTOM_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/custom` as const;
+const DomainsWithCustomImage: Record<string, string> = {
+  'code.crypto': 'code.svg',
+  'web3.crypto': 'web3.svg',
+  'privacy.crypto': 'privacy.svg',
+  'surf.crypto': 'surf.svg',
+  'hosting.crypto': 'hosting.svg',
+  'india.crypto': 'india.jpg',
+};
+const AnimalHelper: AnimalDomainHelper = new AnimalDomainHelper();
 
 class Erc721Metadata {
   @IsString()
@@ -56,8 +70,6 @@ class ImageResponse {
 
 @Controller()
 export class MetaDataController {
-  private animalHelper: AnimalDomainHelper = new AnimalDomainHelper();
-
   @Get('/metadata/:domainOrToken')
   @ResponseSchema(OpenSeaMetadata)
   async getMetaData(
@@ -77,7 +89,7 @@ export class MetaDataController {
       name: domain.name,
       description,
       external_url: `https://unstoppabledomains.com/search?searchTerm=${domain.name}`,
-      image: domain.image,
+      image: this.generateDomainImageUrl(domain),
       attributes: [...domainAttributes, ...domainAnimalAttributes],
     };
 
@@ -234,7 +246,7 @@ export class MetaDataController {
   }
 
   private getAnimalAttributes(domain: Domain): OpenSeaMetadataAttribute[] {
-    return this.animalHelper.resellerAnimalAttributes(domain);
+    return AnimalHelper.resellerAnimalAttributes(domain);
   }
 
   private isDomainWithCustomImage(domain: Domain): boolean {
@@ -261,7 +273,7 @@ export class MetaDataController {
       return '';
     }
 
-    const animalImage = await this.animalHelper.getResellerAnimalImageData(
+    const animalImage = await AnimalHelper.getResellerAnimalImageData(
       attributes,
     );
     if (animalImage) {
@@ -279,8 +291,12 @@ export class MetaDataController {
       try {
         const ret = await fetch(imagePathFromDomain);
         return await ret.text();
-      } catch (e) {
-        // eslint-disable-next-line no-empty
+      } catch (error) {
+        logger.error(
+          `Failed to generate image data from the following endpoint: ${imagePathFromDomain}`,
+        );
+        logger.error(error);
+        return this.generateDefaultImageData(domain.label, domain.extension);
       }
     }
     return this.generateDefaultImageData(domain.label, domain.extension);
@@ -301,5 +317,21 @@ export class MetaDataController {
       label = label.substr(0, 29).concat('...');
     }
     return DefaultImageData({ label, tld, fontSize });
+  }
+
+  private generateDomainImageUrl(domain: Domain): string {
+    if (DomainsWithCustomImage[domain.name]) {
+      return `${CUSTOM_IMAGE_URL}/${DomainsWithCustomImage[domain.name]}`;
+    }
+
+    const domainAttributes = this.getAnimalAttributes(domain);
+    const animalImageUrl = AnimalHelper.getResellerAnimalImageUrl(
+      domainAttributes,
+    );
+    if (animalImageUrl) {
+      return animalImageUrl;
+    }
+
+    return DEFAULT_IMAGE_URL;
   }
 }

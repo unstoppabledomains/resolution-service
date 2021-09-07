@@ -1,6 +1,6 @@
-import * as allAnimals from './vocabulary/animals';
-import resellers from './vocabulary/resellers.json';
-import adjectives from './vocabulary/adjectives.json';
+import * as allAnimalsJson from './vocabulary/animals';
+import ResellersDictionary from './vocabulary/resellers.json';
+import AdjectivesDictionary from './vocabulary/adjectives.json';
 import fetch from 'node-fetch';
 import { Domain } from '../../models';
 import { env } from '../../env';
@@ -24,27 +24,26 @@ export type OpenSeaMetadataAttribute =
       value: number;
     };
 
-const imagesEndpoint = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images`;
+const AnimalsDictionary: Record<string, string[]> = allAnimalsJson;
+const AnimalsNames: string[] = Object.values(AnimalsDictionary).flat();
+const ResellerAnimalRegex = new RegExp(
+  `^(${[...AdjectivesDictionary, ...ResellersDictionary].join(
+    '|',
+  )})?(${AnimalsNames.join('|')})[0-9]*$`,
+);
+const ImagesEndpoint = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images`;
 
 export default class AnimalDomainHelper {
-  readonly animals: Record<string, string[]> = allAnimals;
-  readonly adjectives: string[] = adjectives;
-  readonly resellers: string[] = resellers;
-
-  get animalsFlat(): string[] {
-    return Object.values(this.animals).flat();
-  }
-
   resellerAnimalAttributes(domain: Domain): OpenSeaMetadataAttribute[] {
     if (domain.extension !== 'crypto') {
       return [{ trait_type: 'type', value: 'standard' }];
     }
     const attributes: { trait_type: string; value: string }[] = [];
-    const matches = this.getResellerAnimalRegex().exec(domain.label);
+    const matches = ResellerAnimalRegex.exec(domain.label);
     if (matches) {
       const prefix = matches[1];
       const animal = matches[2];
-      if (this.adjectives.includes(prefix)) {
+      if (AdjectivesDictionary.includes(prefix)) {
         attributes.push({ trait_type: 'adjective', value: prefix });
       }
       attributes.push({ trait_type: 'animal', value: animal });
@@ -58,6 +57,16 @@ export default class AnimalDomainHelper {
   async getResellerAnimalImageData(
     attributes: OpenSeaMetadataAttribute[],
   ): Promise<string | undefined> {
+    const imageUrl = this.getResellerAnimalImageUrl(attributes);
+    if (imageUrl) {
+      const ret = await fetch(imageUrl);
+      return ret.text();
+    }
+  }
+
+  getResellerAnimalImageUrl(
+    attributes: OpenSeaMetadataAttribute[],
+  ): string | undefined {
     let domain = '';
     let prefix = '';
     let animal = '';
@@ -78,11 +87,8 @@ export default class AnimalDomainHelper {
             : animal;
       }
     });
-    const extension = domain.split('.').pop();
-    if (extension === 'crypto') {
-      if (animal) {
-        return await this.generateImageData(prefix, animal);
-      }
+    if (animal) {
+      return this.getAnimalImageUrl(prefix, animal);
     }
     return undefined;
   }
@@ -90,7 +96,7 @@ export default class AnimalDomainHelper {
   getAnimalImageUrl(prefix: string, animal: string): string | undefined {
     switch (this.normalizePrefix(prefix)) {
       case 'trust':
-        return `${imagesEndpoint}/unstoppabledomains_crypto.png`;
+        return `${ImagesEndpoint}/unstoppabledomains_crypto.png`;
       case 'switcheo':
       case 'opera':
       case 'dapp':
@@ -104,48 +110,17 @@ export default class AnimalDomainHelper {
       case 'equal':
       case 'elja':
       case 'btg': {
-        if (!this.animals[`${prefix}Animals`].includes(animal)) {
+        if (!AnimalsDictionary[`${prefix}Animals`].includes(animal)) {
           return undefined;
         }
-        return imagesEndpoint + `/${prefix}/${animal}.svg`;
+        return ImagesEndpoint + `/${prefix}/${animal}.svg`;
       }
       default:
-        if (this.animals.ethDenverAnimals.includes(animal)) {
-          return imagesEndpoint + `/ethdenver/${animal}.svg`;
+        if (AnimalsDictionary.ethDenverAnimals.includes(animal)) {
+          return ImagesEndpoint + `/ethdenver/${animal}.svg`;
         }
-        if (this.animals.defaultAnimals.includes(animal)) {
-          return imagesEndpoint + `/animals/${animal}.svg`;
-        }
-        return undefined;
-    }
-  }
-
-  private async generateImageData(
-    prefix: string,
-    animal: string,
-  ): Promise<string | undefined> {
-    switch (this.normalizePrefix(prefix)) {
-      case 'trust':
-      case 'switcheo':
-      case 'opera':
-      case 'dapp':
-      case 'nyc':
-      case 'qtum':
-      case 'dchat':
-      case 'atomic':
-      case 'harmony':
-      case 'bounty':
-      case 'zilliqa':
-      case 'equal':
-      case 'elja':
-      case 'btg':
-        return this.safeGetImageDataFromBucket(prefix, animal);
-      default:
-        if (this.animals.ethDenverAnimals.includes(animal)) {
-          return this.getImageDataFromBucket('ethdenver', animal);
-        }
-        if (this.animals.defaultAnimals.includes(animal)) {
-          return this.getImageDataFromBucket('animals', animal);
+        if (AnimalsDictionary.defaultAnimals.includes(animal)) {
+          return ImagesEndpoint + `/animals/${animal}.svg`;
         }
         return undefined;
     }
@@ -162,33 +137,5 @@ export default class AnimalDomainHelper {
       bitcoingold: 'btg',
     };
     return map[prefix] || prefix;
-  }
-
-  private async safeGetImageDataFromBucket(
-    prefix: string,
-    animal: string,
-  ): Promise<string | undefined> {
-    if (!this.animals[`${prefix}Animals`].includes(animal)) {
-      return undefined;
-    }
-    return this.getImageDataFromBucket(prefix, animal);
-  }
-
-  private async getImageDataFromBucket(
-    prefix: string,
-    animal: string,
-  ): Promise<string> {
-    const ret = await fetch(imagesEndpoint + `/${prefix}/${animal}.svg`);
-    return await ret.text();
-  }
-
-  private getResellerAnimalRegex(): RegExp {
-    const prefixes = [...this.adjectives, ...this.resellers];
-    let regex = '^(';
-    regex += prefixes.join('|');
-    regex += ')?(';
-    regex += this.animalsFlat.join('|');
-    regex += ')[0-9]*$';
-    return new RegExp(regex);
   }
 }

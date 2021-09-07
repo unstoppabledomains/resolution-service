@@ -22,22 +22,9 @@ import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import { Attributes } from '../types/common';
 import punycode from 'punycode';
 import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
-import { env } from '../env';
 
 export const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
 export type Location = typeof DomainLocations[number];
-
-export const DomainsWithCustomImage: Record<string, string> = {
-  'code.crypto': 'code.svg',
-  'web3.crypto': 'web3.svg',
-  'privacy.crypto': 'privacy.svg',
-  'surf.crypto': 'surf.svg',
-  'hosting.crypto': 'hosting.svg',
-  'india.crypto': 'india.jpg',
-};
-
-const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/unstoppabledomains_crypto.png` as const;
-const CUSTOM_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/custom` as const;
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
@@ -140,34 +127,6 @@ export default class Domain extends Model {
   get isUnicodeName(): boolean {
     // eslint-disable-next-line no-control-regex
     return /[^\u0000-\u00ff]/.test(this.name);
-  }
-
-  get image(): string {
-    if (DomainsWithCustomImage[this.name]) {
-      return `${CUSTOM_IMAGE_URL}/${DomainsWithCustomImage[this.name]}`;
-    }
-
-    const domainAttributes = Domain.AnimalHelper.resellerAnimalAttributes(this);
-    const animalAttribute = domainAttributes.find((d) => {
-      if ('trait_type' in d) {
-        return d.trait_type === 'animal';
-      }
-    });
-    if (animalAttribute) {
-      const adjectiveAttribute = domainAttributes.find((d) => {
-        if ('trait_type' in d) {
-          return d.trait_type === 'adjective';
-        }
-      });
-      const prefix = adjectiveAttribute?.value as string;
-      return (
-        Domain.AnimalHelper.getAnimalImageUrl(
-          prefix,
-          animalAttribute.value as string,
-        ) ?? ''
-      );
-    }
-    return DEFAULT_IMAGE_URL;
   }
 
   static async findByNode(
