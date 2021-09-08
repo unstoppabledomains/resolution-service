@@ -141,20 +141,44 @@ describe('MetaDataController', () => {
       expect(response.image_data).to.eq(correctImageData);
     });
 
-    it('should return an error with unknown domain/token', async () => {
+    it('should return default response for unknown domain/token', async () => {
       const response = await supertest(api)
         .get('/metadata/unknown.crypto')
-        .send();
-      expect(response.text).to.eq(
-        '{"code":"Error","message":"Entity unknown.crypto is not found","errors":[{}]}',
-      );
+        .send()
+        .then((r) => r.body);
+      expect(response).to.deep.eq({
+        name: 'unknown.crypto',
+        description:
+          'A CNS or UNS blockchain domain. Use it to resolve your cryptocurrency addresses and decentralized websites.',
+        external_url:
+          'https://unstoppabledomains.com/search?searchTerm=unknown.crypto',
+        image:
+          'https://storage.googleapis.com/dot-crypto-metadata-api/unstoppabledomains_crypto.png',
+        image_data: DefaultImageData({
+          label: 'unknown',
+          tld: 'crypto',
+          fontSize: 24,
+        }),
+        attributes: [
+          { trait_type: 'domain', value: 'unknown.crypto' },
+          { trait_type: 'level', value: 2 },
+          { trait_type: 'length', value: 7 },
+          { trait_type: 'type', value: 'standard' },
+        ],
+      });
       const token = eip137Namehash('unknown.crypto');
       const responseWithNode = await supertest(api)
         .get(`/metadata/${token}`)
-        .send();
-      expect(responseWithNode.text).to.eq(
-        `{"code":"Error","message":"Entity ${token} is not found","errors":[{}]}`,
-      );
+        .send()
+        .then((r) => r.body);
+      expect(responseWithNode).to.deep.eq({
+        name: null,
+        description: null,
+        external_url: null,
+        image: null,
+        image_data: null,
+        attributes: [],
+      });
     });
 
     it('should work with special domains', async () => {
@@ -336,18 +360,26 @@ describe('MetaDataController', () => {
       expect(res.image_data).to.equal(correctImageData);
     });
 
-    it('should throw an error when no domain is found', async () => {
-      const response = await supertest(api).get('/image/unknown.crypto').send();
-      expect(response.text).to.eq(
-        '{"code":"Error","message":"Entity unknown.crypto is not found","errors":[{}]}',
-      );
+    it('should return null value when no domain is found', async () => {
+      const response = await supertest(api)
+        .get('/image/unknown.crypto')
+        .send()
+        .then((r) => r.body);
+      expect(response).to.deep.eq({
+        image_data: DefaultImageData({
+          label: 'unknown',
+          tld: 'crypto',
+          fontSize: 24,
+        }),
+      });
       const token = eip137Namehash('unknown.crypto');
       const responseWithNode = await supertest(api)
         .get(`/image/${token}`)
-        .send();
-      expect(responseWithNode.text).to.eq(
-        `{"code":"Error","message":"Entity ${token} is not found","errors":[{}]}`,
-      );
+        .send()
+        .then((r) => r.body);
+      expect(responseWithNode).to.deep.eq({
+        image_data: '',
+      });
     });
   });
 });

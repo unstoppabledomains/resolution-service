@@ -322,6 +322,7 @@ describe('DomainsController', () => {
     });
     it('should return list of test domains', async () => {
       const testDomainOne = Domain.create({
+        id: 100,
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
@@ -330,6 +331,7 @@ describe('DomainsController', () => {
         location: 'CNS',
       });
       const testDomainTwo = Domain.create({
+        id: 101,
         name: 'test1.crypto',
         node:
           '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
@@ -337,7 +339,8 @@ describe('DomainsController', () => {
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'CNS',
       });
-      await testDomainOne.save().then(async () => await testDomainTwo.save());
+      await testDomainOne.save();
+      await testDomainTwo.save();
 
       const res = await supertest(api)
         .get('/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2')
@@ -377,6 +380,7 @@ describe('DomainsController', () => {
     });
     it('should return one domain perPage', async () => {
       const testDomainOne = Domain.create({
+        id: 100,
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
@@ -385,6 +389,7 @@ describe('DomainsController', () => {
         location: 'CNS',
       });
       const testDomainTwo = Domain.create({
+        id: 101,
         name: 'test1.zil',
         node:
           '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
@@ -392,8 +397,8 @@ describe('DomainsController', () => {
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'ZNS',
       });
-
-      await testDomainOne.save().then(async () => await testDomainTwo.save());
+      await testDomainOne.save();
+      await testDomainTwo.save();
 
       const res = await supertest(api)
         .get(
