@@ -17,6 +17,7 @@ import ErrorHandler from './errors/ErrorHandler';
 export const api = createExpressServer({
   classTransformer: true,
   defaultErrorHandler: false,
+  cors: true,
   controllers: [DomainsController, StatusController, MetaDataController],
   middlewares: [ErrorHandler],
 });
