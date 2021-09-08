@@ -34,12 +34,15 @@ const ResellerAnimalRegex = new RegExp(
 const ImagesEndpoint = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images`;
 
 export default class AnimalDomainHelper {
-  resellerAnimalAttributes(domain: Domain): OpenSeaMetadataAttribute[] {
-    if (domain.extension !== 'crypto') {
+  resellerAnimalAttributes(name: string): OpenSeaMetadataAttribute[] {
+    const splitname = name.split('.');
+    const extension = splitname.pop();
+    const label = splitname.join('.');
+    if (extension !== 'crypto') {
       return [{ trait_type: 'type', value: 'standard' }];
     }
     const attributes: { trait_type: string; value: string }[] = [];
-    const matches = ResellerAnimalRegex.exec(domain.label);
+    const matches = ResellerAnimalRegex.exec(label);
     if (matches) {
       const prefix = matches[1];
       const animal = matches[2];

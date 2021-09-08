@@ -3,14 +3,16 @@ import { ResponseSchema } from 'routing-controllers-openapi';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import fetch from 'node-fetch';
 import Domain from '../models/Domain';
-import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
+import AnimalDomainHelper, {
+  OpenSeaMetadataAttribute,
+} from '../utils/AnimalDomainHelper/AnimalDomainHelper';
 import { DefaultImageData } from '../utils/generalImage';
 import { MetadataImageFontSize } from '../types/common';
 import { pathThatSvg } from 'path-that-svg';
 import { IsArray, IsOptional, IsString } from 'class-validator';
-import { OpenSeaMetadataAttribute } from '../utils/AnimalDomainHelper/AnimalDomainHelper';
 import { env } from '../env';
 import { logger } from '../logger';
+import punycode from 'punycode';
 
 const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/unstoppabledomains_crypto.png` as const;
 const CUSTOM_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/custom` as const;
@@ -26,16 +28,16 @@ const AnimalHelper: AnimalDomainHelper = new AnimalDomainHelper();
 
 class Erc721Metadata {
   @IsString()
-  name: string;
+  name: string | null;
 
   @IsString()
-  description: string;
+  description: string | null;
 
   @IsString()
-  image: string;
+  image: string | null;
 
   @IsString()
-  external_url: string;
+  external_url: string | null;
 }
 
 class OpenSeaMetadata extends Erc721Metadata {
@@ -45,7 +47,7 @@ class OpenSeaMetadata extends Erc721Metadata {
 
   @IsOptional()
   @IsString()
-  image_data?: string;
+  image_data?: string | null;
 
   @IsArray()
   attributes: Array<OpenSeaMetadataAttribute>;
@@ -78,25 +80,31 @@ export class MetaDataController {
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain = await Domain.findByNode(token);
     if (!domain) {
-      throw new Error(`Entity ${domainOrToken} is not found`);
+      return await this.defaultMetaResponse(domainOrToken);
     }
 
-    const description = this.getDomainDescription(domain);
-    const domainAttributes = this.getDomainAttributes(domain);
-    const domainAnimalAttributes = this.getAnimalAttributes(domain);
+    const description = this.getDomainDescription(
+      domain.name,
+      domain.resolution,
+    );
+    const domainAttributes = this.getDomainAttributes(
+      domain.name,
+      domain.resolution,
+    );
 
     const metadata: OpenSeaMetadata = {
       name: domain.name,
       description,
       external_url: `https://unstoppabledomains.com/search?searchTerm=${domain.name}`,
-      image: this.generateDomainImageUrl(domain),
-      attributes: [...domainAttributes, ...domainAnimalAttributes],
+      image: this.generateDomainImageUrl(domain.name),
+      attributes: domainAttributes,
     };
 
-    if (!this.isDomainWithCustomImage(domain)) {
+    if (!this.isDomainWithCustomImage(domain.name)) {
       metadata.image_data = await this.generateImageData(
-        domain,
-        metadata.attributes,
+        domain.name,
+        domain.resolution,
+        domainAttributes,
       );
       metadata.background_color = '4C47F7';
     }
@@ -121,16 +129,21 @@ export class MetaDataController {
   ): Promise<ImageResponse> {
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain = await Domain.findByNode(token);
-    if (!domain) {
-      throw new Error(`Entity ${domainOrToken} is not found`);
+
+    const name = domain ? domain.name : domainOrToken;
+    const resolution = domain ? domain.resolution : {};
+
+    if (!name.includes('.')) {
+      return { image_data: '' };
     }
 
-    const domainAttributes = [
-      ...this.getDomainAttributes(domain),
-      ...this.getAnimalAttributes(domain),
-    ];
+    const domainAttributes = this.getDomainAttributes(name, resolution);
     return {
-      image_data: await this.generateImageData(domain, domainAttributes),
+      image_data: await this.generateImageData(
+        name,
+        resolution,
+        domainAttributes,
+      ),
     };
   }
 
@@ -143,21 +156,49 @@ export class MetaDataController {
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain = await Domain.findByNode(token);
 
-    if (!domain) {
-      throw new Error(`Entity ${domainOrToken} is not found`);
+    const name = domain ? domain.name : domainOrToken;
+    const resolution = domain ? domain.resolution : {};
+
+    if (!name.includes('.')) {
+      return '';
     }
-    const domainAttributes = [
-      ...this.getDomainAttributes(domain),
-      ...this.getAnimalAttributes(domain),
-    ];
-    const imageData = await this.generateImageData(domain, domainAttributes);
+
+    const domainAttributes = this.getDomainAttributes(name, resolution);
+    const imageData = await this.generateImageData(
+      name,
+      resolution,
+      domainAttributes,
+    );
     return await pathThatSvg(imageData);
+  }
+
+  private async defaultMetaResponse(
+    domainOrToken: string,
+  ): Promise<OpenSeaMetadata> {
+    const name = domainOrToken.includes('.') ? domainOrToken : null;
+    const description = name ? this.getDomainDescription(name, {}) : null;
+    const attributes = name ? this.getDomainAttributes(name, {}) : [];
+    const image = name ? this.generateDomainImageUrl(name) : null;
+    const image_data = name
+      ? await this.generateImageData(name, {}, attributes)
+      : null;
+    const external_url = name
+      ? `https://unstoppabledomains.com/search?searchTerm=${name}`
+      : null;
+    return {
+      name,
+      description,
+      external_url,
+      attributes,
+      image,
+      image_data,
+    };
   }
 
   private normalizeDomainOrToken(domainOrToken: string): string {
     if (domainOrToken.includes('.')) {
       return this.normalizeDomain(domainOrToken);
-    } else if (domainOrToken.match(/^[0-9]*$/)) {
+    } else if (domainOrToken.replace('0x', '').match(/^[a-fA-F0-9]+$/)) {
       return this.normalizeToken(domainOrToken);
     }
     return domainOrToken;
@@ -176,12 +217,15 @@ export class MetaDataController {
     return '0x' + BigInt(token).toString(16).padStart(64, '0');
   }
 
-  private getDomainDescription(domain: Domain): string {
-    const levels = domain.levelCount;
-    const ipfsDescriptionPart = this.getIpfsDescriptionPart(domain.resolution);
+  private getDomainDescription(
+    name: string,
+    resolution: Record<string, string>,
+  ): string {
+    const levels = name.split('.').length;
+    const ipfsDescriptionPart = this.getIpfsDescriptionPart(resolution);
 
     // todo find a better way for this edge case.
-    if (domain.name === 'india.crypto') {
+    if (name === 'india.crypto') {
       return 'This exclusive art piece by Amrit Pal Singh features hands of different skin tones spelling out the word HOPE in sign language. Hope embodies people coming together and having compassion for others in a way that transcends geographical borders. This art is a reminder that, while one individual can’t uplift humanity on their own, collective and inclusive efforts give rise to meaningful change.'.concat(
         ipfsDescriptionPart,
       );
@@ -210,34 +254,46 @@ export class MetaDataController {
     return '';
   }
 
-  private getDomainAttributes(domain: Domain): OpenSeaMetadataAttribute[] {
+  private getDomainAttributes(
+    name: string,
+    resolution: Record<string, string>,
+  ): OpenSeaMetadataAttribute[] {
+    return [
+      ...this.getBasicDomainAttributes(name, resolution),
+      ...this.getAnimalAttributes(name),
+    ];
+  }
+
+  private getBasicDomainAttributes(
+    name: string,
+    resolution: Record<string, string>,
+  ): OpenSeaMetadataAttribute[] {
     const attributes: OpenSeaMetadataAttribute[] = [
       {
         trait_type: 'domain',
-        value: domain.name,
+        value: name,
       },
       {
         trait_type: 'level',
-        value: domain.levelCount,
+        value: name.split('.').length,
       },
       {
         trait_type: 'length',
-        value: domain.unicodeName.split('.')[0].length,
+        value: punycode.toUnicode(name).split('.')[0].length,
       },
     ];
 
-    const currencies = Object.keys(domain.resolution)
+    const currencies = Object.keys(resolution)
       .filter((key) => key.startsWith('crypto') && key.endsWith('address'))
       .map((key) => ({
         trait_type: key.slice('crypto.'.length, key.length - '.address'.length),
-        value: domain.resolution[key],
+        value: resolution[key],
       }))
       .filter((r) => r.value);
     attributes.push(...currencies);
 
     const ipfsContent =
-      domain.resolution['dweb.ipfs.hash'] ||
-      domain.resolution['ipfs.html.value'];
+      resolution['dweb.ipfs.hash'] || resolution['ipfs.html.value'];
     if (ipfsContent) {
       attributes.push({ trait_type: 'IPFS Content', value: ipfsContent });
     }
@@ -245,12 +301,12 @@ export class MetaDataController {
     return attributes;
   }
 
-  private getAnimalAttributes(domain: Domain): OpenSeaMetadataAttribute[] {
-    return AnimalHelper.resellerAnimalAttributes(domain);
+  private getAnimalAttributes(name: string): OpenSeaMetadataAttribute[] {
+    return AnimalHelper.resellerAnimalAttributes(name);
   }
 
-  private isDomainWithCustomImage(domain: Domain): boolean {
-    return Boolean(DomainsWithCustomImage[domain.name]);
+  private isDomainWithCustomImage(name: string): boolean {
+    return Boolean(DomainsWithCustomImage[name]);
   }
 
   private isValidDNSDomain(domain: string): boolean {
@@ -266,12 +322,16 @@ export class MetaDataController {
   }
 
   private async generateImageData(
-    domain: Domain,
+    name: string,
+    resolution: Record<string, string>,
     attributes: OpenSeaMetadataAttribute[],
   ): Promise<string> {
-    if (this.isDomainWithCustomImage(domain)) {
+    if (this.isDomainWithCustomImage(name)) {
       return '';
     }
+    const splittedName = name.split('.');
+    const extension = splittedName.pop() || '';
+    const label = splittedName.join('.');
 
     const animalImage = await AnimalHelper.getResellerAnimalImageData(
       attributes,
@@ -280,7 +340,7 @@ export class MetaDataController {
       return animalImage;
     }
 
-    const imagePathFromDomain = domain.resolution['social.image.value'];
+    const imagePathFromDomain = resolution['social.image.value'];
     if (
       imagePathFromDomain &&
       imagePathFromDomain.startsWith(
@@ -296,10 +356,10 @@ export class MetaDataController {
           `Failed to generate image data from the following endpoint: ${imagePathFromDomain}`,
         );
         logger.error(error);
-        return this.generateDefaultImageData(domain.label, domain.extension);
+        return this.generateDefaultImageData(label, extension);
       }
     }
-    return this.generateDefaultImageData(domain.label, domain.extension);
+    return this.generateDefaultImageData(label, extension);
   }
 
   private generateDefaultImageData(label: string, tld: string) {
@@ -319,12 +379,12 @@ export class MetaDataController {
     return DefaultImageData({ label, tld, fontSize });
   }
 
-  private generateDomainImageUrl(domain: Domain): string {
-    if (DomainsWithCustomImage[domain.name]) {
-      return `${CUSTOM_IMAGE_URL}/${DomainsWithCustomImage[domain.name]}`;
+  private generateDomainImageUrl(name: string): string | null {
+    if (DomainsWithCustomImage[name]) {
+      return `${CUSTOM_IMAGE_URL}/${DomainsWithCustomImage[name]}`;
     }
 
-    const domainAttributes = this.getAnimalAttributes(domain);
+    const domainAttributes = this.getAnimalAttributes(name);
     const animalImageUrl = AnimalHelper.getResellerAnimalImageUrl(
       domainAttributes,
     );
