@@ -16,6 +16,7 @@ import punycode from 'punycode';
 
 const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/unstoppabledomains_crypto.png` as const;
 const CUSTOM_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/custom` as const;
+const INVALID_DOMAIN_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/invalid-domain.svg` as const;
 const DomainsWithCustomImage: Record<string, string> = {
   'code.crypto': 'code.svg',
   'web3.crypto': 'web3.svg',
@@ -72,6 +73,26 @@ class ImageResponse {
 
 @Controller()
 export class MetaDataController {
+  @Get('/deaddata/:domainOrToken')
+  @ResponseSchema(OpenSeaMetadata)
+  async getDeadData(): Promise<{
+    name: string;
+    description: string;
+    image: string;
+    background_color: string;
+  }> {
+    const description = 'This domain is invalid';
+
+    const metadata = {
+      name: 'INVALID DOMAIN',
+      description,
+      image: INVALID_DOMAIN_IMAGE_URL,
+      background_color: 'FFFFFF',
+    };
+
+    return metadata;
+  }
+
   @Get('/metadata/:domainOrToken')
   @ResponseSchema(OpenSeaMetadata)
   async getMetaData(
