@@ -14,9 +14,9 @@ import { env } from '../env';
 import { logger } from '../logger';
 import punycode from 'punycode';
 
-const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/unstoppabledomains_crypto.png` as const;
+const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
 const CUSTOM_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/custom` as const;
-const INVALID_DOMAIN_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/invalid-domain.svg` as const;
+const INVALID_DOMAIN_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/invalid-domain.svg` as const;
 const DomainsWithCustomImage: Record<string, string> = {
   'code.crypto': 'code.svg',
   'web3.crypto': 'web3.svg',
@@ -83,14 +83,12 @@ export class MetaDataController {
   }> {
     const description = 'This domain is invalid';
 
-    const metadata = {
+    return {
       name: 'INVALID DOMAIN',
       description,
       image: INVALID_DOMAIN_IMAGE_URL,
       background_color: 'FFFFFF',
     };
-
-    return metadata;
   }
 
   @Get('/metadata/:domainOrToken')
@@ -125,7 +123,6 @@ export class MetaDataController {
       metadata.image_data = await this.generateImageData(
         domain.name,
         domain.resolution,
-        domainAttributes,
       );
       metadata.background_color = '4C47F7';
     }
@@ -158,13 +155,8 @@ export class MetaDataController {
       return { image_data: '' };
     }
 
-    const domainAttributes = this.getDomainAttributes(name, resolution);
     return {
-      image_data: await this.generateImageData(
-        name,
-        resolution,
-        domainAttributes,
-      ),
+      image_data: await this.generateImageData(name, resolution),
     };
   }
 
@@ -184,12 +176,7 @@ export class MetaDataController {
       return '';
     }
 
-    const domainAttributes = this.getDomainAttributes(name, resolution);
-    const imageData = await this.generateImageData(
-      name,
-      resolution,
-      domainAttributes,
-    );
+    const imageData = await this.generateImageData(name, resolution);
     return await pathThatSvg(imageData);
   }
 
@@ -200,9 +187,7 @@ export class MetaDataController {
     const description = name ? this.getDomainDescription(name, {}) : null;
     const attributes = name ? this.getDomainAttributes(name, {}) : [];
     const image = name ? this.generateDomainImageUrl(name) : null;
-    const image_data = name
-      ? await this.generateImageData(name, {}, attributes)
-      : null;
+    const image_data = name ? await this.generateImageData(name, {}) : null;
     const external_url = name
       ? `https://unstoppabledomains.com/search?searchTerm=${name}`
       : null;
@@ -323,7 +308,7 @@ export class MetaDataController {
   }
 
   private getAnimalAttributes(name: string): OpenSeaMetadataAttribute[] {
-    return AnimalHelper.resellerAnimalAttributes(name);
+    return AnimalHelper.getAnimalAttributes(name);
   }
 
   private isDomainWithCustomImage(name: string): boolean {
@@ -345,7 +330,6 @@ export class MetaDataController {
   private async generateImageData(
     name: string,
     resolution: Record<string, string>,
-    attributes: OpenSeaMetadataAttribute[],
   ): Promise<string> {
     if (this.isDomainWithCustomImage(name)) {
       return '';
@@ -354,9 +338,7 @@ export class MetaDataController {
     const extension = splittedName.pop() || '';
     const label = splittedName.join('.');
 
-    const animalImage = await AnimalHelper.getResellerAnimalImageData(
-      attributes,
-    );
+    const animalImage = await AnimalHelper.getAnimalImageData(name);
     if (animalImage) {
       return animalImage;
     }
@@ -405,10 +387,7 @@ export class MetaDataController {
       return `${CUSTOM_IMAGE_URL}/${DomainsWithCustomImage[name]}`;
     }
 
-    const domainAttributes = this.getAnimalAttributes(name);
-    const animalImageUrl = AnimalHelper.getResellerAnimalImageUrl(
-      domainAttributes,
-    );
+    const animalImageUrl = AnimalHelper.getAnimalImageUrl(name);
     if (animalImageUrl) {
       return animalImageUrl;
     }

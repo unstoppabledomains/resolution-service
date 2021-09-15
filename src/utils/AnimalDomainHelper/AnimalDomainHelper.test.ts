@@ -1,18 +1,43 @@
 import AnimalDomainHelper from './AnimalDomainHelper';
 import { expect } from 'chai';
-import { DomainTestHelper } from '../testing/DomainTestHelper';
-import { eip137Namehash } from '../namehash';
+
+const BrandedAnimalsUrls: Record<string, string> = {
+  'dchatbadger.crypto':
+    'https://storage.googleapis.com/dot-crypto-metadata-api/images/dchat/badger.svg',
+  'switcheobadger.crypto':
+    'https://storage.googleapis.com/dot-crypto-metadata-api/images/switcheo/badger.svg',
+  'equalbadger.crypto':
+    'https://storage.googleapis.com/dot-crypto-metadata-api/images/equal/badger.svg',
+  'zilliqabadger.crypto':
+    'https://storage.googleapis.com/dot-crypto-metadata-api/images/zilliqa/badger.svg',
+  'bountybadger.crypto':
+    'https://storage.googleapis.com/dot-crypto-metadata-api/images/bounty/badger.svg',
+  'btgbadger.crypto':
+    'https://storage.googleapis.com/dot-crypto-metadata-api/images/btg/badger.svg',
+  'harmonybadger.crypto':
+    'https://storage.googleapis.com/dot-crypto-metadata-api/images/harmony/badger.svg',
+  'operabadger.crypto':
+    'https://storage.googleapis.com/dot-crypto-metadata-api/images/opera/badger.svg',
+  'eljabadger.crypto':
+    'https://storage.googleapis.com/dot-crypto-metadata-api/images/elja/badger.svg',
+  'qtumbadger.crypto':
+    'https://storage.googleapis.com/dot-crypto-metadata-api/images/qtum/badger.svg',
+  'atomicbadger.crypto':
+    'https://storage.googleapis.com/dot-crypto-metadata-api/images/atomic/badger.svg',
+  'dappbadger.crypto':
+    'https://storage.googleapis.com/dot-crypto-metadata-api/images/dapp/badger.svg',
+  'trustbadger.crypto':
+    'https://storage.googleapis.com/dot-crypto-metadata-api/images/trust/badger.svg',
+};
+
+const BrandedAnimalsDomains: string[] = Object.keys(BrandedAnimalsUrls);
 
 describe('AnimalDomainHelper', () => {
   const helper = new AnimalDomainHelper();
 
   describe('.resellerAnimalAttributes', () => {
     it('non crypto domain', async () => {
-      const domain = await DomainTestHelper.createTestDomain({
-        name: 'noncrypto.wallet',
-        node: eip137Namehash('noncrypto.wallet'),
-      });
-      const attributes = helper.resellerAnimalAttributes(domain.name);
+      const attributes = helper.getAnimalAttributes('noncrypto.wallet');
       expect(attributes.length).to.equal(1);
       expect(attributes[0]).to.deep.equal({
         trait_type: 'type',
@@ -21,11 +46,7 @@ describe('AnimalDomainHelper', () => {
     });
 
     it('animalDomain with no prefix', async () => {
-      const domain = await DomainTestHelper.createTestDomain({
-        name: 'lemming.crypto',
-        node: eip137Namehash('lemming.crypto'),
-      });
-      const attributes = helper.resellerAnimalAttributes(domain.name);
+      const attributes = helper.getAnimalAttributes('lemming.crypto');
       expect(attributes.length).to.equal(2);
       expect(attributes[0]).to.deep.equal({
         trait_type: 'animal',
@@ -38,11 +59,9 @@ describe('AnimalDomainHelper', () => {
     });
 
     it('animalDomain with prefix', async () => {
-      const domain = await DomainTestHelper.createTestDomain({
-        name: 'unstoppablelemming.crypto',
-        node: eip137Namehash('unstoppablelemming.crypto'),
-      });
-      const attributes = helper.resellerAnimalAttributes(domain.name);
+      const attributes = helper.getAnimalAttributes(
+        'unstoppablelemming.crypto',
+      );
       expect(attributes.length).to.equal(3);
       expect(attributes[0]).to.deep.equal({
         trait_type: 'adjective',
@@ -59,13 +78,39 @@ describe('AnimalDomainHelper', () => {
     });
 
     it('not animal domain', async () => {
-      const domain = await DomainTestHelper.createTestDomain({});
-      const attributes = helper.resellerAnimalAttributes(domain.name);
+      const attributes = helper.getAnimalAttributes('standard.crypto');
       expect(attributes.length).to.equal(1);
       expect(attributes[0]).to.deep.equal({
         trait_type: 'type',
         value: 'standard',
       });
+    });
+
+    it('should return correct image url for branded animals', async () => {
+      expect(BrandedAnimalsDomains.length).to.be.greaterThan(0); // Ensure that we have items to check
+      BrandedAnimalsDomains.forEach((domainName: string) => {
+        const url = helper.getAnimalImageUrl(domainName);
+        const expectedUrl = BrandedAnimalsUrls[domainName];
+        expect(url).to.equal(expectedUrl);
+      });
+    });
+
+    it('should return correct metadata for branded animals', async () => {
+      expect(BrandedAnimalsDomains.length).to.be.greaterThan(0); // Ensure that we have items to check
+      BrandedAnimalsDomains.forEach((domainName: string) => {
+        const attributes = helper.getAnimalAttributes(domainName);
+        expect(attributes).to.deep.equal([
+          { trait_type: 'animal', value: 'badger' },
+          { trait_type: 'type', value: 'animal' },
+        ]);
+      });
+    });
+
+    it('should return correct image url for default animals', async () => {
+      const url = helper.getAnimalImageUrl('fancybear.crypto');
+      const expectedUrl =
+        'https://storage.googleapis.com/dot-crypto-metadata-api/images/animals/bear.svg';
+      expect(url).to.equal(expectedUrl);
     });
   });
 });

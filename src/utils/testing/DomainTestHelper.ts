@@ -1,5 +1,4 @@
 import { Domain } from '../../models';
-import { Location } from '../../models/Domain';
 import { Attributes } from '../../types/common';
 
 export class DomainTestHelper {

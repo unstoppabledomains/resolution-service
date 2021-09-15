@@ -2,7 +2,6 @@ import * as allAnimalsJson from './vocabulary/animals';
 import ResellersDictionary from './vocabulary/resellers.json';
 import AdjectivesDictionary from './vocabulary/adjectives.json';
 import fetch from 'node-fetch';
-import { Domain } from '../../models';
 import { env } from '../../env';
 
 export type OpenSeaMetadataAttribute =
@@ -34,21 +33,13 @@ const ResellerAnimalRegex = new RegExp(
 const ImagesEndpoint = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images`;
 
 export default class AnimalDomainHelper {
-  resellerAnimalAttributes(name: string): OpenSeaMetadataAttribute[] {
-    const splitname = name.split('.');
-    const extension = splitname.pop();
-    const label = splitname.join('.');
-    if (extension !== 'crypto') {
-      return [{ trait_type: 'type', value: 'standard' }];
-    }
+  getAnimalAttributes(name: string): OpenSeaMetadataAttribute[] {
     const attributes: { trait_type: string; value: string }[] = [];
-    const matches = ResellerAnimalRegex.exec(label);
-    if (matches) {
-      const prefix = matches[1];
-      const animal = matches[2];
-      if (AdjectivesDictionary.includes(prefix)) {
-        attributes.push({ trait_type: 'adjective', value: prefix });
-      }
+    const { prefix, animal } = this.extractPrefixAndAnimal(name);
+    if (prefix && AdjectivesDictionary.includes(prefix)) {
+      attributes.push({ trait_type: 'adjective', value: prefix });
+    }
+    if (animal) {
       attributes.push({ trait_type: 'animal', value: animal });
       attributes.push({ trait_type: 'type', value: 'animal' });
     } else {
@@ -57,49 +48,25 @@ export default class AnimalDomainHelper {
     return attributes;
   }
 
-  async getResellerAnimalImageData(
-    attributes: OpenSeaMetadataAttribute[],
-  ): Promise<string | undefined> {
-    const imageUrl = this.getResellerAnimalImageUrl(attributes);
+  async getAnimalImageData(domainName: string): Promise<string | undefined> {
+    const imageUrl = this.getAnimalImageUrl(domainName);
     if (imageUrl) {
       const ret = await fetch(imageUrl);
       return ret.text();
     }
   }
 
-  getResellerAnimalImageUrl(
-    attributes: OpenSeaMetadataAttribute[],
-  ): string | undefined {
-    let domain = '';
-    let prefix = '';
-    let animal = '';
-
-    attributes.forEach((attribute) => {
-      if ('trait_type' in attribute) {
-        domain =
-          attribute.trait_type === 'domain'
-            ? (attribute.value as string)
-            : domain;
-        prefix =
-          attribute.trait_type === 'adjective'
-            ? (attribute.value as string)
-            : prefix;
-        animal =
-          attribute.trait_type === 'animal'
-            ? (attribute.value as string)
-            : animal;
-      }
-    });
+  getAnimalImageUrl(domainName: string): string | undefined {
+    const { prefix, animal } = this.extractPrefixAndAnimal(domainName);
     if (animal) {
-      return this.getAnimalImageUrl(prefix, animal);
+      return this.generateImageUrl(prefix, animal);
     }
     return undefined;
   }
 
-  getAnimalImageUrl(prefix: string, animal: string): string | undefined {
+  private generateImageUrl(prefix: string, animal: string): string | undefined {
     switch (this.normalizePrefix(prefix)) {
       case 'trust':
-        return `${ImagesEndpoint}/unstoppabledomains_crypto.png`;
       case 'switcheo':
       case 'opera':
       case 'dapp':
@@ -140,5 +107,23 @@ export default class AnimalDomainHelper {
       bitcoingold: 'btg',
     };
     return map[prefix] || prefix;
+  }
+
+  private extractPrefixAndAnimal(
+    domainName: string,
+  ): { prefix: string; animal: string } {
+    let prefix = '';
+    let animal = '';
+    if (domainName && domainName.includes('.')) {
+      const extensionDelimiter = domainName.lastIndexOf('.');
+      const label = domainName.slice(0, extensionDelimiter);
+      const matches = ResellerAnimalRegex.exec(label);
+      if (matches) {
+        prefix = matches[1] ?? '';
+        animal = matches[2] ?? '';
+        return { prefix, animal };
+      }
+    }
+    return { prefix, animal };
   }
 }
