@@ -65,7 +65,8 @@ export default class AnimalDomainHelper {
   }
 
   private generateImageUrl(prefix: string, animal: string): string | undefined {
-    switch (this.normalizePrefix(prefix)) {
+    const normalizedPrefix = this.normalizePrefix(prefix);
+    switch (normalizedPrefix) {
       case 'trust':
       case 'switcheo':
       case 'opera':
@@ -80,10 +81,10 @@ export default class AnimalDomainHelper {
       case 'equal':
       case 'elja':
       case 'btg': {
-        if (!AnimalsDictionary[`${prefix}Animals`].includes(animal)) {
+        if (!AnimalsDictionary[`${normalizedPrefix}Animals`].includes(animal)) {
           return undefined;
         }
-        return ImagesEndpoint + `/${prefix}/${animal}.svg`;
+        return ImagesEndpoint + `/${normalizedPrefix}/${animal}.svg`;
       }
       default:
         if (AnimalsDictionary.ethDenverAnimals.includes(animal)) {
@@ -99,7 +100,7 @@ export default class AnimalDomainHelper {
   private normalizePrefix(prefix: string): string {
     const map: Record<string, string> = {
       decentralized: 'dchat',
-      aws: 'atomic',
+      awc: 'atomic',
       bnty: 'bounty',
       zil: 'zilliqa',
       eql: 'equal',
