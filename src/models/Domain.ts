@@ -8,12 +8,12 @@ import {
   Repository,
 } from 'typeorm';
 import {
+  IsNumber,
   IsObject,
   IsOptional,
   IsString,
   Matches,
   NotEquals,
-  IsEnum,
 } from 'class-validator';
 import ValidateWith from '../services/ValidateWith';
 import * as _ from 'lodash';
@@ -22,9 +22,13 @@ import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import { Attributes } from '../types/common';
 import punycode from 'punycode';
 import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
+import { getEthConfig } from '../contracts';
+import { Blockchain } from '../utils/constants';
 
-export const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
-export type Location = typeof DomainLocations[number];
+export type Location = {
+  networkId: number;
+  blockchain: keyof typeof Blockchain;
+};
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
@@ -79,9 +83,13 @@ export default class Domain extends Model {
   @JoinColumn({ name: 'parent_id' })
   children: Promise<Domain[]>;
 
-  @IsEnum(DomainLocations)
+  @IsNumber()
+  @Column('int')
+  networkId: number;
+
+  @IsString()
   @Column('text')
-  location: Location;
+  blockchain: keyof typeof Blockchain;
 
   constructor(attributes?: Attributes<Domain>) {
     super();
@@ -147,7 +155,7 @@ export default class Domain extends Model {
     if (!this.name || this.name !== this.name.toLowerCase()) {
       return undefined;
     }
-    if (this.location === 'ZNS') {
+    if (this.blockchain === Blockchain.ZIL) {
       return znsNamehash(this.name);
     }
     return eip137Namehash(this.name);
@@ -166,7 +174,11 @@ export default class Domain extends Model {
     location: Location,
     repository: Repository<Domain> = this.getRepository(),
   ): Promise<Domain> {
-    const domain = await repository.findOne({ name, location });
+    const domain = await repository.findOne({
+      name,
+      blockchain: location.blockchain,
+      networkId: location.networkId,
+    });
     if (domain) {
       return domain;
     }
@@ -177,7 +189,8 @@ export default class Domain extends Model {
     newDomain.attributes({
       name: name,
       node: eip137Namehash(name),
-      location: location,
+      blockchain: location.blockchain,
+      networkId: location.networkId,
       registry,
     });
     await repository.save(newDomain);
@@ -185,16 +198,20 @@ export default class Domain extends Model {
   }
 
   // todo Don't prefill domain registry. Set domain registry from incoming ETH events only.
-  static getRegistryAddressFromLocation(location: string): string {
-    switch (location) {
-      case 'CNS':
-        return '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe';
-      case 'ZNS':
-        return '0x9611c53be6d1b32058b2747bdececed7e1216793';
-      case 'UNSL1':
-        return '0x049aba7510f45ba5b64ea9e658e342f904db358d';
-      default:
-        return Domain.NullAddress;
+  static getRegistryAddressFromLocation(location: Location): string {
+    if (
+      location.blockchain === Blockchain.ETH ||
+      location.blockchain === Blockchain.MATIC
+    ) {
+      const ethConfig = getEthConfig(location.networkId.toString());
+      if (this.name.endsWith('.crypto')) {
+        return ethConfig.CNSRegistry.address;
+      }
+      return ethConfig.UNSRegistry.address;
     }
+    if (location.blockchain === Blockchain.ZIL) {
+      return '0x9611c53be6d1b32058b2747bdececed7e1216793';
+    }
+    return Domain.NullAddress;
   }
 }
