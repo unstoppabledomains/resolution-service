@@ -23,11 +23,11 @@ import { Attributes } from '../types/common';
 import punycode from 'punycode';
 import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
 import { getEthConfig } from '../contracts';
-import { Blockchain } from '../utils/constants';
+import { BlockchainType, Blockchain } from '../utils/constants';
 
 export type Location = {
   networkId: number;
-  blockchain: keyof typeof Blockchain;
+  blockchain: BlockchainType;
 };
 
 @Entity({ name: 'domains' })
@@ -89,7 +89,7 @@ export default class Domain extends Model {
 
   @IsString()
   @Column('text')
-  blockchain: keyof typeof Blockchain;
+  blockchain: BlockchainType;
 
   constructor(attributes?: Attributes<Domain>) {
     super();

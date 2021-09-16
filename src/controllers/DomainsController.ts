@@ -9,7 +9,6 @@ import {
 import {
   ArrayNotEmpty,
   IsArray,
-  IsEnum,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -24,8 +23,7 @@ import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
 import { In } from 'typeorm';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
-import { Blockchain } from '../utils/constants';
-import { Location } from '../models/Domain';
+import { BlockchainType } from '../utils/constants';
 
 class DomainMetadata {
   @IsString()
@@ -41,7 +39,7 @@ class DomainMetadata {
 
   @IsOptional()
   @IsString()
-  blockchain: keyof typeof Blockchain | null = null;
+  blockchain: BlockchainType | null = null;
 
   @IsOptional()
   @IsNumber()

@@ -13,7 +13,7 @@ import ValidateWith from '../services/ValidateWith';
 import { Attributes } from '../types/common';
 import Model from './Model';
 import { BigNumber } from '@ethersproject/bignumber';
-import { Blockchain } from '../utils/constants';
+import { BlockchainType } from '../utils/constants';
 
 export const DomainOperationTypes = [
   'Transfer',
@@ -48,7 +48,7 @@ export default class CnsRegistryEvent extends Model {
 
   @IsString()
   @Column('text')
-  blockchain: keyof typeof Blockchain;
+  blockchain: BlockchainType;
 
   @IsNumber()
   @Column('int')
