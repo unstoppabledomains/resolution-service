@@ -39,6 +39,7 @@ export default class ZilWorker {
     return WorkerStatus.saveWorkerStatus(
       'ZIL',
       latestBlock,
+      undefined,
       latestAtxuid,
       repository,
     );

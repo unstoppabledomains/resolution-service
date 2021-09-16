@@ -63,10 +63,12 @@ describe('StatusController', () => {
       'ETH',
       expectedStatus.ETH.latestMirroredBlock,
       undefined,
+      undefined,
     );
     await WorkerStatus.saveWorkerStatus(
       'ZIL',
       expectedStatus.ZIL.latestMirroredBlock,
+      undefined,
       undefined,
     );
 

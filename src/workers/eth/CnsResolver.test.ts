@@ -1,7 +1,6 @@
 import { BigNumber, Contract } from 'ethers';
 import { randomBytes } from 'crypto';
 import { env } from '../../env';
-import { EthereumProvider } from '../EthereumProvider';
 import { Domain, WorkerStatus } from '../../models';
 import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
 import { CnsResolver } from './CnsResolver';
@@ -10,6 +9,7 @@ import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
 import { ETHContracts } from '../../contracts';
 import supportedKeysJson from 'dot-crypto/src/supported-keys/supported-keys.json';
+import * as ethersUtils from '../../utils/ethersUtils';
 
 describe('CnsResolver', () => {
   let service: CnsResolver;
@@ -67,6 +67,7 @@ describe('CnsResolver', () => {
 
   before(async () => {
     await EthereumTestsHelper.startNetwork();
+    await EthereumTestsHelper.resetNetwork();
 
     registry = ETHContracts.CNSRegistry.getContract().connect(
       EthereumTestsHelper.owner(),
@@ -85,7 +86,7 @@ describe('CnsResolver', () => {
         env.APPLICATION.ETHEREUM,
         'CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK',
       )
-      .value(await EthereumProvider.getBlockNumber());
+      .value(await ethersUtils.getLatestNetworkBlock());
 
     testDomainLabel = randomBytes(16).toString('hex');
     testDomainName = `${testDomainLabel}.crypto`;
@@ -94,7 +95,7 @@ describe('CnsResolver', () => {
 
     await WorkerStatus.saveWorkerStatus(
       'ETH',
-      await EthereumProvider.getBlockNumber(),
+      await ethersUtils.getLatestNetworkBlock(),
     );
     await whitelistedMinter.functions
       .mintSLDToDefaultResolver(
@@ -262,7 +263,7 @@ describe('CnsResolver', () => {
       await resolver.functions
         .reconfigure(['custom-key'], ['custom-value'], testTokenId)
         .then((receipt) => receipt.wait());
-      const resetRecordsBlockNumber = await EthereumProvider.getBlockNumber();
+      const resetRecordsBlockNumber = await ethersUtils.getLatestNetworkBlock();
       const ethereumCallSpy = sinonSandbox.spy(service, '_getResolverEvents');
       const domainRecords = await service._getAllDomainRecords(
         resolver.address,

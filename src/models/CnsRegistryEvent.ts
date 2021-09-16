@@ -8,7 +8,7 @@ import {
   ValidateIf,
   IsOptional,
 } from 'class-validator';
-import { Column, Entity, Index, MoreThan, Not } from 'typeorm';
+import { Column, Entity, Index, MoreThan, Not, Repository } from 'typeorm';
 import ValidateWith from '../services/ValidateWith';
 import { Attributes } from '../types/common';
 import Model from './Model';
@@ -55,6 +55,11 @@ export default class CnsRegistryEvent extends Model {
   @Column({ type: 'int' })
   @Index()
   blockNumber = 0;
+
+  @IsOptional()
+  @Matches(/0x[0-9a-f]+/)
+  @Column({ type: 'text', nullable: true })
+  blockHash: string | null = null;
 
   @IsOptional()
   @IsNumber()
@@ -129,5 +134,36 @@ export default class CnsRegistryEvent extends Model {
       blockNumber: Not(this.blockNumber),
     });
     return !inconsistentEvent;
+  }
+
+  static async latestEventBlocks(
+    count: number,
+    repository: Repository<CnsRegistryEvent> = this.getRepository(),
+  ): Promise<{ blockNumber: number; blockHash: string }[]> {
+    const res = await repository
+      .createQueryBuilder()
+      .select('block_number, block_hash')
+      .groupBy('block_number, block_hash')
+      .orderBy('block_number', 'ASC')
+      .limit(count)
+      .getRawMany();
+    return res.map((value) => {
+      return {
+        blockNumber: value?.block_number as number,
+        blockHash: value?.block_hash as string,
+      };
+    });
+  }
+
+  static async deleteEventsFromBlock(
+    block: number,
+    repository: Repository<CnsRegistryEvent> = this.getRepository(),
+  ): Promise<number | null | undefined> {
+    const res = await repository
+      .createQueryBuilder()
+      .delete()
+      .where(`block_number > ${block}`)
+      .execute();
+    return res.affected;
   }
 }

@@ -2,16 +2,17 @@ import { logger } from '../../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
 import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import { env } from '../../env';
-import { Contract, Event, BigNumber } from 'ethers';
+import { Contract, Event, BigNumber, ethers } from 'ethers';
 import { EntityManager, getConnection, Repository } from 'typeorm';
 import { ETHContracts } from '../../contracts';
 import { eip137Namehash } from '../../utils/namehash';
 import { EthUpdaterError } from '../../errors/EthUpdaterError';
-import { EthereumProvider } from '../EthereumProvider';
+import { EthereumProvider } from '../../workers/EthereumProvider';
 import { unwrap } from '../../utils/option';
 import { CnsResolverError } from '../../errors/CnsResolverError';
 import { ExecutionRevertedError } from './BlockchainErrors';
 import { CnsResolver } from './CnsResolver';
+import * as ethersUtils from '../../utils/ethersUtils';
 
 export class EthUpdater {
   private unsRegistry: Contract = ETHContracts.UNSRegistry.getContract();
@@ -19,23 +20,29 @@ export class EthUpdater {
   private cnsResolver: CnsResolver = new CnsResolver();
 
   private currentSyncBlock = 0;
+  private currentSyncBlockHash = '';
   private lastProcessedEvent?: Event;
 
-  static getLatestNetworkBlock(): Promise<number> {
-    return EthereumProvider.getBlockNumber();
+  static async getLatestNetworkBlock(): Promise<number> {
+    return (
+      (await ethersUtils.getLatestNetworkBlock()) -
+      env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS
+    );
   }
 
   static getLatestMirroredBlock(): Promise<number> {
     return WorkerStatus.latestMirroredBlockForWorker('ETH');
   }
 
-  private saveLastMirroredBlock(
-    blockNumber: number,
-    manager: EntityManager,
-  ): Promise<void> {
+  static getLatestMirroredBlockHash(): Promise<string | undefined> {
+    return WorkerStatus.latestMirroredBlockHashForWorker('ETH');
+  }
+
+  private async saveLastMirroredBlock(manager: EntityManager): Promise<void> {
     return WorkerStatus.saveWorkerStatus(
       'ETH',
-      blockNumber,
+      this.currentSyncBlock,
+      this.currentSyncBlockHash,
       undefined,
       manager.getRepository(WorkerStatus),
     );
@@ -266,6 +273,7 @@ export class EthUpdater {
         contractAddress,
         type: event.event as CnsRegistryEvent['type'],
         blockNumber: event.blockNumber,
+        blockHash: event.blockHash,
         logIndex: event.logIndex,
         transactionHash: event.transactionHash,
         returnValues: values,
@@ -273,7 +281,11 @@ export class EthUpdater {
     );
   }
 
-  private async processEvents(events: Event[], manager: EntityManager) {
+  private async processEvents(
+    events: Event[],
+    manager: EntityManager,
+    save = true,
+  ) {
     const domainRepository = manager.getRepository(Domain);
 
     for (const event of events) {
@@ -313,7 +325,9 @@ export class EthUpdater {
           default:
             break;
         }
-        await this.saveEvent(event, manager);
+        if (save) {
+          await this.saveEvent(event, manager);
+        }
         this.lastProcessedEvent = event;
       } catch (error) {
         if (error instanceof EthUpdaterError) {
@@ -327,22 +341,120 @@ export class EthUpdater {
     }
   }
 
+  static MAX_REORG_SIZE = 200;
+  static MIN_REORG_RANGE = 10;
+
+  private async findLastMatchingBlock(): Promise<{
+    blockNumber: number;
+    blockHash: string;
+  }> {
+    const latestEventBlocks = await CnsRegistryEvent.latestEventBlocks(
+      EthUpdater.MAX_REORG_SIZE,
+    );
+
+    // Check first and last blocks as edge cases
+    const [firstNetBlock, lastNetBlock] = await Promise.all([
+      EthereumProvider.getBlock(latestEventBlocks[0].blockNumber),
+      EthereumProvider.getBlock(
+        latestEventBlocks[latestEventBlocks.length - 1].blockNumber,
+      ),
+    ]);
+
+    // If the oldest event block doesn't match, the reorg must be too long.
+    if (firstNetBlock.hash !== latestEventBlocks[0].blockHash) {
+      throw new EthUpdaterError(
+        `Detected reorg that is larger than ${EthUpdater.MAX_REORG_SIZE} blocks. Manual resync is required.`,
+      );
+    }
+
+    // Latest event block != last mirrored block. There could be blocks without events during the reorg.
+    if (
+      lastNetBlock.hash ===
+      latestEventBlocks[latestEventBlocks.length - 1].blockHash
+    ) {
+      return latestEventBlocks[latestEventBlocks.length - 1];
+    }
+
+    // Binary search for reorg start
+    let searchReorgFrom = 0;
+    let searchReorgTo = latestEventBlocks.length - 1;
+    while (searchReorgTo - searchReorgFrom > 1) {
+      const mid =
+        searchReorgFrom + Math.floor((searchReorgTo - searchReorgFrom) / 2);
+      logger.info(
+        `searching for reorgs from ${searchReorgFrom} to ${searchReorgTo}, current: ${mid}`,
+      );
+      const ourBlock = latestEventBlocks[mid];
+      const netBlock = await EthereumProvider.getBlock(ourBlock.blockNumber);
+      if (ourBlock.blockHash !== netBlock.hash) {
+        searchReorgTo = mid;
+      } else {
+        searchReorgFrom = mid;
+      }
+    }
+    logger.info(
+      `searching for reorgs from ${searchReorgFrom} to ${searchReorgTo}`,
+    );
+    logger.info(JSON.stringify(latestEventBlocks));
+    return latestEventBlocks[searchReorgFrom];
+  }
+
+  private async handleReorg(): Promise<number> {
+    const reorgStartingBlock = await this.findLastMatchingBlock();
+    await WorkerStatus.saveWorkerStatus(
+      'ETH',
+      reorgStartingBlock.blockNumber,
+      reorgStartingBlock.blockHash,
+    );
+    const deleted = await CnsRegistryEvent.deleteEventsFromBlock(
+      reorgStartingBlock.blockNumber,
+    );
+    logger.warn(`Deleted ${deleted} events after reorg`);
+    return reorgStartingBlock.blockNumber;
+  }
+
+  private async syncBlockRanges(): Promise<{
+    fromBlock: number;
+    toBlock: number;
+  }> {
+    const latestMirrored = await EthUpdater.getLatestMirroredBlock();
+    const latestNetBlock = await EthUpdater.getLatestNetworkBlock();
+    const latestMirroredHash = await EthUpdater.getLatestMirroredBlockHash();
+    const networkHash = (await EthereumProvider.getBlock(latestMirrored))?.hash;
+
+    const empty = (await CnsRegistryEvent.count()) == 0;
+    const blockHeightMatches = latestNetBlock >= latestMirrored;
+    const blockHashMatches = latestMirroredHash === networkHash;
+    if (empty || (blockHeightMatches && blockHashMatches)) {
+      return { fromBlock: latestMirrored, toBlock: latestNetBlock };
+    }
+
+    if (!blockHeightMatches) {
+      logger.warn(
+        `Blockchain reorg detected: Sync last block ${latestMirrored} is less than the current mirror block ${latestNetBlock}`,
+      );
+    } else {
+      logger.warn(
+        `Blockchain reorg detected: last mirrored block hash ${latestMirroredHash} does not match the network block hash ${networkHash}`,
+      );
+    }
+
+    const reorgStartingBlock = await this.handleReorg();
+    logger.warn(
+      `Handled blockchain reorg starting from block ${reorgStartingBlock}`,
+    );
+
+    return { fromBlock: reorgStartingBlock, toBlock: latestNetBlock };
+  }
+
   public async run(): Promise<void> {
     logger.info('EthUpdater is pulling updates from Ethereum');
-    const fromBlock = await EthUpdater.getLatestMirroredBlock();
-    const toBlock =
-      (await EthUpdater.getLatestNetworkBlock()) -
-      env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS;
+
+    const { fromBlock, toBlock } = await this.syncBlockRanges();
 
     logger.info(
       `[Current network block ${toBlock}]: Syncing mirror from ${fromBlock} to ${toBlock}`,
     );
-
-    if (toBlock < fromBlock) {
-      throw new EthUpdaterError(
-        `Sync last block ${toBlock} is less than the current mirror block ${fromBlock}`,
-      );
-    }
 
     this.currentSyncBlock = fromBlock;
 
@@ -360,7 +472,14 @@ export class EthUpdater {
       await getConnection().transaction(async (manager) => {
         await this.processEvents(events, manager);
         this.currentSyncBlock = fetchBlock;
-        await this.saveLastMirroredBlock(this.currentSyncBlock, manager);
+        logger.info(this.currentSyncBlock);
+        const tmp = await EthereumProvider.getBlock(this.currentSyncBlock);
+        logger.info(JSON.stringify(tmp));
+        this.currentSyncBlock = fetchBlock;
+        this.currentSyncBlockHash = (
+          await EthereumProvider.getBlock(this.currentSyncBlock)
+        ).hash;
+        await this.saveLastMirroredBlock(manager);
       });
     }
   }
