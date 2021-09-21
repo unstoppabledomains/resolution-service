@@ -13,11 +13,13 @@ export class DomainTestHelper {
       node:
         options.node ??
         '0x77694b72888ab3b13c9c7eb4f343045d3820c1202c1765255b896280a8bc7b55',
-      location: options.location ?? 'CNS',
       resolution: options.resolution ?? {},
       registry:
         options.registry ??
-        Domain.getRegistryAddressFromLocation(options.location ?? 'CNS'),
+        Domain.getRegistryAddressFromLocation({
+          blockchain: options.blockchain ?? 'ETH',
+          networkId: options.networkId ?? 1,
+        }),
       resolver:
         options.resolver ?? '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
     });

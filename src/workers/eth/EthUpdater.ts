@@ -149,10 +149,8 @@ export class EthUpdater {
 
     const domain = await Domain.findOrBuildByNode(producedNode);
     domain.name = uri;
-    domain.location = {
-      blockchain: Blockchain.ETH,
-      networkId: env.APPLICATION.ETHEREUM.CHAIN_ID,
-    };
+    domain.blockchain = Blockchain.ETH;
+    domain.networkId = env.APPLICATION.ETHEREUM.CHAIN_ID;
     domain.ownerAddress = this.lastProcessedEvent.args?.to.toLowerCase();
     domain.registry = this.cnsRegistry.address;
 

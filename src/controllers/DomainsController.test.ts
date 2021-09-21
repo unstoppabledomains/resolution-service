@@ -32,7 +32,8 @@ describe('DomainsController', () => {
           owner: null,
           resolver: null,
           registry: null,
-          location: 'UNMINTED',
+          blockchain: null,
+          networkId: null,
         },
         records: {},
       });
@@ -51,7 +52,8 @@ describe('DomainsController', () => {
           owner: null,
           resolver: null,
           registry: null,
-          location: 'UNMINTED',
+          blockchain: null,
+          networkId: null,
         },
         records: {},
       });
@@ -63,7 +65,8 @@ describe('DomainsController', () => {
         ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
         node:
           '0x08c2e9d2a30aa81623fcc758848d5556696868222fbc80a15ca46ec2fe2cba4f',
-        location: 'CNS',
+        blockchain: 'ETH',
+        networkId: 1,
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         resolution: {
           'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
@@ -81,7 +84,8 @@ describe('DomainsController', () => {
           owner: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
           resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
           registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-          location: 'CNS',
+          blockchain: 'ETH',
+          networkId: 1,
         },
         records: {
           'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
@@ -93,15 +97,23 @@ describe('DomainsController', () => {
       const znsDomain = await DomainTestHelper.createTestDomain({
         name: 'test.zil',
         node: znsNamehash('test.zil'),
-        registry: Domain.getRegistryAddressFromLocation('ZNS'),
-        location: 'ZNS',
+        registry: Domain.getRegistryAddressFromLocation({
+          blockchain: 'ZIL',
+          networkId: 1,
+        }),
+        blockchain: 'ZIL',
+        networkId: 1,
       });
       const cnsDomain = await DomainTestHelper.createTestDomain();
       const unsDomain = await DomainTestHelper.createTestDomain({
         name: 'test.nft',
         node: eip137Namehash('test.nft'),
-        registry: Domain.getRegistryAddressFromLocation('UNSL1'),
-        location: 'UNSL1',
+        registry: Domain.getRegistryAddressFromLocation({
+          blockchain: 'ETH',
+          networkId: 1,
+        }),
+        blockchain: 'ETH',
+        networkId: 1,
       });
 
       const znsResult = await supertest(api)
@@ -110,7 +122,10 @@ describe('DomainsController', () => {
         .send();
       expect(znsResult.status).eq(200);
       expect(znsResult.body.meta.registry).eq(
-        Domain.getRegistryAddressFromLocation('ZNS'),
+        Domain.getRegistryAddressFromLocation({
+          blockchain: 'ZIL',
+          networkId: 1,
+        }),
       );
 
       const cnsResult = await supertest(api)
@@ -119,7 +134,10 @@ describe('DomainsController', () => {
         .send();
       expect(cnsResult.status).eq(200);
       expect(cnsResult.body.meta.registry).eq(
-        Domain.getRegistryAddressFromLocation('CNS'),
+        Domain.getRegistryAddressFromLocation({
+          blockchain: 'ETH',
+          networkId: 1,
+        }),
       );
 
       const unsResult = await supertest(api)
@@ -128,7 +146,10 @@ describe('DomainsController', () => {
         .send();
       expect(unsResult.status).eq(200);
       expect(unsResult.body.meta.registry).eq(
-        Domain.getRegistryAddressFromLocation('UNSL1'),
+        Domain.getRegistryAddressFromLocation({
+          blockchain: 'ETH',
+          networkId: 1,
+        }),
       );
     });
 
@@ -144,7 +165,8 @@ describe('DomainsController', () => {
           owner: null,
           resolver: null,
           registry: null,
-          location: 'UNMINTED',
+          blockchain: null,
+          networkId: null,
         },
         records: {},
       });
@@ -158,7 +180,8 @@ describe('DomainsController', () => {
         registry: '0x9611c53be6d1b32058b2747bdececed7e1216793',
         node:
           '0x8052ef7b6b4eee4bc0d7014f0e216db6270bf0055bcd3582368601f2de5e60f0',
-        location: 'ZNS',
+        blockchain: 'ZIL',
+        networkId: 1,
         resolution: {},
       });
       const res = await supertest(api)
@@ -172,7 +195,8 @@ describe('DomainsController', () => {
           owner: '0xcea21f5a6afc11b3a4ef82e986d63b8b050b6910',
           resolver: '0x34bbdee3404138430c76c2d1b2d4a2d223a896df',
           registry: '0x9611c53be6d1b32058b2747bdececed7e1216793',
-          location: 'ZNS',
+          blockchain: 'ZIL',
+          networkId: 1,
         },
         records: {},
       });
@@ -184,7 +208,8 @@ describe('DomainsController', () => {
         ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
         node:
           '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
-        location: 'CNS',
+        blockchain: 'ETH',
+        networkId: 1,
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         resolution: {
           'gundb.username.value':
@@ -212,7 +237,8 @@ describe('DomainsController', () => {
           owner: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
           resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
           registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-          location: 'CNS',
+          blockchain: 'ETH',
+          networkId: 1,
         },
         records: {
           'gundb.username.value':
@@ -257,7 +283,8 @@ describe('DomainsController', () => {
           '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        location: 'CNS',
+        blockchain: 'ETH',
+        networkId: 1,
       });
       await testDomain.save();
 
@@ -272,7 +299,8 @@ describe('DomainsController', () => {
             attributes: {
               meta: {
                 domain: testDomain.name,
-                location: testDomain.location,
+                blockchain: 'ETH',
+                networkId: 1,
                 owner: testDomain.ownerAddress,
                 registry: testDomain.registry,
                 resolver: null,
@@ -291,7 +319,8 @@ describe('DomainsController', () => {
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        location: 'CNS',
+        blockchain: 'ETH',
+        networkId: 1,
       });
       await testDomain.save();
 
@@ -308,7 +337,8 @@ describe('DomainsController', () => {
             attributes: {
               meta: {
                 domain: testDomain.name,
-                location: testDomain.location,
+                blockchain: testDomain.blockchain,
+                networkId: testDomain.networkId,
                 owner: testDomain.ownerAddress,
                 registry: testDomain.registry,
                 resolver: null,
@@ -328,7 +358,8 @@ describe('DomainsController', () => {
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        location: 'CNS',
+        blockchain: 'ETH',
+        networkId: 1,
       });
       const testDomainTwo = Domain.create({
         id: 101,
@@ -337,7 +368,8 @@ describe('DomainsController', () => {
           '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        location: 'CNS',
+        blockchain: 'ETH',
+        networkId: 1,
       });
       await testDomainOne.save();
       await testDomainTwo.save();
@@ -353,7 +385,8 @@ describe('DomainsController', () => {
             attributes: {
               meta: {
                 domain: testDomainOne.name,
-                location: testDomainOne.location,
+                blockchain: testDomainOne.blockchain,
+                networkId: testDomainOne.networkId,
                 owner: testDomainOne.ownerAddress,
                 registry: testDomainOne.registry,
                 resolver: null,
@@ -366,7 +399,8 @@ describe('DomainsController', () => {
             attributes: {
               meta: {
                 domain: testDomainTwo.name,
-                location: testDomainTwo.location,
+                blockchain: testDomainTwo.blockchain,
+                networkId: testDomainTwo.networkId,
                 owner: testDomainTwo.ownerAddress,
                 registry: testDomainTwo.registry,
                 resolver: null,
@@ -386,7 +420,8 @@ describe('DomainsController', () => {
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        location: 'CNS',
+        blockchain: 'ETH',
+        networkId: 1,
       });
       const testDomainTwo = Domain.create({
         id: 101,
@@ -395,7 +430,8 @@ describe('DomainsController', () => {
           '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        location: 'ZNS',
+        blockchain: 'ZIL',
+        networkId: 1,
       });
       await testDomainOne.save();
       await testDomainTwo.save();
@@ -413,7 +449,8 @@ describe('DomainsController', () => {
             attributes: {
               meta: {
                 domain: testDomainOne.name,
-                location: testDomainOne.location,
+                blockchain: testDomainOne.blockchain,
+                networkId: testDomainOne.networkId,
                 owner: testDomainOne.ownerAddress,
                 registry: testDomainOne.registry,
                 resolver: null,
@@ -432,7 +469,8 @@ describe('DomainsController', () => {
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        location: 'CNS',
+        blockchain: 'ETH',
+        networkId: 1,
       });
       await testDomainOne.save();
       const res = await supertest(api)
@@ -453,7 +491,8 @@ describe('DomainsController', () => {
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        location: 'CNS',
+        blockchain: 'ETH',
+        networkId: 1,
       });
       const testDomainTwo = Domain.create({
         name: 'test1.zil',
@@ -461,7 +500,8 @@ describe('DomainsController', () => {
           '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08bbeadb',
-        location: 'ZNS',
+        blockchain: 'ZIL',
+        networkId: 1,
       });
 
       await testDomainOne.save();
@@ -480,7 +520,8 @@ describe('DomainsController', () => {
             attributes: {
               meta: {
                 domain: testDomainOne.name,
-                location: testDomainOne.location,
+                blockchain: testDomainOne.blockchain,
+                networkId: testDomainOne.networkId,
                 owner: testDomainOne.ownerAddress,
                 registry: testDomainOne.registry,
                 resolver: null,
