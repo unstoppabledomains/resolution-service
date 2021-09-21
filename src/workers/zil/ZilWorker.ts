@@ -152,7 +152,8 @@ export default class ZilWorker {
     const domain = await Domain.findOrBuildByNode(node, repository);
     domain.attributes({
       name: `${label}.${parentDomain.name}`,
-      location: 'ZNS',
+      blockchain: 'ZIL',
+      networkId: 1,
       registry: this.provider.registryAddress,
     });
     await repository.save(domain);

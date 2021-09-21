@@ -18,12 +18,15 @@ import {
   Min,
   IsNumber,
   ValidateNested,
+  IsIn,
 } from 'class-validator';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
 import { In } from 'typeorm';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
-import { BlockchainType } from '../utils/constants';
+import { Blockchain, BlockchainType } from '../utils/constants';
+import { toNumber } from 'lodash';
+import NetworkConfig from 'uns/uns-config.json';
 
 class DomainMetadata {
   @IsString()
@@ -39,10 +42,12 @@ class DomainMetadata {
 
   @IsOptional()
   @IsString()
+  @IsIn(Object.values(Blockchain), { each: true })
   blockchain: BlockchainType | null = null;
 
   @IsOptional()
   @IsNumber()
+  @IsIn(Object.keys(NetworkConfig.networks).map(toNumber))
   networkId: number | null = null;
 
   @IsOptional()
@@ -68,13 +73,14 @@ class DomainsListQuery {
   @IsArray()
   @ArrayNotEmpty()
   @IsNotEmpty({ each: true })
-  networkIds: number[];
+  @IsIn(Object.keys(NetworkConfig.networks), { each: true })
+  networkIds: string[] = Object.keys(NetworkConfig.networks);
 
   @IsArray()
   @ArrayNotEmpty()
   @IsNotEmpty({ each: true })
-  @IsString({ each: true })
-  blockchains: string[];
+  @IsIn(Object.values(Blockchain), { each: true })
+  blockchains: string[] = Object.values(Blockchain);
 
   @IsNotEmpty()
   @IsInt()
@@ -169,7 +175,7 @@ export class DomainsController {
       where: {
         ownerAddress: ownersQuery ? In(ownersQuery) : undefined,
         blockchain: In(query.blockchains),
-        networkId: In(query.networkIds),
+        networkId: In(query.networkIds.map(toNumber)),
       },
       take: query.perPage,
       skip: (query.page - 1) * query.perPage,

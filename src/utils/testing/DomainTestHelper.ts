@@ -20,6 +20,8 @@ export class DomainTestHelper {
           blockchain: options.blockchain ?? 'ETH',
           networkId: options.networkId ?? 1,
         }),
+      blockchain: options.blockchain ?? 'ETH',
+      networkId: options.networkId ?? 1,
       resolver:
         options.resolver ?? '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
     });

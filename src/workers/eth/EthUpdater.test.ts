@@ -192,7 +192,8 @@ describe('EthUpdater', () => {
       const domain = await Domain.findOne({ name: cns.name });
       expect(domain).to.containSubset({
         name: cns.name,
-        location: 'CNS',
+        blockchain: 'ETH',
+        networkId: 1337,
         resolver: resolver.address.toLowerCase(),
         resolution: {
           'crypto.BTC.address': 'qp3gu0flg7tehyv73ua5nznlw8s040nz3uqnyffrcn',
@@ -222,7 +223,8 @@ describe('EthUpdater', () => {
       const domain = await Domain.findOne({ name: uns.name });
       expect(domain).to.containSubset({
         name: uns.name,
-        location: 'UNSL1',
+        blockchain: 'ETH',
+        networkId: 1337,
         resolver: unsRegistry.address.toLowerCase(),
         ownerAddress: owner.toLowerCase(),
         resolution: {
@@ -423,7 +425,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name, 'CNS');
+      const domain = await Domain.findOrCreateByName(cns.name, {
+        blockchain: 'ETH',
+        networkId: 1337,
+      });
       expect(domain.resolution).to.be.empty;
     });
 
@@ -439,7 +444,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(uns.name, 'UNSL1');
+      const domain = await Domain.findOrCreateByName(uns.name, {
+        blockchain: 'ETH',
+        networkId: 1337,
+      });
       expect(domain.resolution).to.be.empty;
     });
 
@@ -459,7 +467,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name, 'CNS');
+      const domain = await Domain.findOrCreateByName(cns.name, {
+        blockchain: 'ETH',
+        networkId: 1337,
+      });
       expect(domain.resolution).to.deep.equal({
         'crypto.ETH.address': '0x829BD824B016326A401d083B33D092293333A830',
       });
@@ -481,7 +492,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(uns.name, 'UNSL1');
+      const domain = await Domain.findOrCreateByName(uns.name, {
+        blockchain: 'ETH',
+        networkId: 1337,
+      });
       expect(domain.resolution).to.deep.equal({
         'crypto.ETH.address': '0x829BD824B016326A401d083B33D092293333A830',
       });
@@ -497,7 +511,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name, 'CNS');
+      const domain = await Domain.findOrCreateByName(cns.name, {
+        blockchain: 'ETH',
+        networkId: 1337,
+      });
       expect(domain.resolution).to.deep.equal({ 'custom-key': 'value' });
     });
 
@@ -513,7 +530,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name, 'CNS');
+      const domain = await Domain.findOrCreateByName(cns.name, {
+        blockchain: 'ETH',
+        networkId: 1337,
+      });
       expect(domain.resolution).to.deep.equal({
         'crypto.ETH.address': '0x461781022A9C2De74f2171EB3c44F27320b13B8c',
         'custom-key': 'value',
@@ -536,7 +556,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name, 'CNS');
+      const domain = await Domain.findOrCreateByName(cns.name, {
+        blockchain: 'ETH',
+        networkId: 1337,
+      });
       expect(domain.resolution).to.deep.equal({
         'crypto.ETH.address': '0x461781022A9C2De74f2171EB3c44F27320b13B8c',
         'custom-key': 'value',

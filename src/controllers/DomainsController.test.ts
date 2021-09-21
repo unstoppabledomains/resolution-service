@@ -509,7 +509,7 @@ describe('DomainsController', () => {
 
       const res = await supertest(api)
         .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&locations[]=CNS',
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]=ETH',
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
@@ -563,23 +563,23 @@ describe('DomainsController', () => {
       });
       expect(res.status).eq(400);
     });
-    it('should return error on non array locations', async () => {
+    it('should return error on invalid networkIds', async () => {
       const res = await supertest(api)
         .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&locations=we',
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds=we',
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
       expect(res.body).containSubset({
         message:
-          'Given parameter locations is invalid. Value ("we") cannot be parsed into JSON.',
+          'Given parameter networkIds is invalid. Value ("we") cannot be parsed into JSON.',
       });
       expect(res.status).eq(400);
     });
-    it('should return error on invalid locations', async () => {
+    it('should return error on invalid blockchains', async () => {
       const res = await supertest(api)
         .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&locations[]=we',
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&blockchains[]=we',
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
@@ -587,7 +587,8 @@ describe('DomainsController', () => {
         errors: [
           {
             constraints: {
-              isEnum: 'each value in locations must be a valid enum value',
+              isIn:
+                'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
             },
           },
         ],

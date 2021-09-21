@@ -74,10 +74,10 @@ describe('ErrorHandler', () => {
     });
   });
 
-  it('should return the correct validation error for incorrect location param', async () => {
+  it('should return the correct validation error for incorrect networkId param', async () => {
     const res = await supertest(api)
       .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&locations[]=we',
+        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=we&blockchains[]=ETH',
       )
       .auth(testApiKey.apiKey, { type: 'bearer' })
       .send();
@@ -89,9 +89,10 @@ describe('ErrorHandler', () => {
       message: "Invalid queries, check 'errors' property for more info.",
       errors: [
         {
-          property: 'locations',
+          property: 'networkIds',
           constraints: {
-            isEnum: 'each value in locations must be a valid enum value',
+            isIn:
+              'each value in networkIds must be one of the following values: 1, 4, 1337',
           },
         },
       ],

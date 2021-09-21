@@ -78,7 +78,8 @@ describe('MetaDataController', () => {
         resolution: {
           'crypto.ETH.address': '0xe7474D07fD2FA286e7e0aa23cd107F8379085037',
         },
-        location: 'CNS',
+        blockchain: 'ETH',
+        networkId: 1,
       });
 
       const response = await supertest(api)
@@ -143,10 +144,10 @@ describe('MetaDataController', () => {
     });
 
     it('should return branded animal domain metadata', async () => {
-      const animalDomain = await Domain.findOrCreateByName(
-        'trustbear.crypto',
-        'CNS',
-      );
+      const animalDomain = await Domain.findOrCreateByName('trustbear.crypto', {
+        blockchain: 'ETH',
+        networkId: 1,
+      });
       const expectedImageUrl =
         'https://storage.googleapis.com/dot-crypto-metadata-api/images/trust/bear.svg';
       const response = await supertest(api)
