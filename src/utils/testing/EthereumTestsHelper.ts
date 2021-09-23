@@ -87,4 +87,8 @@ export class EthereumTestsHelper {
   static faucet(): Wallet {
     return EthereumTestsHelper.accounts.faucet;
   }
+
+  static getAccount(label: string): Wallet {
+    return EthereumTestsHelper.accounts[label];
+  }
 }

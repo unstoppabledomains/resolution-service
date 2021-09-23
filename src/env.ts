@@ -56,6 +56,7 @@ export const env = {
       ),
       RECORDS_PER_PAGE: Number(process.env.ETHEREUM_RECORDS_PER_PAGE || 100),
       FETCH_INTERVAL: Number(process.env.ETHEREUM_FETCH_INTERVAL || 5000),
+      MAX_REORG_SIZE: Number(process.env.ETHEREUM_MAX_REORG_SIZE || 200),
     },
     ZILLIQA: {
       NETWORK: ZnsNetwork,

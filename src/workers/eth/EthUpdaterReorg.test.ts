@@ -1,6 +1,6 @@
 import { BigNumber, Contract } from 'ethers';
 import { randomBytes } from 'crypto';
-import { CnsRegistryEvent, WorkerStatus } from '../../models';
+import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import { EthereumProvider } from '../../workers/EthereumProvider';
 import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
 import { EthUpdater } from './EthUpdater';
@@ -40,6 +40,7 @@ describe('EthUpdater handles reorgs', () => {
   let unsRegistry: Contract;
   let mintingManager: Contract;
   let owner: string;
+  let recipient: string;
   const sinonSandbox = sinon.createSandbox();
 
   type DomainBlockInfo = {
@@ -70,6 +71,7 @@ describe('EthUpdater handles reorgs', () => {
 
   before(async () => {
     owner = EthereumTestsHelper.owner().address;
+    recipient = EthereumTestsHelper.getAccount('9').address;
     mintingManager = ETHContracts.MintingManager.getContract().connect(
       EthereumTestsHelper.minter(),
     );
@@ -84,6 +86,7 @@ describe('EthUpdater handles reorgs', () => {
   //    nb - n empty blocks (e.g. 10b)
   //    dn - nth minted domain event (e.g. d1, d2)
   //    x - reorg start
+  // Note: block numbers are not exact since there are always some extra blocks in the blockchain (e.g. contract deployment).
 
   // Starting timeline:
   // 0----10b----d1----10b----d2----100b---->
@@ -172,14 +175,13 @@ describe('EthUpdater handles reorgs', () => {
     const reorgEvents = await CnsRegistryEvent.find({
       blockNumber: domainAt20.blockNumber,
     });
-    for (const event of reorgEvents) {
+    for (let index = 0; index < reorgEvents.length; index++) {
+      const event = reorgEvents[index];
       event.blockHash = '0xdead2';
+      event.logIndex = reorgEvents.length + index; // to bypass `logIndexForBlockIncreases` constraint
       await event.save();
     }
-    const deleteSpy = sinonSandbox.spy(
-      CnsRegistryEvent,
-      'deleteEventsFromBlock',
-    );
+    const deleteSpy = sinonSandbox.spy(CnsRegistryEvent, 'cleanUpEvents');
 
     await service.run();
 
@@ -212,14 +214,13 @@ describe('EthUpdater handles reorgs', () => {
     const reorgEvents = await CnsRegistryEvent.find({
       blockNumber: domainAt20.blockNumber,
     });
-    for (const event of reorgEvents) {
+    for (let index = 0; index < reorgEvents.length; index++) {
+      const event = reorgEvents[index];
       event.blockHash = '0xdead2';
+      event.logIndex = reorgEvents.length + index; // to bypass `logIndexForBlockIncreases` constraint
       await event.save();
     }
-    const deleteSpy = sinonSandbox.spy(
-      CnsRegistryEvent,
-      'deleteEventsFromBlock',
-    );
+    const deleteSpy = sinonSandbox.spy(CnsRegistryEvent, 'cleanUpEvents');
 
     await service.run();
 
@@ -249,21 +250,25 @@ describe('EthUpdater handles reorgs', () => {
   // 0----10b----d1----10b----d2----100b---------d3----20b---->
   // Reorg timeline:
   // 0----10b----d1----10b----d2----100b----x->
-  it('should fix a reorg with events that should not exist', async () => {
+  it('should fix a reorg and revert domain changes', async () => {
     await WorkerStatus.saveWorkerStatus('ETH', oldBlock.number + 20, '0xdead');
     const eventAt120 = new CnsRegistryEvent({
       contractAddress: unsRegistry.address,
-      type: 'NewURI',
+      type: 'Transfer',
       blockNumber: oldBlock.number,
       blockHash: '0xdead2',
-      returnValues: { uri: 'reorg' },
+      returnValues: { tokenId: domainAt20.domain.tokenId.toHexString() },
     });
     await eventAt120.save();
-
-    const deleteSpy = sinonSandbox.spy(
-      CnsRegistryEvent,
-      'deleteEventsFromBlock',
+    const changedDomain = await Domain.findByNode(
+      domainAt20.domain.tokenId.toHexString(),
     );
+    if (changedDomain) {
+      changedDomain.ownerAddress = '0x000000000000000000000000000000000000dead';
+      await changedDomain.save();
+    }
+
+    const deleteSpy = sinonSandbox.spy(CnsRegistryEvent, 'cleanUpEvents');
 
     await service.run();
 
@@ -278,33 +283,48 @@ describe('EthUpdater handles reorgs', () => {
       blockNumber: eventAt120.blockNumber,
     });
     expect(actualEvents).to.be.empty;
+
+    const actualDomain = await Domain.findByNode(
+      domainAt20.domain.tokenId.toHexString(),
+    );
+    expect(actualDomain?.ownerAddress?.toLowerCase()).to.eq(
+      owner.toLowerCase(),
+    );
   });
 
   // Worker timeline:
   // 0----10b----d1----10b----d2----100b---------d3----20b---->
   // Reorg timeline:
   // 0----10b----d1----10b----d2----100b----x----d4----20b---->
-  it('should fix a reorg delete old and save new', async () => {
+  it('should fix a reorg and update domains', async () => {
     await WorkerStatus.saveWorkerStatus('ETH', oldBlock.number + 20, '0xdead');
     const eventAt120 = new CnsRegistryEvent({
       contractAddress: unsRegistry.address,
-      type: 'NewURI',
+      type: 'Transfer',
       blockNumber: oldBlock.number,
       blockHash: '0xdead2',
-      returnValues: { uri: 'reorg' },
+      returnValues: { tokenId: domainAt20.domain.tokenId.toHexString() },
     });
     await eventAt120.save();
+    const changedDomain = await Domain.findByNode(
+      domainAt20.domain.tokenId.toHexString(),
+    );
+    if (changedDomain) {
+      changedDomain.ownerAddress = '0x000000000000000000000000000000000000dead';
+      await changedDomain.save();
+    }
 
-    const domainAt120 = await mintDomain();
+    const expectedTx = await unsRegistry.functions
+      .transferFrom(owner, recipient, domainAt20.domain.tokenId)
+      .then((receipt) => {
+        return receipt.wait();
+      });
     await EthereumTestsHelper.mineBlocksForConfirmation(20);
     const newBlock = await EthereumProvider.getBlock(
       await EthUpdater.getLatestNetworkBlock(),
     );
 
-    const deleteSpy = sinonSandbox.spy(
-      CnsRegistryEvent,
-      'deleteEventsFromBlock',
-    );
+    const deleteSpy = sinonSandbox.spy(CnsRegistryEvent, 'cleanUpEvents');
 
     await service.run();
 
@@ -315,14 +335,19 @@ describe('EthUpdater handles reorgs', () => {
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(newBlock.number);
     expect(workerStatus?.lastMirroredBlockHash).to.eq(newBlock.hash);
 
-    let actualEvents = await CnsRegistryEvent.find({
-      blockHash: eventAt120.blockHash,
-    });
-    expect(actualEvents).to.be.empty;
-
-    actualEvents = await CnsRegistryEvent.find({
-      blockHash: domainAt120.blockHash,
+    const actualEvents = await CnsRegistryEvent.find({
+      blockNumber: expectedTx.blockNumber,
     });
     expect(actualEvents).to.not.be.empty;
+    for (const event of actualEvents) {
+      expect(event.blockHash).to.equal(expectedTx.blockHash);
+    }
+
+    const actualDomain = await Domain.findByNode(
+      domainAt20.domain.tokenId.toHexString(),
+    );
+    expect(actualDomain?.ownerAddress?.toLowerCase()).to.eq(
+      recipient.toLowerCase(),
+    );
   });
 });

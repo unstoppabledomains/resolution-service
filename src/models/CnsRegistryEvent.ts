@@ -155,15 +155,18 @@ export default class CnsRegistryEvent extends Model {
     });
   }
 
-  static async deleteEventsFromBlock(
+  static async cleanUpEvents(
     block: number,
     repository: Repository<CnsRegistryEvent> = this.getRepository(),
-  ): Promise<number | null | undefined> {
-    const res = await repository
-      .createQueryBuilder()
-      .delete()
-      .where(`block_number > ${block}`)
-      .execute();
-    return res.affected;
+  ): Promise<{ deleted: number; affected: Set<string> }> {
+    const eventsToDelete = await repository.find({
+      where: { blockNumber: MoreThan(block) },
+    });
+    const affectedTokenIds = new Set<string>();
+    for (const event of eventsToDelete) {
+      affectedTokenIds.add(event.returnValues['tokenId']);
+    }
+    await repository.remove(eventsToDelete);
+    return { deleted: eventsToDelete.length, affected: affectedTokenIds };
   }
 }
