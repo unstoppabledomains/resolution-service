@@ -24,6 +24,7 @@ const DomainsWithCustomImage: Record<string, string> = {
   'surf.crypto': 'surf.svg',
   'hosting.crypto': 'hosting.svg',
   'india.crypto': 'india.jpg',
+  'reseller-test-mago012.crypto': 'smiley-face.jpg',
 };
 const AnimalHelper: AnimalDomainHelper = new AnimalDomainHelper();
 
