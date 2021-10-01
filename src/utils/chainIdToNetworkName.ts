@@ -1,4 +1,4 @@
-const chainIdToNetworkName: { [chaindId: number]: string } = {
+const chainIdToNetworkName: { [chainId: number]: string } = {
   1: 'mainnet',
   4: 'rinkeby',
   333: 'zil_testnet',

@@ -27,15 +27,17 @@ describe('StatusController', () => {
 
   it('should return appropriate block counts', async () => {
     const expectedStatus = {
-      ETH: {
-        latestMirroredBlock: 1101,
-        latestNetworkBlock: 1207,
-        network: 'sandbox',
-      },
-      ZIL: {
-        latestMirroredBlock: 171102,
-        latestNetworkBlock: 1234,
-        network: 'testnet',
+      blockchain: {
+        ETH: {
+          latestMirroredBlock: 1101,
+          latestNetworkBlock: 1207,
+          networkId: 1337,
+        },
+        ZIL: {
+          latestMirroredBlock: 171102,
+          latestNetworkBlock: 1234,
+          networkId: 333,
+        },
       },
     };
 
@@ -44,7 +46,9 @@ describe('StatusController', () => {
       .query({
         network: 'testnet',
       })
-      .reply(200, { txHeight: expectedStatus.ZIL.latestNetworkBlock });
+      .reply(200, {
+        txHeight: expectedStatus.blockchain.ZIL.latestNetworkBlock,
+      });
 
     const jsonRpcInterceptor = nock(mockJsonRpcProviderUrl)
       .post('/', {
@@ -61,12 +65,12 @@ describe('StatusController', () => {
 
     await WorkerStatus.saveWorkerStatus(
       'ETH',
-      expectedStatus.ETH.latestMirroredBlock,
+      expectedStatus.blockchain.ETH.latestMirroredBlock,
       undefined,
     );
     await WorkerStatus.saveWorkerStatus(
       'ZIL',
-      expectedStatus.ZIL.latestMirroredBlock,
+      expectedStatus.blockchain.ZIL.latestMirroredBlock,
       undefined,
     );
 
