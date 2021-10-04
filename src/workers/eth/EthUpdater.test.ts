@@ -2,7 +2,7 @@ import { BigNumber, Contract } from 'ethers';
 import { randomBytes } from 'crypto';
 import { env } from '../../env';
 import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
-import { EthereumProvider } from '../../workers/EthereumProvider';
+import { EthereumProvider } from '../EthereumProvider';
 import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
 import { EthUpdater } from './EthUpdater';
 import * as sinon from 'sinon';

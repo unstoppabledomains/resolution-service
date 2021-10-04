@@ -49,16 +49,17 @@ describe('StatusController', () => {
     const jsonRpcInterceptor = nock(mockJsonRpcProviderUrl)
       .post('/', {
         jsonrpc: '2.0',
-        method: 'eth_blockNumber',
-        params: [],
+        method: 'eth_getBlockByNumber',
+        params: ['latest', false],
         id: /^\d+$/,
       })
       .reply(200, (uri, requestBody) => ({
         id: 1,
         jsonrpc: '2.0',
-        result: '0x4b7', // 1207
+        result: {
+          number: '0x4b7', // 1207
+        },
       }));
-
     await WorkerStatus.saveWorkerStatus(
       'ETH',
       expectedStatus.ETH.latestMirroredBlock,

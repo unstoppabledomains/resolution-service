@@ -393,7 +393,10 @@ export class EthUpdater {
     return latestEventBlocks[searchReorgFrom];
   }
 
-  private async rebuildDomainFromEvents(tokenId: string) {
+  private async rebuildDomainFromEvents(
+    tokenId: string,
+    manager: EntityManager,
+  ) {
     const domain = await Domain.findByNode(tokenId);
 
     logger.debug(`Rebuilding domain ${domain?.name} from db events`);
@@ -414,11 +417,8 @@ export class EthUpdater {
       tmpEvent.args.tokenId = BigNumber.from(tokenId);
       convertedEvents.push(tmpEvent as Event);
     }
-
-    await getConnection().transaction(async (manager) => {
-      await domain?.remove();
-      await this.processEvents(convertedEvents, manager, false);
-    });
+    await domain?.remove();
+    await this.processEvents(convertedEvents, manager, false);
   }
 
   private async handleReorg(): Promise<number> {
@@ -429,19 +429,22 @@ export class EthUpdater {
       reorgStartingBlock.blockHash,
     );
 
-    const cleanUp = await CnsRegistryEvent.cleanUpEvents(
-      reorgStartingBlock.blockNumber,
-    );
+    await getConnection().transaction(async (manager) => {
+      const cleanUp = await CnsRegistryEvent.cleanUpEvents(
+        reorgStartingBlock.blockNumber,
+        manager.getRepository(CnsRegistryEvent),
+      );
 
-    const promises: Promise<void>[] = [];
-    for (const tokenId of cleanUp.affected) {
-      promises.push(this.rebuildDomainFromEvents(tokenId));
-    }
-    await Promise.all(promises);
+      const promises: Promise<void>[] = [];
+      for (const tokenId of cleanUp.affected) {
+        promises.push(this.rebuildDomainFromEvents(tokenId, manager));
+      }
+      await Promise.all(promises);
 
-    logger.warn(
-      `Deleted ${cleanUp.deleted} events after reorg and reverted ${cleanUp.affected.size} domains`,
-    );
+      logger.warn(
+        `Deleted ${cleanUp.deleted} events after reorg and reverted ${cleanUp.affected.size} domains`,
+      );
+    });
 
     return reorgStartingBlock.blockNumber;
   }
