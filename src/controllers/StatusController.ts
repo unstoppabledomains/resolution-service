@@ -4,8 +4,8 @@ import { ResponseSchema } from 'routing-controllers-openapi';
 import { IsNumber, IsString, ValidateNested } from 'class-validator';
 import { WorkerStatus } from '../models';
 import ZilProvider from '../workers/zil/ZilProvider';
-import { EthereumProvider } from '../workers/EthereumProvider';
 import { env } from '../env';
+import * as ethersUtils from '../utils/ethersUtils';
 
 class BlockchainStatus {
   @IsNumber()
@@ -46,8 +46,7 @@ export class StatusController {
     blockchain.ETH.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
       'ETH',
     );
-    blockchain.ETH.latestNetworkBlock = await EthereumProvider.getBlockNumber();
-
+    blockchain.ETH.latestNetworkBlock = await ethersUtils.getLatestNetworkBlock();
     blockchain.ZIL.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
       'ZIL',
     );

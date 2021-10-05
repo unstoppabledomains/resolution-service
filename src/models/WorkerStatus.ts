@@ -18,10 +18,11 @@ export default class WorkerStatus extends Model {
   @IsNumber()
   @Min(0)
   @Column({ type: 'int' })
-  @ValidateWith<WorkerStatus>('blockNumberIncreases', {
-    message: 'the value of lastMirroredBlockNumber should increase',
-  })
   lastMirroredBlockNumber = 0;
+
+  @IsOptional()
+  @Column({ type: 'text', nullable: true })
+  lastMirroredBlockHash?: string = undefined;
 
   @IsOptional()
   @IsNumber()
@@ -34,13 +35,6 @@ export default class WorkerStatus extends Model {
   constructor(attributes?: Attributes<WorkerStatus>) {
     super();
     this.attributes<WorkerStatus>(attributes);
-  }
-
-  async blockNumberIncreases(): Promise<boolean> {
-    const previousBlock = await WorkerStatus.latestMirroredBlockForWorker(
-      this.location,
-    );
-    return previousBlock <= this.lastMirroredBlockNumber;
   }
 
   async lastAtxuidIncreases(): Promise<boolean> {
@@ -62,6 +56,13 @@ export default class WorkerStatus extends Model {
     return status ? status.lastMirroredBlockNumber : 0;
   }
 
+  static async latestMirroredBlockHashForWorker(
+    location: Blockchain,
+  ): Promise<string | undefined> {
+    const status = await WorkerStatus.findOne({ location });
+    return status?.lastMirroredBlockHash;
+  }
+
   static async latestAtxuidForWorker(
     location: Blockchain,
   ): Promise<number | undefined> {
@@ -72,6 +73,7 @@ export default class WorkerStatus extends Model {
   static async saveWorkerStatus(
     location: Blockchain,
     latestBlock: number,
+    latestBlockHash?: string,
     lastAtxuid?: number,
     repository: Repository<WorkerStatus> = WorkerStatus.getRepository(),
   ): Promise<void> {
@@ -82,6 +84,7 @@ export default class WorkerStatus extends Model {
       });
     }
     workerStatus.lastMirroredBlockNumber = latestBlock;
+    workerStatus.lastMirroredBlockHash = latestBlockHash;
     workerStatus.lastAtxuid = lastAtxuid;
     await repository.save(workerStatus);
   }

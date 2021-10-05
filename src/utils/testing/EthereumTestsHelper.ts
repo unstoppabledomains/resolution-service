@@ -36,8 +36,10 @@ export class EthereumTestsHelper {
     });
   }
 
-  static async mineBlocksForConfirmation(): Promise<void> {
-    for (let i = 0; i < env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS; i++) {
+  static async mineBlocksForConfirmation(
+    count: number = env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS,
+  ): Promise<void> {
+    for (let i = 0; i != count; i++) {
       await EthereumTestsHelper.fundAddress(
         '0x000000000000000000000000000000000000dEaD',
         BigNumber.from(1),
@@ -61,8 +63,15 @@ export class EthereumTestsHelper {
     }
   }
 
+  static async resetNetwork(): Promise<void> {
+    if (EthereumTestsHelper.sandboxInitialized) {
+      EthereumTestsHelper.sandbox.reset();
+    }
+  }
+
   static async stopNetwork(): Promise<void> {
     if (EthereumTestsHelper.sandboxInitialized) {
+      EthereumTestsHelper.sandboxInitialized = false;
       await EthereumTestsHelper.sandbox.stop();
     }
   }
@@ -77,5 +86,9 @@ export class EthereumTestsHelper {
 
   static faucet(): Wallet {
     return EthereumTestsHelper.accounts.faucet;
+  }
+
+  static getAccount(label: string): Wallet {
+    return EthereumTestsHelper.accounts[label];
   }
 }

@@ -49,7 +49,7 @@ export class CnsResolver {
         domain.resolver,
         BigNumber.from(domain.node),
       );
-    } catch (error) {
+    } catch (error: any) {
       if (!error.message.includes(InvalidValuesError)) {
         throw error;
       }
@@ -162,7 +162,7 @@ export class CnsResolver {
     try {
       const resolverAddress = await this.registry.callStatic.resolverOf(node);
       return Domain.normalizeResolver(resolverAddress);
-    } catch (error) {
+    } catch (error: any) {
       if (
         !error.message.includes(InvalidValuesError) &&
         !error.message.includes(ExecutionRevertedError) &&

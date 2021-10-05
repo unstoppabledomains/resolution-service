@@ -17,7 +17,8 @@ describe('WorkerStatus', () => {
       expect(status.id).to.be.a('number');
     });
 
-    it('should not save entity if lastMirroredBlock decreases', async () => {
+    it('should save entity if lastMirroredBlock decreases', async () => {
+      // possible during a reorg
       const status = WorkerStatus.create({
         lastMirroredBlockNumber: 11,
         lastAtxuid: 150,
@@ -27,9 +28,7 @@ describe('WorkerStatus', () => {
 
       status.lastMirroredBlockNumber = 10;
 
-      await expect(status.save()).to.be.rejectedWith(
-        '- property lastMirroredBlockNumber has failed the following constraints: validate lastMirroredBlockNumber with blockNumberIncreases',
-      );
+      expect(status.id).to.be.a('number');
     });
 
     it('should not save entity if lastAtxuid decreases', async () => {
@@ -103,6 +102,7 @@ describe('WorkerStatus', () => {
       await WorkerStatus.saveWorkerStatus(
         'ETH',
         expectedBlockNumber,
+        undefined,
         expectedlastAtxuid,
       );
 
@@ -120,6 +120,7 @@ describe('WorkerStatus', () => {
       await WorkerStatus.saveWorkerStatus(
         'ETH',
         expectedBlockNumber,
+        undefined,
         expectedlastAtxuid,
       );
 

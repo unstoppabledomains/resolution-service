@@ -39,6 +39,7 @@ export default class ZilWorker {
     return WorkerStatus.saveWorkerStatus(
       'ZIL',
       latestBlock,
+      undefined,
       latestAtxuid,
       repository,
     );
@@ -60,7 +61,7 @@ export default class ZilWorker {
         try {
           await this.processTransaction(transaction, queryRunner);
         } catch (error) {
-          Bugsnag.notify(error);
+          Bugsnag.notify(error as Error);
           logger.error(
             `Failed to process Transaction ${JSON.stringify(transaction)}`,
           );
@@ -89,7 +90,7 @@ export default class ZilWorker {
       try {
         await this.processTransactionEvent(event, queryRunner);
       } catch (error) {
-        Bugsnag.notify(error);
+        Bugsnag.notify(error as Error);
         logger.error(`Failed to process event. ${JSON.stringify(event)}`);
         logger.error(error);
       }
