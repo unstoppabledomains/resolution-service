@@ -249,10 +249,13 @@ export class EthUpdater {
         node,
       );
       domain.resolution[resolutionRecord.key] = resolutionRecord.value;
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof CnsResolverError) {
         logger.warn(error);
-      } else if (error.message.includes(ExecutionRevertedError)) {
+      } else if (
+        error instanceof Error &&
+        error.message.includes(ExecutionRevertedError)
+      ) {
         domain.resolution = {};
       } else {
         throw error;
