@@ -5,6 +5,7 @@ import { DomainTestHelper } from '../utils/testing/DomainTestHelper';
 import fetch from 'node-fetch';
 import { eip137Namehash } from '../utils/namehash';
 import { DefaultImageData, BackgroundColor } from '../utils/generalImage';
+import { Domain } from '../models';
 
 describe('MetaDataController', () => {
   describe('GET /metadata/:DomainOrToken', () => {
@@ -35,7 +36,7 @@ describe('MetaDataController', () => {
         'https://unstoppabledomains.com/search?searchTerm=testdomain.crypto',
       );
       expect(resWithName.image).eq(
-        'https://storage.googleapis.com/dot-crypto-metadata-api/unstoppabledomains_crypto.png',
+        'https://storage.googleapis.com/dot-crypto-metadata-api/images/unstoppabledomains.svg',
       );
       expect(resWithName.attributes.length).eq(7);
       const correctAttributes = [
@@ -141,6 +142,27 @@ describe('MetaDataController', () => {
       expect(response.image_data).to.eq(correctImageData);
     });
 
+    it('should return branded animal domain metadata', async () => {
+      const animalDomain = await Domain.findOrCreateByName(
+        'trustbear.crypto',
+        'CNS',
+      );
+      const expectedImageUrl =
+        'https://storage.googleapis.com/dot-crypto-metadata-api/images/trust/bear.svg';
+      const response = await supertest(api)
+        .get(`/metadata/${animalDomain.name}`)
+        .send()
+        .then((r) => r.body);
+      expect(response.image).to.equal(expectedImageUrl);
+      expect(response.attributes).to.deep.equal([
+        { trait_type: 'domain', value: 'trustbear.crypto' },
+        { trait_type: 'level', value: 2 },
+        { trait_type: 'length', value: 9 },
+        { trait_type: 'animal', value: 'bear' },
+        { trait_type: 'type', value: 'animal' },
+      ]);
+    });
+
     it('should return default response for unknown domain/token', async () => {
       const response = await supertest(api)
         .get('/metadata/unknown.crypto')
@@ -153,7 +175,7 @@ describe('MetaDataController', () => {
         external_url:
           'https://unstoppabledomains.com/search?searchTerm=unknown.crypto',
         image:
-          'https://storage.googleapis.com/dot-crypto-metadata-api/unstoppabledomains_crypto.png',
+          'https://storage.googleapis.com/dot-crypto-metadata-api/images/unstoppabledomains.svg',
         image_data: DefaultImageData({
           label: 'unknown',
           tld: 'crypto',

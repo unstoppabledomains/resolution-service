@@ -5,7 +5,6 @@ import { IsNumber, IsString, ValidateNested } from 'class-validator';
 import { WorkerStatus } from '../models';
 import ZilProvider from '../workers/zil/ZilProvider';
 import { env } from '../env';
-import chainIdToNetworkName from '../utils/chainIdToNetworkName';
 import * as ethersUtils from '../utils/ethersUtils';
 
 class BlockchainStatus {
@@ -15,16 +14,21 @@ class BlockchainStatus {
   @IsNumber()
   latestMirroredBlock = 0;
 
-  @IsString()
-  network: string;
+  @IsNumber()
+  networkId: number;
 }
 
-class StatusResponse {
+class Blockchains {
   @ValidateNested()
   ETH: BlockchainStatus;
 
   @ValidateNested()
   ZIL: BlockchainStatus;
+}
+
+class StatusResponse {
+  @ValidateNested()
+  blockchain: Blockchains;
 }
 
 @JsonController()
@@ -35,25 +39,26 @@ export class StatusController {
   @ResponseSchema(StatusResponse)
   async getStatus(): Promise<StatusResponse> {
     const statusResponse = new StatusResponse();
-    statusResponse.ETH = new BlockchainStatus();
-    statusResponse.ZIL = new BlockchainStatus();
+    const blockchain = new Blockchains();
+    blockchain.ETH = new BlockchainStatus();
+    blockchain.ZIL = new BlockchainStatus();
 
-    statusResponse.ETH.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
+    blockchain.ETH.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
       'ETH',
     );
-    statusResponse.ETH.latestNetworkBlock = await ethersUtils.getLatestNetworkBlock();
-
-    statusResponse.ZIL.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
+    blockchain.ETH.latestNetworkBlock = await ethersUtils.getLatestNetworkBlock();
+    blockchain.ZIL.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
       'ZIL',
     );
-    statusResponse.ZIL.latestNetworkBlock = (
+    blockchain.ZIL.latestNetworkBlock = (
       await this.zilProvider.getChainStats()
     ).txHeight;
 
-    statusResponse.ETH.network =
-      chainIdToNetworkName[env.APPLICATION.ETHEREUM.CHAIN_ID];
-    statusResponse.ZIL.network = env.APPLICATION.ZILLIQA.NETWORK;
+    blockchain.ETH.networkId = env.APPLICATION.ETHEREUM.CHAIN_ID;
+    blockchain.ZIL.networkId =
+      env.APPLICATION.ZILLIQA.NETWORK === 'mainnet' ? 1 : 333;
 
+    statusResponse.blockchain = blockchain;
     return statusResponse;
   }
 }
