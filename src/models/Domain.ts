@@ -184,34 +184,13 @@ export default class Domain extends Model {
     }
 
     const newDomain = new Domain();
-    // todo Don't prefill domain registry. Set domain registry from incoming ETH events only.
-    const registry = this.getRegistryAddressFromLocation(location);
     newDomain.attributes({
       name: name,
       node: eip137Namehash(name),
       blockchain: location.blockchain,
       networkId: location.networkId,
-      registry,
     });
     await repository.save(newDomain);
     return newDomain;
-  }
-
-  // todo Don't prefill domain registry. Set domain registry from incoming ETH events only.
-  static getRegistryAddressFromLocation(location: Location): string {
-    if (
-      location.blockchain === Blockchain.ETH ||
-      location.blockchain === Blockchain.MATIC
-    ) {
-      const ethConfig = getEthConfig(location.networkId.toString());
-      if (this.name.endsWith('.crypto')) {
-        return ethConfig.CNSRegistry.address;
-      }
-      return ethConfig.UNSRegistry.address;
-    }
-    if (location.blockchain === Blockchain.ZIL) {
-      return '0x9611c53be6d1b32058b2747bdececed7e1216793';
-    }
-    return Domain.NullAddress;
   }
 }

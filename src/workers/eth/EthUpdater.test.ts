@@ -338,6 +338,7 @@ describe('EthUpdater', () => {
 
       const domain = await Domain.findOneOrFail({ name: expectedDomainName });
       expect(domain.label).to.equal(expectedLabel);
+      expect(domain.registry).to.equal(unsRegistry.address);
     });
 
     it('should add new uns domain', async () => {

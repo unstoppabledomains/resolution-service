@@ -4,6 +4,8 @@ import { expect } from 'chai';
 import { ApiKey, Domain } from '../models';
 import { DomainTestHelper } from '../utils/testing/DomainTestHelper';
 import { znsNamehash, eip137Namehash } from '../utils/namehash';
+import ethConfig from '../contracts/eth';
+import { env } from '../env';
 
 describe('DomainsController', () => {
   let testApiKey: ApiKey;
@@ -97,10 +99,7 @@ describe('DomainsController', () => {
       const znsDomain = await DomainTestHelper.createTestDomain({
         name: 'test.zil',
         node: znsNamehash('test.zil'),
-        registry: Domain.getRegistryAddressFromLocation({
-          blockchain: 'ZIL',
-          networkId: 1,
-        }),
+        registry: env.APPLICATION.ZILLIQA.ZNS_REGISTRY_CONTRACT,
         blockchain: 'ZIL',
         networkId: 1,
       });
@@ -108,10 +107,7 @@ describe('DomainsController', () => {
       const unsDomain = await DomainTestHelper.createTestDomain({
         name: 'test.nft',
         node: eip137Namehash('test.nft'),
-        registry: Domain.getRegistryAddressFromLocation({
-          blockchain: 'ETH',
-          networkId: 1,
-        }),
+        registry: ethConfig.UNSRegistry.address,
         blockchain: 'ETH',
         networkId: 1,
       });
@@ -122,10 +118,7 @@ describe('DomainsController', () => {
         .send();
       expect(znsResult.status).eq(200);
       expect(znsResult.body.meta.registry).eq(
-        Domain.getRegistryAddressFromLocation({
-          blockchain: 'ZIL',
-          networkId: 1,
-        }),
+        env.APPLICATION.ZILLIQA.ZNS_REGISTRY_CONTRACT,
       );
 
       const cnsResult = await supertest(api)
@@ -133,24 +126,14 @@ describe('DomainsController', () => {
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
       expect(cnsResult.status).eq(200);
-      expect(cnsResult.body.meta.registry).eq(
-        Domain.getRegistryAddressFromLocation({
-          blockchain: 'ETH',
-          networkId: 1,
-        }),
-      );
+      expect(cnsResult.body.meta.registry).eq(ethConfig.UNSRegistry.address);
 
       const unsResult = await supertest(api)
         .get(`/domains/${unsDomain.name}`)
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
       expect(unsResult.status).eq(200);
-      expect(unsResult.body.meta.registry).eq(
-        Domain.getRegistryAddressFromLocation({
-          blockchain: 'ETH',
-          networkId: 1,
-        }),
-      );
+      expect(unsResult.body.meta.registry).eq(ethConfig.UNSRegistry.address);
     });
 
     it('should return non-minted domain ending on .zil', async () => {

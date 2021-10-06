@@ -1,5 +1,6 @@
 import { Domain } from '../../models';
 import { Attributes } from '../../types/common';
+import { ETHContracts } from '../../contracts';
 
 export class DomainTestHelper {
   static async createTestDomain(
@@ -14,12 +15,7 @@ export class DomainTestHelper {
         options.node ??
         '0x77694b72888ab3b13c9c7eb4f343045d3820c1202c1765255b896280a8bc7b55',
       resolution: options.resolution ?? {},
-      registry:
-        options.registry ??
-        Domain.getRegistryAddressFromLocation({
-          blockchain: options.blockchain ?? 'ETH',
-          networkId: options.networkId ?? 1,
-        }),
+      registry: options.registry ?? ETHContracts.UNSRegistry.address,
       blockchain: options.blockchain ?? 'ETH',
       networkId: options.networkId ?? 1,
       resolver:
