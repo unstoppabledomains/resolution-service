@@ -98,4 +98,103 @@ describe('ErrorHandler', () => {
       ],
     });
   });
+
+  it('should return the correct validation error for empty networkIds param', async () => {
+    const res = await supertest(api)
+      .get(
+        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]&blockchains[]=ETH',
+      )
+      .auth(testApiKey.apiKey, { type: 'bearer' })
+      .send();
+    expect(res.status).eq(400);
+    expect(res.body.code).to.exist;
+    expect(res.body.message).to.exist;
+    expect(res.body).containSubset({
+      code: 'BadRequestError',
+      message: "Invalid queries, check 'errors' property for more info.",
+      errors: [
+        {
+          property: 'networkIds',
+          constraints: {
+            isIn:
+              'each value in networkIds must be one of the following values: 1, 4, 1337',
+            isNotEmpty: 'each value in networkIds should not be empty',
+          },
+        },
+      ],
+    });
+  });
+  it('should return the correct validation error for empty blockchain param', async () => {
+    const res = await supertest(api)
+      .get(
+        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]',
+      )
+      .auth(testApiKey.apiKey, { type: 'bearer' })
+      .send();
+    expect(res.status).eq(400);
+    expect(res.body.code).to.exist;
+    expect(res.body.message).to.exist;
+    expect(res.body).containSubset({
+      code: 'BadRequestError',
+      message: "Invalid queries, check 'errors' property for more info.",
+      errors: [
+        {
+          property: 'blockchains',
+          constraints: {
+            isIn:
+              'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
+            isNotEmpty: 'each value in blockchains should not be empty',
+          },
+        },
+      ],
+    });
+  });
+  it('should return the correct validation error for invalid blockchain param', async () => {
+    const res = await supertest(api)
+      .get(
+        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]=BAD',
+      )
+      .auth(testApiKey.apiKey, { type: 'bearer' })
+      .send();
+    expect(res.status).eq(400);
+    expect(res.body.code).to.exist;
+    expect(res.body.message).to.exist;
+    expect(res.body).containSubset({
+      code: 'BadRequestError',
+      message: "Invalid queries, check 'errors' property for more info.",
+      errors: [
+        {
+          property: 'blockchains',
+          constraints: {
+            isIn:
+              'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
+          },
+        },
+      ],
+    });
+  });
+  it('should return the correct validation error for invalid blockchain param #2', async () => {
+    const res = await supertest(api)
+      .get(
+        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]=ETH,BAD',
+      )
+      .auth(testApiKey.apiKey, { type: 'bearer' })
+      .send();
+    expect(res.status).eq(400);
+    expect(res.body.code).to.exist;
+    expect(res.body.message).to.exist;
+    expect(res.body).containSubset({
+      code: 'BadRequestError',
+      message: "Invalid queries, check 'errors' property for more info.",
+      errors: [
+        {
+          property: 'blockchains',
+          constraints: {
+            isIn:
+              'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
+          },
+        },
+      ],
+    });
+  });
 });
