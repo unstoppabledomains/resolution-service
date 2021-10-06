@@ -24,7 +24,7 @@ import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
 import { In } from 'typeorm';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
-import { Blockchain, BlockchainType } from '../utils/constants';
+import { Blockchain } from '../types/common';
 import { toNumber } from 'lodash';
 import NetworkConfig from 'uns/uns-config.json';
 
@@ -43,7 +43,7 @@ class DomainMetadata {
   @IsOptional()
   @IsString()
   @IsIn(Object.values(Blockchain), { each: true })
-  blockchain: BlockchainType | null = null;
+  blockchain: keyof typeof Blockchain | null = null;
 
   @IsOptional()
   @IsNumber()
