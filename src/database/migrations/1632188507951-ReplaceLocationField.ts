@@ -1,11 +1,12 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
+import { env } from '../../env';
 
 export class ReplaceLocationField1632188507951 implements MigrationInterface {
   name = 'ReplaceLocationField1632188507951';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "domains" ADD "network_id" integer NOT NULL DEFAULT 1`,
+      `ALTER TABLE "domains" ADD "network_id" integer NOT NULL DEFAULT ${env.APPLICATION.ETHEREUM.CHAIN_ID}`,
     );
     await queryRunner.query(
       `ALTER TABLE "domains" ADD "blockchain" text NOT NULL DEFAULT 'ETH'`,
@@ -18,7 +19,7 @@ export class ReplaceLocationField1632188507951 implements MigrationInterface {
       `ALTER TABLE "cns_registry_events" ADD "blockchain" text NOT NULL DEFAULT 'ETH'`,
     );
     await queryRunner.query(
-      `ALTER TABLE "cns_registry_events" ADD "network_id" integer NOT NULL DEFAULT 1`,
+      `ALTER TABLE "cns_registry_events" ADD "network_id" integer NOT NULL DEFAULT ${env.APPLICATION.ETHEREUM.CHAIN_ID}`,
     );
   }
 
