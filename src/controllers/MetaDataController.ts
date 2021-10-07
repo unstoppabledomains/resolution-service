@@ -9,7 +9,7 @@ import AnimalDomainHelper, {
 import { DefaultImageData } from '../utils/generalImage';
 import { MetadataImageFontSize } from '../types/common';
 import { pathThatSvg } from 'path-that-svg';
-import { IsArray, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsObject, IsOptional, IsString } from 'class-validator';
 import { env } from '../env';
 import { logger } from '../logger';
 import punycode from 'punycode';
@@ -27,6 +27,10 @@ const DomainsWithCustomImage: Record<string, string> = {
   'reseller-test-mago012.crypto': 'smiley-face.jpg',
 };
 const AnimalHelper: AnimalDomainHelper = new AnimalDomainHelper();
+
+type DomainProperties = {
+  records: Record<string, string>;
+};
 
 class Erc721Metadata {
   @IsString()
@@ -50,6 +54,9 @@ class OpenSeaMetadata extends Erc721Metadata {
   @IsOptional()
   @IsString()
   image_data?: string | null;
+
+  @IsObject()
+  properties: DomainProperties;
 
   @IsArray()
   attributes: Array<OpenSeaMetadataAttribute>;
@@ -109,12 +116,16 @@ export class MetaDataController {
     );
     const domainAttributes = this.getDomainAttributes(
       domain.name,
-      domain.resolution,
+      domain.resolution['dweb.ipfs.hash'] ||
+        domain.resolution['ipfs.html.value'],
     );
 
     const metadata: OpenSeaMetadata = {
       name: domain.name,
       description,
+      properties: {
+        records: domain.resolution,
+      },
       external_url: `https://unstoppabledomains.com/search?searchTerm=${domain.name}`,
       image: this.generateDomainImageUrl(domain.name),
       attributes: domainAttributes,
@@ -186,7 +197,7 @@ export class MetaDataController {
   ): Promise<OpenSeaMetadata> {
     const name = domainOrToken.includes('.') ? domainOrToken : null;
     const description = name ? this.getDomainDescription(name, {}) : null;
-    const attributes = name ? this.getDomainAttributes(name, {}) : [];
+    const attributes = name ? this.getDomainAttributes(name) : [];
     const image = name ? this.generateDomainImageUrl(name) : null;
     const image_data = name ? await this.generateImageData(name, {}) : null;
     const external_url = name
@@ -195,6 +206,9 @@ export class MetaDataController {
     return {
       name,
       description,
+      properties: {
+        records: {},
+      },
       external_url,
       attributes,
       image,
@@ -263,17 +277,17 @@ export class MetaDataController {
 
   private getDomainAttributes(
     name: string,
-    resolution: Record<string, string>,
+    ipfsContent?: string,
   ): OpenSeaMetadataAttribute[] {
     return [
-      ...this.getBasicDomainAttributes(name, resolution),
+      ...this.getBasicDomainAttributes(name, ipfsContent),
       ...this.getAnimalAttributes(name),
     ];
   }
 
   private getBasicDomainAttributes(
     name: string,
-    resolution: Record<string, string>,
+    ipfsContent?: string,
   ): OpenSeaMetadataAttribute[] {
     const attributes: OpenSeaMetadataAttribute[] = [
       {
@@ -290,17 +304,6 @@ export class MetaDataController {
       },
     ];
 
-    const currencies = Object.keys(resolution)
-      .filter((key) => key.startsWith('crypto') && key.endsWith('address'))
-      .map((key) => ({
-        trait_type: key.slice('crypto.'.length, key.length - '.address'.length),
-        value: resolution[key],
-      }))
-      .filter((r) => r.value);
-    attributes.push(...currencies);
-
-    const ipfsContent =
-      resolution['dweb.ipfs.hash'] || resolution['ipfs.html.value'];
     if (ipfsContent) {
       attributes.push({ trait_type: 'IPFS Content', value: ipfsContent });
     }
