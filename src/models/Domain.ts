@@ -22,9 +22,7 @@ import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import { Attributes } from '../types/common';
 import punycode from 'punycode';
 import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
-
-export const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
-export type Location = typeof DomainLocations[number];
+import DomainsResolution, { BlockchainName } from './DomainsResolution';
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
@@ -45,43 +43,21 @@ export default class Domain extends Model {
   @Column('text')
   node: string;
 
-  @Index()
-  @IsOptional()
-  @Matches(Domain.AddressRegex)
-  @Column('text', { nullable: true })
-  ownerAddress: string | null = null;
-
-  @IsOptional()
-  @Matches(Domain.AddressRegex)
-  @NotEquals(Domain.NullAddress)
-  @Column('text', { nullable: true })
-  resolver: string | null = null;
-
-  @IsOptional()
-  @Column('text', { nullable: true })
-  registry: string | null = null;
-
   @IsOptional()
   @Index()
   @ManyToOne((type) => Domain, { nullable: true })
   @JoinColumn()
   parent: Promise<Domain | null>;
 
-  @IsOptional()
-  @IsObject()
-  @ValidateWith<Domain>('validResolution', {
-    message: 'resolution does not match Record<string, string> type',
-  })
-  @Column('jsonb', { default: {} })
-  resolution: Record<string, string> = {};
-
   @OneToMany((type) => Domain, (domain) => domain.parent)
   @JoinColumn({ name: 'parent_id' })
   children: Promise<Domain[]>;
 
-  @IsEnum(DomainLocations)
-  @Column('text')
-  location: Location;
+  @OneToMany(
+    (type) => DomainsResolution,
+    (domainResolution) => domainResolution.domain,
+  )
+  resolutions: DomainsResolution[];
 
   constructor(attributes?: Attributes<Domain>) {
     super();
@@ -90,20 +66,6 @@ export default class Domain extends Model {
 
   nameMatchesNode(): boolean {
     return this.correctNode() === this.node;
-  }
-
-  validResolution(): boolean {
-    for (const property in this.resolution) {
-      if (
-        !Object.prototype.hasOwnProperty.call(this.resolution, property) ||
-        false === _.isString(property) ||
-        false === _.isString(this.resolution[property])
-      ) {
-        return false;
-      }
-    }
-
-    return true;
   }
 
   get label(): string {
@@ -147,10 +109,34 @@ export default class Domain extends Model {
     if (!this.name || this.name !== this.name.toLowerCase()) {
       return undefined;
     }
-    if (this.location === 'ZNS') {
+    if (this.name.endsWith('zil')) {
       return znsNamehash(this.name);
     }
     return eip137Namehash(this.name);
+  }
+
+  public getResolution(
+    blockchain: BlockchainName,
+    networkId: number,
+  ): DomainsResolution {
+    let resolution = this.resolutions.filter(
+      (res) => res.blockchain === blockchain && res.networkId === networkId,
+    )[0];
+    if (resolution == undefined) {
+      resolution = new DomainsResolution();
+      resolution.blockchain = blockchain;
+      resolution.networkId = networkId;
+    }
+    return resolution;
+  }
+
+  public setResolution(resolution: DomainsResolution) {
+    const otherResolutions = this.resolutions.filter(
+      (res) =>
+        res.blockchain != resolution.blockchain &&
+        res.networkId != resolution.networkId,
+    );
+    this.resolutions = [resolution, ...otherResolutions];
   }
 
   static normalizeResolver(resolver: string | null | undefined): string | null {
@@ -163,38 +149,24 @@ export default class Domain extends Model {
 
   static async findOrCreateByName(
     name: string,
-    location: Location,
     repository: Repository<Domain> = this.getRepository(),
   ): Promise<Domain> {
-    const domain = await repository.findOne({ name, location });
+    const domain = await repository.findOne({ name });
     if (domain) {
       return domain;
     }
 
+    let node = eip137Namehash(name);
+    if (name.endsWith('zil')) {
+      node = znsNamehash(this.name);
+    }
+
     const newDomain = new Domain();
-    // todo Don't prefill domain registry. Set domain registry from incoming ETH events only.
-    const registry = this.getRegistryAddressFromLocation(location);
     newDomain.attributes({
       name: name,
-      node: eip137Namehash(name),
-      location: location,
-      registry,
+      node: node,
     });
     await repository.save(newDomain);
     return newDomain;
-  }
-
-  // todo Don't prefill domain registry. Set domain registry from incoming ETH events only.
-  static getRegistryAddressFromLocation(location: string): string {
-    switch (location) {
-      case 'CNS':
-        return '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe';
-      case 'ZNS':
-        return '0x9611c53be6d1b32058b2747bdececed7e1216793';
-      case 'UNSL1':
-        return '0x049aba7510f45ba5b64ea9e658e342f904db358d';
-      default:
-        return Domain.NullAddress;
-    }
   }
 }

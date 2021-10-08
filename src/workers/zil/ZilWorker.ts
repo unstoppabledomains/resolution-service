@@ -11,6 +11,8 @@ import { isBech32 } from '@zilliqa-js/util/dist/validation';
 import { fromBech32Address } from '@zilliqa-js/crypto';
 import Bugsnag from '@bugsnag/js';
 import { ZnsTransactionEvent } from '../../models/ZnsTransaction';
+import { BlockchainName } from '../../models/DomainsResolution';
+import { env } from '../../env';
 
 type ZilWorkerOptions = {
   perPage?: number;
@@ -19,6 +21,8 @@ type ZilWorkerOptions = {
 export default class ZilWorker {
   private provider: ZnsProvider;
   private perPage: number;
+  readonly blockchain: BlockchainName = 'ZIL';
+  readonly networkId: number = env.APPLICATION.ZILLIQA.NETWORK_ID;
 
   constructor(options?: ZilWorkerOptions) {
     this.perPage = options?.perPage || 25;
@@ -151,11 +155,12 @@ export default class ZilWorker {
     }
     const node = znsChildhash(parentDomain.node, label);
     const domain = await Domain.findOrBuildByNode(node, repository);
+    const resolution = domain.getResolution(this.blockchain, this.networkId);
     domain.attributes({
       name: `${label}.${parentDomain.name}`,
-      location: 'ZNS',
-      registry: this.provider.registryAddress,
     });
+    resolution.registry = this.provider.registryAddress;
+    domain.setResolution(resolution);
     await repository.save(domain);
   }
 
@@ -177,13 +182,16 @@ export default class ZilWorker {
       const resolution = await this.provider.requestZilliqaResolutionFor(
         resolver,
       );
-      domain.attributes({
-        resolver: resolver !== Domain.NullAddress ? resolver : null,
-        ownerAddress: owner !== Domain.NullAddress ? owner : null,
-        resolution: resolution ? resolution : {},
-        registry:
-          owner !== Domain.NullAddress ? this.provider.registryAddress : null,
-      });
+      const dbResolution = domain.getResolution(
+        this.blockchain,
+        this.networkId,
+      );
+      dbResolution.resolver = resolver !== Domain.NullAddress ? resolver : null;
+      dbResolution.ownerAddress = owner !== Domain.NullAddress ? owner : null;
+      dbResolution.resolution = resolution ? resolution : {};
+      dbResolution.registry =
+        owner !== Domain.NullAddress ? this.provider.registryAddress : null;
+      domain.setResolution(dbResolution);
       await repository.save(domain);
     }
   }

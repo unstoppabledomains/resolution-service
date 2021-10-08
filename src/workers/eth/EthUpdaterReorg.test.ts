@@ -9,6 +9,8 @@ import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
 import { ETHContracts } from '../../contracts';
 import { Block } from '@ethersproject/abstract-provider';
+import DomainsResolution from '../../models/DomainsResolution';
+import { env } from '../../env';
 
 type NSConfig = {
   tld: string;
@@ -42,6 +44,7 @@ describe('EthUpdater handles reorgs', () => {
   let owner: string;
   let recipient: string;
   const sinonSandbox = sinon.createSandbox();
+  const ethNetworkId = env.APPLICATION.ETHEREUM.CHAIN_ID;
 
   type DomainBlockInfo = {
     blockNumber: number;
@@ -264,7 +267,14 @@ describe('EthUpdater handles reorgs', () => {
       domainAt20.domain.tokenId.toHexString(),
     );
     if (changedDomain) {
-      changedDomain.ownerAddress = '0x000000000000000000000000000000000000dead';
+      changedDomain.resolutions = [
+        new DomainsResolution({
+          ownerAddress: '0x000000000000000000000000000000000000dead',
+          location: 'CNS',
+          blockchain: 'ETH',
+          networkId: ethNetworkId,
+        }),
+      ];
       await changedDomain.save();
     }
 
@@ -287,9 +297,8 @@ describe('EthUpdater handles reorgs', () => {
     const actualDomain = await Domain.findByNode(
       domainAt20.domain.tokenId.toHexString(),
     );
-    expect(actualDomain?.ownerAddress?.toLowerCase()).to.eq(
-      owner.toLowerCase(),
-    );
+    const resolution = actualDomain?.getResolution('ETH', ethNetworkId);
+    expect(resolution?.ownerAddress?.toLowerCase()).to.eq(owner.toLowerCase());
   });
 
   // Worker timeline:
@@ -310,7 +319,14 @@ describe('EthUpdater handles reorgs', () => {
       domainAt20.domain.tokenId.toHexString(),
     );
     if (changedDomain) {
-      changedDomain.ownerAddress = '0x000000000000000000000000000000000000dead';
+      changedDomain.resolutions = [
+        new DomainsResolution({
+          ownerAddress: '0x000000000000000000000000000000000000dead',
+          location: 'CNS',
+          blockchain: 'ETH',
+          networkId: ethNetworkId,
+        }),
+      ];
       await changedDomain.save();
     }
 
@@ -346,7 +362,8 @@ describe('EthUpdater handles reorgs', () => {
     const actualDomain = await Domain.findByNode(
       domainAt20.domain.tokenId.toHexString(),
     );
-    expect(actualDomain?.ownerAddress?.toLowerCase()).to.eq(
+    const resolution = actualDomain?.getResolution('ETH', ethNetworkId);
+    expect(resolution?.ownerAddress?.toLowerCase()).to.eq(
       recipient.toLowerCase(),
     );
   });

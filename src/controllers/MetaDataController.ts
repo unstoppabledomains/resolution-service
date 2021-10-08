@@ -13,6 +13,8 @@ import { IsArray, IsOptional, IsString } from 'class-validator';
 import { env } from '../env';
 import { logger } from '../logger';
 import punycode from 'punycode';
+import DomainsResolution from '../models/DomainsResolution';
+import { LocationFromDomainName } from '../utils/domainLocationUtils';
 
 const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
 const CUSTOM_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/custom` as const;
@@ -92,6 +94,16 @@ export class MetaDataController {
     };
   }
 
+  private getDomainResolution(domain: Domain): DomainsResolution {
+    const location = LocationFromDomainName(domain.name);
+    switch (location) {
+      case 'ZNS':
+        return domain.getResolution('ZIL', env.APPLICATION.ZILLIQA.NETWORK_ID);
+      default:
+        return domain.getResolution('ETH', env.APPLICATION.ETHEREUM.CHAIN_ID);
+    }
+  }
+
   @Get('/metadata/:domainOrToken')
   @ResponseSchema(OpenSeaMetadata)
   async getMetaData(
@@ -102,14 +114,15 @@ export class MetaDataController {
     if (!domain) {
       return await this.defaultMetaResponse(domainOrToken);
     }
+    const resolution = this.getDomainResolution(domain);
 
     const description = this.getDomainDescription(
       domain.name,
-      domain.resolution,
+      resolution.resolution,
     );
     const domainAttributes = this.getDomainAttributes(
       domain.name,
-      domain.resolution,
+      resolution.resolution,
     );
 
     const metadata: OpenSeaMetadata = {
@@ -123,7 +136,7 @@ export class MetaDataController {
     if (!this.isDomainWithCustomImage(domain.name)) {
       metadata.image_data = await this.generateImageData(
         domain.name,
-        domain.resolution,
+        resolution.resolution,
       );
       metadata.background_color = '4C47F7';
     }
@@ -150,7 +163,9 @@ export class MetaDataController {
     const domain = await Domain.findByNode(token);
 
     const name = domain ? domain.name : domainOrToken;
-    const resolution = domain ? domain.resolution : {};
+    const resolution = domain
+      ? this.getDomainResolution(domain).resolution
+      : {};
 
     if (!name.includes('.')) {
       return { image_data: '' };
@@ -171,7 +186,9 @@ export class MetaDataController {
     const domain = await Domain.findByNode(token);
 
     const name = domain ? domain.name : domainOrToken;
-    const resolution = domain ? domain.resolution : {};
+    const resolution = domain
+      ? this.getDomainResolution(domain).resolution
+      : {};
 
     if (!name.includes('.')) {
       return '';

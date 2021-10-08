@@ -137,14 +137,18 @@ describe('ZilWorker', () => {
       const domainFromDb = await Domain.findOne({
         name: fakeTransaction.events[1].params.label + '.zil',
       });
+      const dbResolution = domainFromDb?.getResolution(
+        worker.blockchain,
+        worker.networkId,
+      );
       expect(domainFromDb).to.exist;
-      expect(isBech32(domainFromDb!.ownerAddress!)).to.be.false;
-      expect(domainFromDb!.ownerAddress!).to.equal(
+      expect(isBech32(dbResolution!.ownerAddress!)).to.be.false;
+      expect(dbResolution!.ownerAddress!).to.equal(
         fromBech32Address(
           fakeTransaction.events[0].params.owner!,
         ).toLowerCase(),
       );
-      expect(domainFromDb?.resolver).to.be.null;
+      expect(dbResolution?.resolver).to.be.null;
     });
 
     it('should not update the db due to missing node in db', async () => {
@@ -193,9 +197,13 @@ describe('ZilWorker', () => {
       const domainFromDb = await Domain.findOne({
         name: fakeTransaction.events[1].params.label + '.zil',
       });
+      const dbResolution = domainFromDb?.getResolution(
+        worker.blockchain,
+        worker.networkId,
+      );
       expect(domainFromDb).to.exist;
-      expect(domainFromDb?.ownerAddress).to.be.null;
-      expect(domainFromDb?.resolver).to.be.null;
+      expect(dbResolution?.ownerAddress).to.be.null;
+      expect(dbResolution?.resolver).to.be.null;
     });
   });
 
@@ -412,14 +420,18 @@ describe('ZilWorker', () => {
     expect(txFromDb?.events.length).eq(2);
     expect(txFromDb?.blockNumber).eq(247856);
     const domainFromDb = await Domain.findOne({ name: 'activating.zil' });
+    const dbResolution = domainFromDb?.getResolution(
+      worker.blockchain,
+      worker.networkId,
+    );
     expect(domainFromDb).exist;
-    expect(domainFromDb?.ownerAddress).eq(
+    expect(dbResolution?.ownerAddress).eq(
       '0x0c7b9630f75423ca9efba2a386d0bc6a0292702e',
     );
-    expect(domainFromDb?.resolver).eq(null);
+    expect(dbResolution?.resolver).eq(null);
     expect(domainFromDb?.node).eq(
       '0xd81a54e6c75997b2bbd27a0c0d5afa898eae62dbfc3c178964bcceea0c009b3c',
     );
-    expect(domainFromDb?.location).eq('ZNS');
+    expect(dbResolution?.location).eq('ZNS');
   });
 });

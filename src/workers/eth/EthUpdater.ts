@@ -13,11 +13,14 @@ import { CnsResolverError } from '../../errors/CnsResolverError';
 import { ExecutionRevertedError } from './BlockchainErrors';
 import { CnsResolver } from './CnsResolver';
 import * as ethersUtils from '../../utils/ethersUtils';
+import { BlockchainName } from '../../models/DomainsResolution';
 
 export class EthUpdater {
   private unsRegistry: Contract = ETHContracts.UNSRegistry.getContract();
   private cnsRegistry: Contract = ETHContracts.CNSRegistry.getContract();
   private cnsResolver: CnsResolver = new CnsResolver();
+  readonly blockchain: BlockchainName = 'ETH';
+  readonly networkId: number = env.APPLICATION.ETHEREUM.CHAIN_ID;
 
   private currentSyncBlock = 0;
   private currentSyncBlockHash = '';
@@ -106,15 +109,18 @@ export class EthUpdater {
           `Transfer event was not processed. Could not find domain for ${node}`,
         );
       }
+      const resolution = domain.getResolution(this.blockchain, this.networkId);
+
       //Check if it's a burn
       if (event.args?.to === Domain.NullAddress) {
-        domain.ownerAddress = null;
-        domain.resolution = {};
-        domain.resolver = null;
-        domain.registry = null;
+        resolution.ownerAddress = null;
+        resolution.resolution = {};
+        resolution.resolver = null;
+        resolution.registry = null;
+        domain.setResolution(resolution);
         await domainRepository.save(domain);
       } else {
-        domain.ownerAddress = event.args?.to.toLowerCase();
+        resolution.ownerAddress = event.args?.to.toLowerCase();
         await domainRepository.save(domain);
       }
     }
@@ -154,17 +160,21 @@ export class EthUpdater {
     }
 
     const domain = await Domain.findOrBuildByNode(producedNode);
+
+    const resolution = domain.getResolution(this.blockchain, this.networkId);
+
     domain.name = uri;
-    domain.location = 'CNS';
-    domain.ownerAddress = lastProcessedEvent.args?.to.toLowerCase();
-    domain.registry = this.cnsRegistry.address;
+    resolution.location = 'CNS';
+    resolution.ownerAddress = lastProcessedEvent.args?.to.toLowerCase();
+    resolution.registry = this.cnsRegistry.address;
 
     const contractAddress = event.address.toLowerCase();
     if (contractAddress === this.unsRegistry.address.toLowerCase()) {
-      domain.resolver = contractAddress;
-      domain.registry = this.unsRegistry.address.toLowerCase();
-      domain.location = 'UNSL1';
+      resolution.resolver = contractAddress;
+      resolution.registry = this.unsRegistry.address.toLowerCase();
+      resolution.location = 'UNS';
     }
+    domain.setResolution(resolution);
     await domainRepository.save(domain);
   }
 
@@ -174,12 +184,16 @@ export class EthUpdater {
   ): Promise<void> {
     const node = CnsRegistryEvent.tokenIdToNode(event.args?.tokenId);
     const domain = await Domain.findByNode(node, domainRepository);
+
     if (!domain) {
       throw new EthUpdaterError(
         `ResetRecords event was not processed. Could not find domain for ${node}`,
       );
     }
-    domain.resolution = {};
+
+    const resolution = domain.getResolution(this.blockchain, this.networkId);
+    resolution.resolution = {};
+    domain.setResolution(resolution);
     await domainRepository.save(domain);
   }
 
@@ -198,7 +212,9 @@ export class EthUpdater {
         `Set event was not processed. Could not find domain for ${node}`,
       );
     }
-    domain.resolution[key] = value;
+    const resolution = domain.getResolution(this.blockchain, this.networkId);
+    resolution.resolution[key] = value;
+    domain.setResolution(resolution);
     await domainRepository.save(domain);
   }
 
@@ -213,8 +229,8 @@ export class EthUpdater {
         `Resolve event was not processed. Could not find domain for ${node}`,
       );
     }
-
-    await this.cnsResolver.fetchResolver(domain, domainRepository);
+    const resolution = domain.getResolution(this.blockchain, this.networkId);
+    await this.cnsResolver.fetchResolver(domain, resolution, domainRepository);
   }
 
   private async processSync(
@@ -234,10 +250,13 @@ export class EthUpdater {
       );
     }
 
+    const resolution = domain.getResolution(this.blockchain, this.networkId);
+
     const keyHash = event.args?.updateId.toString();
     const resolverAddress = await this.cnsResolver.getResolverAddress(node);
     if (keyHash === '0' || !resolverAddress) {
-      domain.resolution = {};
+      resolution.resolution = {};
+      domain.setResolution(resolution);
       await domainRepository.save(domain);
       return;
     }
@@ -248,7 +267,7 @@ export class EthUpdater {
         keyHash,
         node,
       );
-      domain.resolution[resolutionRecord.key] = resolutionRecord.value;
+      resolution.resolution[resolutionRecord.key] = resolutionRecord.value;
     } catch (error: unknown) {
       if (error instanceof CnsResolverError) {
         logger.warn(error);
@@ -256,12 +275,13 @@ export class EthUpdater {
         error instanceof Error &&
         error.message.includes(ExecutionRevertedError)
       ) {
-        domain.resolution = {};
+        resolution.resolution = {};
       } else {
         throw error;
       }
     }
 
+    domain.setResolution(resolution);
     await domainRepository.save(domain);
   }
 

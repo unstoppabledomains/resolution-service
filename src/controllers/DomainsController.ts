@@ -22,8 +22,13 @@ import {
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
 import { In } from 'typeorm';
-import { DomainLocations, Location } from '../models/Domain';
+import DomainsResolution, {
+  DomainLocations,
+  Location,
+} from '../models/DomainsResolution';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
+import { LocationFromDomainName } from '../utils/domainLocationUtils';
+import { env } from '../env';
 
 class DomainMetadata {
   @IsString()
@@ -95,6 +100,32 @@ class DomainsListResponse {
 @JsonController()
 @UseBefore(ApiKeyAuthMiddleware)
 export class DomainsController {
+  private prepareDomainResponse(domain: Domain): DomainResponse {
+    const location = LocationFromDomainName(domain.name);
+    let resolution: DomainsResolution;
+    if (location === 'ZNS') {
+      resolution = domain.getResolution(
+        'ZIL',
+        env.APPLICATION.ZILLIQA.NETWORK_ID,
+      );
+    } else {
+      resolution = domain.getResolution(
+        'ETH',
+        env.APPLICATION.ETHEREUM.CHAIN_ID,
+      );
+    }
+    const response = new DomainResponse();
+    response.meta = {
+      domain: domain.name,
+      location: resolution.location,
+      owner: resolution.ownerAddress,
+      resolver: resolution.resolver,
+      registry: resolution.registry,
+    };
+    response.records = resolution.resolution;
+    return response;
+  }
+
   @Get('/domains/:domainName')
   @ResponseSchema(DomainResponse)
   async getDomain(
@@ -103,16 +134,7 @@ export class DomainsController {
     domainName = domainName.toLowerCase();
     const domain = await Domain.findOne({ name: domainName });
     if (domain) {
-      const response = new DomainResponse();
-      response.meta = {
-        domain: domainName,
-        location: domain.location,
-        owner: domain.ownerAddress,
-        resolver: domain.resolver,
-        registry: domain.registry,
-      };
-      response.records = domain.resolution;
-      return response;
+      return this.prepareDomainResponse(domain);
     }
     return {
       meta: {
@@ -155,7 +177,9 @@ export class DomainsController {
     const domains = await Domain.find({
       where: {
         ownerAddress: ownersQuery ? In(ownersQuery) : undefined,
-        location: In(query.locations),
+        resolutions: {
+          location: In(query.locations),
+        },
       },
       take: query.perPage,
       skip: (query.page - 1) * query.perPage,
@@ -165,16 +189,7 @@ export class DomainsController {
     for (const domain of domains) {
       response.data.push({
         id: domain.name,
-        attributes: {
-          meta: {
-            location: domain.location,
-            owner: domain.ownerAddress,
-            resolver: domain.resolver,
-            registry: domain.registry,
-            domain: domain.name,
-          },
-          records: domain.resolution,
-        },
+        attributes: this.prepareDomainResponse(domain),
       });
     }
     return response;

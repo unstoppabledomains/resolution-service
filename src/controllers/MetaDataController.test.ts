@@ -10,7 +10,7 @@ import { Domain } from '../models';
 describe('MetaDataController', () => {
   describe('GET /metadata/:DomainOrToken', () => {
     it('should work', async () => {
-      const domain = await DomainTestHelper.createTestDomain({
+      const { domain } = await DomainTestHelper.createTestDomain({
         resolution: {
           'crypto.BTC.address': 'beabbeabbeabeabeabeabeabeabeabeabeabeabeab',
           'crypto.ETH.address': '0xdeadeadeadeadeadeadeadeadeadeadeadeadead',
@@ -69,7 +69,7 @@ describe('MetaDataController', () => {
     });
 
     it('should work with animal domain', async () => {
-      const animalDomain = await DomainTestHelper.createTestDomain({
+      const { domain: animalDomain } = await DomainTestHelper.createTestDomain({
         name: 'unstoppablelemming.crypto',
         node:
           '0xccfd2756994b2ea38fcd2deaf3ae2b2a4678fce6e81fbe4f856ceb0cb50dfee9',
@@ -143,10 +143,9 @@ describe('MetaDataController', () => {
     });
 
     it('should return branded animal domain metadata', async () => {
-      const animalDomain = await Domain.findOrCreateByName(
-        'trustbear.crypto',
-        'CNS',
-      );
+      const { domain: animalDomain } = await DomainTestHelper.createTestDomain({
+        name: 'trustbear.crypto',
+      });
       const expectedImageUrl =
         'https://storage.googleapis.com/dot-crypto-metadata-api/images/trust/bear.svg';
       const response = await supertest(api)
@@ -239,7 +238,7 @@ describe('MetaDataController', () => {
         }),
       );
 
-      for (const domain of specialDomains) {
+      for (const { domain } of specialDomains) {
         const response = await supertest(api)
           .get(`/metadata/${domain.name}`)
           .send()
@@ -291,10 +290,14 @@ describe('MetaDataController', () => {
     });
 
     it('should return the same attributes regardless of what record key is used for ipfs', async () => {
-      const domainHtmlValue = await DomainTestHelper.createTestDomain({
+      const {
+        domain: domainHtmlValue,
+      } = await DomainTestHelper.createTestDomain({
         resolution: { 'ipfs.html.value': 'ipfs hash content' },
       });
-      const domainDwebHash = await DomainTestHelper.createTestDomain({
+      const {
+        domain: domainDwebHash,
+      } = await DomainTestHelper.createTestDomain({
         name: 'testdomain2.crypto',
         node: eip137Namehash('testdomain2.crypto'),
         resolution: { 'dweb.ipfs.hash': 'ipfs hash content' },
@@ -322,7 +325,7 @@ describe('MetaDataController', () => {
     });
 
     it('should return the dweb.ipfs.hash record when ipfs.html.value is also set', async () => {
-      const domain = await DomainTestHelper.createTestDomain({
+      const { domain } = await DomainTestHelper.createTestDomain({
         resolution: { 'dweb.ipfs.hash': 'correct', 'ipfs.html.value': 'wrong' },
       });
       const response = await supertest(api)
@@ -338,7 +341,7 @@ describe('MetaDataController', () => {
 
   describe('GET /image/:domainOrToken', () => {
     it('should resolve image_data with provided domain', async () => {
-      const domain = await DomainTestHelper.createTestDomain({});
+      const { domain } = await DomainTestHelper.createTestDomain({});
       const res = await supertest(api)
         .get(`/image/${domain.name}`)
         .send()
@@ -352,7 +355,7 @@ describe('MetaDataController', () => {
     });
 
     it('should resolve image_data with provided tokenId', async () => {
-      const domain = await DomainTestHelper.createTestDomain({});
+      const { domain } = await DomainTestHelper.createTestDomain({});
       const res = await supertest(api)
         .get(`/image/${domain.node}`)
         .send()
@@ -366,7 +369,7 @@ describe('MetaDataController', () => {
     });
 
     it(`should resolve image_data as animal domain`, async () => {
-      const domain = await DomainTestHelper.createTestDomain({
+      const { domain } = await DomainTestHelper.createTestDomain({
         name: 'unstoppablelemming.crypto',
         node: eip137Namehash('unstoppablelemming.crypto'),
       });

@@ -138,8 +138,14 @@ describe('EthUpdater', () => {
       await service.run();
 
       const domain = await Domain.findOne({ name: cns.name });
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
       expect(domain).to.not.be.undefined;
-      expect(domain?.ownerAddress).to.be.equal(recipientAddress.toLowerCase());
+      expect(resolution?.ownerAddress).to.be.equal(
+        recipientAddress.toLowerCase(),
+      );
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         NewURI: 2,
@@ -161,8 +167,14 @@ describe('EthUpdater', () => {
       await service.run();
 
       const domain = await Domain.findOne({ name: uns.name });
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
       expect(domain).to.not.be.undefined;
-      expect(domain?.ownerAddress).to.be.equal(recipientAddress.toLowerCase());
+      expect(resolution?.ownerAddress).to.be.equal(
+        recipientAddress.toLowerCase(),
+      );
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         Approval: 1,
@@ -189,9 +201,15 @@ describe('EthUpdater', () => {
       await service.run();
 
       const domain = await Domain.findOne({ name: cns.name });
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
       expect(domain).to.containSubset({
         name: cns.name,
         location: 'CNS',
+      });
+      expect(resolution).to.containSubset({
         resolver: resolver.address.toLowerCase(),
         resolution: {
           'crypto.BTC.address': 'qp3gu0flg7tehyv73ua5nznlw8s040nz3uqnyffrcn',
@@ -219,9 +237,15 @@ describe('EthUpdater', () => {
       await service.run();
 
       const domain = await Domain.findOne({ name: uns.name });
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
       expect(domain).to.containSubset({
         name: uns.name,
         location: 'UNSL1',
+      });
+      expect(resolution).to.containSubset({
         resolver: unsRegistry.address.toLowerCase(),
         ownerAddress: owner.toLowerCase(),
         resolution: {
@@ -253,8 +277,14 @@ describe('EthUpdater', () => {
 
       await service.run();
       const domain = await Domain.findOne({ name: cns.name });
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
       expect(domain).to.containSubset({
         name: cns.name,
+      });
+      expect(resolution).to.containSubset({
         resolution: {},
         resolver: null,
         ownerAddress: null,
@@ -284,8 +314,14 @@ describe('EthUpdater', () => {
 
       await service.run();
       const domain = await Domain.findOne({ name: uns.name });
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
       expect(domain).to.containSubset({
         name: uns.name,
+      });
+      expect(resolution).to.containSubset({
         resolution: {},
         resolver: null,
         ownerAddress: null,
@@ -422,8 +458,12 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name, 'CNS');
-      expect(domain.resolution).to.be.empty;
+      const domain = await Domain.findOrCreateByName(cns.name);
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
+      expect(resolution.resolution).to.be.empty;
     });
 
     it('should reset uns records if Sync event with zero updateId received', async () => {
@@ -438,8 +478,12 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(uns.name, 'UNSL1');
-      expect(domain.resolution).to.be.empty;
+      const domain = await Domain.findOrCreateByName(uns.name);
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
+      expect(resolution.resolution).to.be.empty;
     });
 
     it('should get all cns domain records when domain was sent via setOwner method', async () => {
@@ -458,8 +502,12 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name, 'CNS');
-      expect(domain.resolution).to.deep.equal({
+      const domain = await Domain.findOrCreateByName(cns.name);
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
+      expect(resolution.resolution).to.deep.equal({
         'crypto.ETH.address': '0x829BD824B016326A401d083B33D092293333A830',
       });
     });
@@ -480,8 +528,12 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(uns.name, 'UNSL1');
-      expect(domain.resolution).to.deep.equal({
+      const domain = await Domain.findOrCreateByName(uns.name);
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
+      expect(resolution.resolution).to.deep.equal({
         'crypto.ETH.address': '0x829BD824B016326A401d083B33D092293333A830',
       });
     });
@@ -496,8 +548,12 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name, 'CNS');
-      expect(domain.resolution).to.deep.equal({ 'custom-key': 'value' });
+      const domain = await Domain.findOrCreateByName(cns.name);
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
+      expect(resolution.resolution).to.deep.equal({ 'custom-key': 'value' });
     });
 
     it('should add custom and default key on Sync event', async () => {
@@ -512,8 +568,12 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name, 'CNS');
-      expect(domain.resolution).to.deep.equal({
+      const domain = await Domain.findOrCreateByName(cns.name);
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
+      expect(resolution.resolution).to.deep.equal({
         'crypto.ETH.address': '0x461781022A9C2De74f2171EB3c44F27320b13B8c',
         'custom-key': 'value',
       });
@@ -535,8 +595,12 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name, 'CNS');
-      expect(domain.resolution).to.deep.equal({
+      const domain = await Domain.findOrCreateByName(cns.name);
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
+      expect(resolution.resolution).to.deep.equal({
         'crypto.ETH.address': '0x461781022A9C2De74f2171EB3c44F27320b13B8c',
         'custom-key': 'value',
       });
