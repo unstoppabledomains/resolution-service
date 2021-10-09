@@ -30,10 +30,17 @@ export class ReplaceLocationField1632188507951 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "cns_registry_events" DROP COLUMN "blockchain"`,
     );
+    await queryRunner.query(`ALTER TABLE "domains" ADD "location" text`);
+    await queryRunner.query(
+      `UPDATE "domains" SET "location"='CNS' WHERE "blockchain"='ETH'`,
+    );
+    await queryRunner.query(
+      `UPDATE "domains" SET "location"='ZNS' WHERE "blockchain"='ZIL'`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "domains" ALTER "location" SET NOT NULL`,
+    );
     await queryRunner.query(`ALTER TABLE "domains" DROP COLUMN "blockchain"`);
     await queryRunner.query(`ALTER TABLE "domains" DROP COLUMN "network_id"`);
-    await queryRunner.query(
-      `ALTER TABLE "domains" ADD "location" text NOT NULL`,
-    );
   }
 }
