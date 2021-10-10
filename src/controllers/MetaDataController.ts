@@ -12,6 +12,7 @@ import { pathThatSvg } from 'path-that-svg';
 import { IsArray, IsOptional, IsString } from 'class-validator';
 import { env } from '../env';
 import { logger } from '../logger';
+import { getAvatarImageUrl } from '../utils/avatarImage';
 import punycode from 'punycode';
 
 const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
@@ -100,8 +101,12 @@ export class MetaDataController {
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain = await Domain.findByNode(token);
     if (!domain) {
-      return await this.defaultMetaResponse(domainOrToken);
+      return this.defaultMetaResponse(domainOrToken);
     }
+    const nftAvatarImageUrl = await getAvatarImageUrl(
+      domain.resolution['social.avatar.value'],
+      domain.ownerAddress || '',
+    ).catch(() => '');
 
     const description = this.getDomainDescription(
       domain.name,
@@ -110,17 +115,18 @@ export class MetaDataController {
     const domainAttributes = this.getDomainAttributes(
       domain.name,
       domain.resolution,
+      nftAvatarImageUrl !== '',
     );
 
     const metadata: OpenSeaMetadata = {
       name: domain.name,
       description,
       external_url: `https://unstoppabledomains.com/search?searchTerm=${domain.name}`,
-      image: this.generateDomainImageUrl(domain.name),
+      image: nftAvatarImageUrl || this.generateDomainImageUrl(domain.name),
       attributes: domainAttributes,
     };
 
-    if (!this.isDomainWithCustomImage(domain.name)) {
+    if (!this.isDomainWithCustomImage(domain.name) && !nftAvatarImageUrl) {
       metadata.image_data = await this.generateImageData(
         domain.name,
         domain.resolution,
@@ -186,7 +192,7 @@ export class MetaDataController {
   ): Promise<OpenSeaMetadata> {
     const name = domainOrToken.includes('.') ? domainOrToken : null;
     const description = name ? this.getDomainDescription(name, {}) : null;
-    const attributes = name ? this.getDomainAttributes(name, {}) : [];
+    const attributes = name ? this.getDomainAttributes(name, {}, false) : [];
     const image = name ? this.generateDomainImageUrl(name) : null;
     const image_data = name ? await this.generateImageData(name, {}) : null;
     const external_url = name
@@ -264,11 +270,19 @@ export class MetaDataController {
   private getDomainAttributes(
     name: string,
     resolution: Record<string, string>,
+    validNftAvatar?: boolean,
   ): OpenSeaMetadataAttribute[] {
-    return [
+    const attributes = [
       ...this.getBasicDomainAttributes(name, resolution),
       ...this.getAnimalAttributes(name),
     ];
+    if (validNftAvatar) {
+      attributes.push({
+        trait_type: 'avatar',
+        value: 'verified-nft',
+      });
+    }
+    return attributes;
   }
 
   private getBasicDomainAttributes(
