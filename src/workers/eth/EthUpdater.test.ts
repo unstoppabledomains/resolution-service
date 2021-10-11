@@ -115,7 +115,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: uns.name });
+      const domain = await Domain.findOne({
+        where: { name: uns.name },
+        relations: ['resolutions'],
+      });
       expect(domain).to.not.be.undefined;
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
@@ -137,7 +140,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: cns.name });
+      const domain = await Domain.findOne({
+        where: { name: cns.name },
+        relations: ['resolutions'],
+      });
       const resolution = domain?.getResolution(
         service.blockchain,
         service.networkId,
@@ -166,7 +172,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: uns.name });
+      const domain = await Domain.findOne({
+        where: { name: uns.name },
+        relations: ['resolutions'],
+      });
       const resolution = domain?.getResolution(
         service.blockchain,
         service.networkId,
@@ -200,14 +209,16 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: cns.name });
+      const domain = await Domain.findOne({
+        where: { name: cns.name },
+        relations: ['resolutions'],
+      });
       const resolution = domain?.getResolution(
         service.blockchain,
         service.networkId,
       );
       expect(domain).to.containSubset({
         name: cns.name,
-        location: 'CNS',
       });
       expect(resolution).to.containSubset({
         resolver: resolver.address.toLowerCase(),
@@ -236,18 +247,21 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: uns.name });
+      const domain = await Domain.findOne({
+        where: { name: uns.name },
+        relations: ['resolutions'],
+      });
       const resolution = domain?.getResolution(
         service.blockchain,
         service.networkId,
       );
       expect(domain).to.containSubset({
         name: uns.name,
-        location: 'UNSL1',
       });
       expect(resolution).to.containSubset({
         resolver: unsRegistry.address.toLowerCase(),
         ownerAddress: owner.toLowerCase(),
+        location: 'UNS',
         resolution: {
           'crypto.BTC.address': 'qp3gu0flg7tehyv73ua5nznlw8s040nz3uqnyffrcn',
         },
@@ -276,7 +290,10 @@ describe('EthUpdater', () => {
       await EthereumTestsHelper.mineBlocksForConfirmation();
 
       await service.run();
-      const domain = await Domain.findOne({ name: cns.name });
+      const domain = await Domain.findOne({
+        where: { name: cns.name },
+        relations: ['resolutions'],
+      });
       const resolution = domain?.getResolution(
         service.blockchain,
         service.networkId,
@@ -313,7 +330,10 @@ describe('EthUpdater', () => {
       await EthereumTestsHelper.mineBlocksForConfirmation();
 
       await service.run();
-      const domain = await Domain.findOne({ name: uns.name });
+      const domain = await Domain.findOne({
+        where: { name: uns.name },
+        relations: ['resolutions'],
+      });
       const resolution = domain?.getResolution(
         service.blockchain,
         service.networkId,
@@ -369,7 +389,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOneOrFail({ name: expectedDomainName });
+      const domain = await Domain.findOneOrFail({
+        where: { name: expectedDomainName },
+        relations: ['resolutions'],
+      });
       expect(domain.label).to.equal(expectedLabel);
     });
 
@@ -384,7 +407,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOneOrFail({ name: expectedDomainName });
+      const domain = await Domain.findOneOrFail({
+        where: { name: expectedDomainName },
+        relations: ['resolutions'],
+      });
       expect(domain.label).to.equal(expectedLabel);
     });
 
@@ -398,7 +424,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: expectedDomainName });
+      const domain = await Domain.findOne({
+        where: { name: expectedDomainName },
+        relations: ['resolutions'],
+      });
       expect(domain).to.be.undefined;
     });
 
@@ -412,7 +441,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: expectedDomainName });
+      const domain = await Domain.findOne({
+        where: { name: expectedDomainName },
+        relations: ['resolutions'],
+      });
       expect(domain).to.be.undefined;
     });
 
@@ -426,7 +458,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: expectedDomainName });
+      const domain = await Domain.findOne({
+        where: { name: expectedDomainName },
+        relations: ['resolutions'],
+      });
       expect(domain).to.be.undefined;
     });
 
@@ -440,7 +475,10 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: expectedDomainName });
+      const domain = await Domain.findOne({
+        where: { name: expectedDomainName },
+        relations: ['resolutions'],
+      });
       expect(domain).to.be.undefined;
     });
   });
@@ -595,12 +633,15 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name);
+      const domain = await Domain.findOne({
+        where: { name: cns.name },
+        relations: ['resolutions'],
+      });
       const resolution = domain?.getResolution(
         service.blockchain,
         service.networkId,
       );
-      expect(resolution.resolution).to.deep.equal({
+      expect(resolution?.resolution).to.deep.equal({
         'crypto.ETH.address': '0x461781022A9C2De74f2171EB3c44F27320b13B8c',
         'custom-key': 'value',
       });

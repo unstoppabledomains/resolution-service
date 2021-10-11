@@ -1,10 +1,9 @@
 import supertest from 'supertest';
 import { api } from '../api';
 import { expect } from 'chai';
-import { ApiKey, Domain } from '../models';
+import { ApiKey } from '../models';
 import { DomainTestHelper } from '../utils/testing/DomainTestHelper';
 import { znsNamehash, eip137Namehash } from '../utils/namehash';
-import DomainsResolution from '../models/DomainsResolution';
 import { env } from '../env';
 import { getRegistryAddressFromLocation } from '../utils/domainLocationUtils';
 
@@ -106,7 +105,7 @@ describe('DomainsController', () => {
         name: 'test.nft',
         node: eip137Namehash('test.nft'),
         registry: getRegistryAddressFromLocation('UNS'),
-        location: 'UNSL1',
+        location: 'UNS',
       });
 
       const znsResult = await supertest(api)
@@ -133,7 +132,7 @@ describe('DomainsController', () => {
         .send();
       expect(unsResult.status).eq(200);
       expect(unsResult.body.meta.registry).eq(
-        getRegistryAddressFromLocation('UNSL1'),
+        getRegistryAddressFromLocation('UNS'),
       );
     });
 
@@ -268,7 +267,6 @@ describe('DomainsController', () => {
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'CNS',
-        resolver: '',
       });
 
       const res = await supertest(api)
@@ -285,7 +283,7 @@ describe('DomainsController', () => {
                 location: resolution.location,
                 owner: resolution.ownerAddress,
                 registry: resolution.registry,
-                resolver: null,
+                resolver: resolution.resolver,
               },
               records: {},
             },
@@ -305,7 +303,6 @@ describe('DomainsController', () => {
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'CNS',
-        resolver: '',
       });
 
       const res = await supertest(api)
@@ -324,7 +321,7 @@ describe('DomainsController', () => {
                 location: resolution.location,
                 owner: resolution.ownerAddress,
                 registry: resolution.registry,
-                resolver: null,
+                resolver: resolution.resolver,
               },
               records: {},
             },
@@ -344,7 +341,6 @@ describe('DomainsController', () => {
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'CNS',
-        resolver: '',
       });
       const {
         domain: testDomainTwo,
@@ -356,7 +352,6 @@ describe('DomainsController', () => {
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'CNS',
-        resolver: '',
       });
 
       const res = await supertest(api)
@@ -373,7 +368,7 @@ describe('DomainsController', () => {
                 location: resolutionOne.location,
                 owner: resolutionOne.ownerAddress,
                 registry: resolutionOne.registry,
-                resolver: null,
+                resolver: resolutionOne.resolver,
               },
               records: {},
             },
@@ -386,7 +381,7 @@ describe('DomainsController', () => {
                 location: resolutionTwo.location,
                 owner: resolutionTwo.ownerAddress,
                 registry: resolutionTwo.registry,
-                resolver: null,
+                resolver: resolutionTwo.resolver,
               },
               records: {},
             },
@@ -434,7 +429,7 @@ describe('DomainsController', () => {
                 location: resolutionOne.location,
                 owner: resolutionOne.ownerAddress,
                 registry: resolutionOne.registry,
-                resolver: null,
+                resolver: resolutionOne.resolver,
               },
               records: {},
             },
@@ -451,7 +446,6 @@ describe('DomainsController', () => {
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         location: 'CNS',
-        resolver: '',
       });
       const res = await supertest(api)
         .get(
@@ -475,7 +469,6 @@ describe('DomainsController', () => {
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         location: 'CNS',
-        resolver: '',
       });
       await DomainTestHelper.createTestDomain({
         blockchain: 'ZIL',
@@ -504,7 +497,7 @@ describe('DomainsController', () => {
                 location: resolutionOne.location,
                 owner: resolutionOne.ownerAddress,
                 registry: resolutionOne.registry,
-                resolver: null,
+                resolver: resolutionOne.resolver,
               },
               records: {},
             },

@@ -56,6 +56,9 @@ export default class Domain extends Model {
   @OneToMany(
     (type) => DomainsResolution,
     (domainResolution) => domainResolution.domain,
+    {
+      cascade: ['insert', 'update', 'remove'],
+    },
   )
   resolutions: DomainsResolution[];
 
@@ -91,14 +94,24 @@ export default class Domain extends Model {
     node?: string,
     repository: Repository<Domain> = this.getRepository(),
   ): Promise<Domain | undefined> {
-    return node ? await repository.findOne({ node }) : undefined;
+    return node
+      ? await repository.findOne({
+          where: { node },
+          relations: ['resolutions'],
+        })
+      : undefined;
   }
 
   static async findOrBuildByNode(
     node: string,
     repository: Repository<Domain> = this.getRepository(),
   ): Promise<Domain> {
-    return (await repository.findOne({ node })) || new Domain({ node });
+    return (
+      (await repository.findOne({
+        where: { node },
+        relations: ['resolutions'],
+      })) || new Domain({ node })
+    );
   }
 
   private getSplittedName(): string[] {
@@ -119,24 +132,29 @@ export default class Domain extends Model {
     blockchain: BlockchainName,
     networkId: number,
   ): DomainsResolution {
-    let resolution = this.resolutions.filter(
+    let resolution = this.resolutions?.filter(
       (res) => res.blockchain === blockchain && res.networkId === networkId,
     )[0];
     if (resolution == undefined) {
-      resolution = new DomainsResolution();
-      resolution.blockchain = blockchain;
-      resolution.networkId = networkId;
+      resolution = new DomainsResolution({
+        blockchain,
+        networkId,
+      });
     }
     return resolution;
   }
 
   public setResolution(resolution: DomainsResolution) {
-    const otherResolutions = this.resolutions.filter(
+    const otherResolutions = this.resolutions?.filter(
       (res) =>
         res.blockchain != resolution.blockchain &&
         res.networkId != resolution.networkId,
     );
-    this.resolutions = [resolution, ...otherResolutions];
+    if (otherResolutions) {
+      this.resolutions = [resolution, ...otherResolutions];
+    } else {
+      this.resolutions = [resolution];
+    }
   }
 
   static normalizeResolver(resolver: string | null | undefined): string | null {
@@ -151,7 +169,10 @@ export default class Domain extends Model {
     name: string,
     repository: Repository<Domain> = this.getRepository(),
   ): Promise<Domain> {
-    const domain = await repository.findOne({ name });
+    const domain = await repository.findOne({
+      where: { name },
+      relations: ['resolutions'],
+    });
     if (domain) {
       return domain;
     }

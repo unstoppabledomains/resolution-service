@@ -135,7 +135,8 @@ describe('ZilWorker', () => {
       expect(txFromDb?.atxuid).to.equal(fakeTransaction.atxuid);
       // domain should be stored with ether addresses
       const domainFromDb = await Domain.findOne({
-        name: fakeTransaction.events[1].params.label + '.zil',
+        where: { name: fakeTransaction.events[1].params.label + '.zil' },
+        relations: ['resolutions'],
       });
       const dbResolution = domainFromDb?.getResolution(
         worker.blockchain,
@@ -195,7 +196,8 @@ describe('ZilWorker', () => {
       expect(txFromDb?.atxuid).to.equal(fakeTransaction.atxuid);
       // domain should be stored with ether addresses
       const domainFromDb = await Domain.findOne({
-        name: fakeTransaction.events[1].params.label + '.zil',
+        where: { name: fakeTransaction.events[1].params.label + '.zil' },
+        relations: ['resolutions'],
       });
       const dbResolution = domainFromDb?.getResolution(
         worker.blockchain,
@@ -238,7 +240,8 @@ describe('ZilWorker', () => {
       expect(txFromDb?.atxuid).to.equal(fakeTransaction.atxuid);
       // domain should not be process or added to the db due to wrong label
       const domainFromDb = await Domain.findOne({
-        name: fakeTransaction.events[0].params.label + '.zil',
+        where: { name: fakeTransaction.events[0].params.label + '.zil' },
+        relations: ['resolutions'],
       });
       expect(domainFromDb).to.not.exist;
     });
@@ -269,7 +272,8 @@ describe('ZilWorker', () => {
       expect(txFromDb?.atxuid).to.equal(fakeTransaction.atxuid);
       // domain should not be process or added to the db due to wrong label
       const domainFromDb = await Domain.findOne({
-        name: fakeTransaction.events[0].params.label + '.zil',
+        where: { name: fakeTransaction.events[0].params.label + '.zil' },
+        relations: ['resolutions'],
       });
       expect(domainFromDb).to.not.exist;
     });
@@ -300,7 +304,8 @@ describe('ZilWorker', () => {
       expect(txFromDb?.atxuid).to.equal(fakeTransaction.atxuid);
       // domain should not be process or added to the db due to wrong label
       const domainFromDb = await Domain.findOne({
-        name: fakeTransaction.events[0].params.label + '.zil',
+        where: { name: fakeTransaction.events[0].params.label + '.zil' },
+        relations: ['resolutions'],
       });
       expect(domainFromDb).to.not.exist;
     });
@@ -353,7 +358,8 @@ describe('ZilWorker', () => {
       expect(txFromDb?.atxuid).to.equal(fakeTransaction.atxuid);
       // domain should not be process or added to the db due to wrong label
       const domainFromDb = await Domain.findOne({
-        name: fakeTransaction.events[0].params.label + '.zil',
+        where: { name: fakeTransaction.events[0].params.label + '.zil' },
+        relations: ['resolutions'],
       });
       expect(domainFromDb).to.not.exist;
 
@@ -365,7 +371,8 @@ describe('ZilWorker', () => {
       expect(secondTxFromDb?.atxuid).to.equal(secondFakeTransaction.atxuid);
 
       const secondDomainFromDb = await Domain.findOne({
-        name: secondFakeTransaction.events[0].params.label + '.zil',
+        where: { name: secondFakeTransaction.events[0].params.label + '.zil' },
+        relations: ['resolutions'],
       });
       expect(secondDomainFromDb).exist;
     });
@@ -419,7 +426,10 @@ describe('ZilWorker', () => {
     expect(txFromDb?.atxuid).eq(0);
     expect(txFromDb?.events.length).eq(2);
     expect(txFromDb?.blockNumber).eq(247856);
-    const domainFromDb = await Domain.findOne({ name: 'activating.zil' });
+    const domainFromDb = await Domain.findOne({
+      where: { name: 'activating.zil' },
+      relations: ['resolutions'],
+    });
     const dbResolution = domainFromDb?.getResolution(
       worker.blockchain,
       worker.networkId,

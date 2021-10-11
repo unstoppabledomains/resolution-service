@@ -145,6 +145,8 @@ describe('MetaDataController', () => {
     it('should return branded animal domain metadata', async () => {
       const { domain: animalDomain } = await DomainTestHelper.createTestDomain({
         name: 'trustbear.crypto',
+        node:
+          '0x329b868d34359c1961358088be9bfbd21e65eb8ab95e90b21e50d99c02b34c72',
       });
       const expectedImageUrl =
         'https://storage.googleapis.com/dot-crypto-metadata-api/images/trust/bear.svg';

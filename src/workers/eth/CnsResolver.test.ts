@@ -119,6 +119,7 @@ describe('CnsResolver', () => {
     it('should fetch resolver', async () => {
       const { domain, resolution } = await DomainTestHelper.createTestDomain({
         name: testDomainName,
+        node: testTokenId.toHexString(),
       });
       await service.fetchResolver(domain, resolution, Domain.getRepository());
       expect(resolution.resolver).to.equal(resolver.address.toLowerCase());
@@ -137,6 +138,7 @@ describe('CnsResolver', () => {
         .then((receipt) => receipt.wait());
       const { domain, resolution } = await DomainTestHelper.createTestDomain({
         name: testDomainName,
+        node: testTokenId.toHexString(),
       });
 
       await service.fetchResolver(domain, resolution, Domain.getRepository());
@@ -153,6 +155,7 @@ describe('CnsResolver', () => {
         .then((receipt) => receipt.wait());
       const { domain, resolution } = await DomainTestHelper.createTestDomain({
         name: testDomainName,
+        node: testTokenId.toHexString(),
       });
       resolution.resolver = resolver.address.toLowerCase();
       (resolution.resolution = { hello: 'world' }),

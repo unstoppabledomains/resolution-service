@@ -67,9 +67,6 @@ describe('Domain', () => {
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        location: 'CNS',
       };
       const domain = Domain.create(domainMetaData);
       await domain.save();

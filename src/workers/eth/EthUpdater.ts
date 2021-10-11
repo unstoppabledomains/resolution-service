@@ -159,8 +159,10 @@ export class EthUpdater {
       );
     }
 
-    const domain = await Domain.findOrBuildByNode(producedNode);
-
+    const domain = await Domain.findOrBuildByNode(
+      producedNode,
+      domainRepository,
+    );
     const resolution = domain.getResolution(this.blockchain, this.networkId);
 
     domain.name = uri;

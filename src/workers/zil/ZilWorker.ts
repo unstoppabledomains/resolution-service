@@ -160,6 +160,7 @@ export default class ZilWorker {
       name: `${label}.${parentDomain.name}`,
     });
     resolution.registry = this.provider.registryAddress;
+    resolution.location = 'ZNS';
     domain.setResolution(resolution);
     await repository.save(domain);
   }

@@ -1,4 +1,4 @@
-import { Column, Entity, Index, ManyToOne, Unique } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, Unique } from 'typeorm';
 import {
   IsEnum,
   IsObject,
@@ -57,6 +57,7 @@ export default class DomainsResolution extends Model {
   networkId: number;
 
   @ManyToOne(() => Domain, (domain) => domain.resolutions)
+  @JoinColumn({ name: 'domain_id' })
   domain: Domain;
 
   constructor(attributes?: Attributes<DomainsResolution>) {

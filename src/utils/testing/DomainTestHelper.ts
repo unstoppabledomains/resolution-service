@@ -31,21 +31,20 @@ export class DomainTestHelper {
       location: options.location ?? 'CNS',
       resolution: options.resolution ?? {},
       resolver:
-        options.resolver === ''
-          ? null
-          : options.resolver ?? '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
+        options.resolver ?? '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
       registry:
         options.registry ??
         getRegistryAddressFromLocation(options.location ?? 'CNS'),
     });
 
-    const domain = await Domain.findOrCreate({
+    const domain = new Domain({
       name: options.name ?? 'testdomain.crypto',
       node:
         options.node ??
         '0x77694b72888ab3b13c9c7eb4f343045d3820c1202c1765255b896280a8bc7b55',
       resolutions: [resolution],
     });
+    await domain.save();
     return { domain, resolution };
   }
 }

@@ -100,41 +100,40 @@ class DomainsListResponse {
 @JsonController()
 @UseBefore(ApiKeyAuthMiddleware)
 export class DomainsController {
-  private prepareDomainResponse(domain: Domain): DomainResponse {
-    const location = LocationFromDomainName(domain.name);
-    let resolution: DomainsResolution;
-    if (location === 'ZNS') {
-      resolution = domain.getResolution(
-        'ZIL',
-        env.APPLICATION.ZILLIQA.NETWORK_ID,
-      );
-    } else {
-      resolution = domain.getResolution(
-        'ETH',
-        env.APPLICATION.ETHEREUM.CHAIN_ID,
-      );
-    }
-    const response = new DomainResponse();
-    response.meta = {
-      domain: domain.name,
-      location: resolution.location,
-      owner: resolution.ownerAddress,
-      resolver: resolution.resolver,
-      registry: resolution.registry,
-    };
-    response.records = resolution.resolution;
-    return response;
-  }
-
   @Get('/domains/:domainName')
   @ResponseSchema(DomainResponse)
   async getDomain(
     @Param('domainName') domainName: string,
   ): Promise<DomainResponse> {
     domainName = domainName.toLowerCase();
-    const domain = await Domain.findOne({ name: domainName });
+    const domain = await Domain.findOne({
+      where: { name: domainName },
+      relations: ['resolutions'],
+    });
     if (domain) {
-      return this.prepareDomainResponse(domain);
+      const location = LocationFromDomainName(domain.name);
+      let resolution: DomainsResolution;
+      if (location === 'ZNS') {
+        resolution = domain.getResolution(
+          'ZIL',
+          env.APPLICATION.ZILLIQA.NETWORK_ID,
+        );
+      } else {
+        resolution = domain.getResolution(
+          'ETH',
+          env.APPLICATION.ETHEREUM.CHAIN_ID,
+        );
+      }
+      const response = new DomainResponse();
+      response.meta = {
+        domain: domain.name,
+        location: resolution.location,
+        owner: resolution.ownerAddress,
+        resolver: resolution.resolver,
+        registry: resolution.registry,
+      };
+      response.records = resolution.resolution;
+      return response;
     }
     return {
       meta: {
@@ -174,22 +173,30 @@ export class DomainsController {
     @QueryParams() query: DomainsListQuery,
   ): Promise<DomainsListResponse> {
     const ownersQuery = query.owners.map((owner) => owner.toLowerCase());
-    const domains = await Domain.find({
+    const resolutions = await DomainsResolution.find({
       where: {
         ownerAddress: ownersQuery ? In(ownersQuery) : undefined,
-        resolutions: {
-          location: In(query.locations),
-        },
+        location: In(query.locations),
       },
+      relations: ['domain'],
       take: query.perPage,
       skip: (query.page - 1) * query.perPage,
     });
     const response = new DomainsListResponse();
     response.data = [];
-    for (const domain of domains) {
+    for (const resolution of resolutions) {
       response.data.push({
-        id: domain.name,
-        attributes: this.prepareDomainResponse(domain),
+        id: resolution.domain.name,
+        attributes: {
+          meta: {
+            domain: resolution.domain.name,
+            location: resolution.location,
+            owner: resolution.ownerAddress,
+            resolver: resolution.resolver,
+            registry: resolution.registry,
+          },
+          records: resolution.resolution,
+        },
       });
     }
     return response;
