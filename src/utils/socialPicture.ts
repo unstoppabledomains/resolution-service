@@ -2,15 +2,15 @@ import { ethers } from 'ethers';
 import { env } from '../env';
 import nodeFetch from 'node-fetch';
 
-const parseAvatarRecord = (avatarRecord: string) => {
-  const regex = /(erc721|erc1155):(0x[a-fA-F0-9]{40})\/(\d+)/;
+const parsePictureRecord = (avatarRecord: string) => {
+  const regex = /(1)\/(erc721|erc1155):(0x[a-fA-F0-9]{40})\/(\d+)/;
   const matches = regex.exec(avatarRecord);
-  if (!matches || matches.length !== 4) {
+  if (!matches || matches.length !== 5) {
     throw new Error('Invalid avatar record');
   }
-  const [, nftStandard, contractAddress, tokenId] = matches;
+  const [, chainId, nftStandard, contractAddress, tokenId] = matches;
 
-  return { nftStandard, contractAddress, tokenId };
+  return { chainId, nftStandard, contractAddress, tokenId };
 };
 
 const constructNFTContract = async (
@@ -102,14 +102,14 @@ const getImageURLFromTokenURI = async (tokenURI: string) => {
   return metadata.image;
 };
 
-export const getAvatarImageUrl = async (
+export const getSocialPictureUrl = async (
   avatarRecord: string,
   ownerAddress: string,
 ): Promise<string> => {
   if (!avatarRecord || !ownerAddress) {
     return '';
   }
-  const { nftStandard, contractAddress, tokenId } = parseAvatarRecord(
+  const { nftStandard, contractAddress, tokenId } = parsePictureRecord(
     avatarRecord,
   );
   const nftContract = await constructNFTContract(contractAddress, nftStandard);

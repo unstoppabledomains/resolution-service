@@ -12,7 +12,7 @@ import { pathThatSvg } from 'path-that-svg';
 import { IsArray, IsOptional, IsString } from 'class-validator';
 import { env } from '../env';
 import { logger } from '../logger';
-import { getAvatarImageUrl } from '../utils/avatarImage';
+import { getSocialPictureUrl } from '../utils/socialPicture';
 import punycode from 'punycode';
 
 const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
@@ -103,8 +103,8 @@ export class MetaDataController {
     if (!domain) {
       return this.defaultMetaResponse(domainOrToken);
     }
-    const nftAvatarImageUrl = await getAvatarImageUrl(
-      domain.resolution['social.avatar.value'],
+    const socialPictureUrl = await getSocialPictureUrl(
+      domain.resolution['social.picture.value'],
       domain.ownerAddress || '',
     ).catch(() => '');
 
@@ -115,18 +115,18 @@ export class MetaDataController {
     const domainAttributes = this.getDomainAttributes(
       domain.name,
       domain.resolution,
-      nftAvatarImageUrl !== '',
+      socialPictureUrl !== '',
     );
 
     const metadata: OpenSeaMetadata = {
       name: domain.name,
       description,
       external_url: `https://unstoppabledomains.com/search?searchTerm=${domain.name}`,
-      image: nftAvatarImageUrl || this.generateDomainImageUrl(domain.name),
+      image: socialPictureUrl || this.generateDomainImageUrl(domain.name),
       attributes: domainAttributes,
     };
 
-    if (!this.isDomainWithCustomImage(domain.name) && !nftAvatarImageUrl) {
+    if (!this.isDomainWithCustomImage(domain.name) && !socialPictureUrl) {
       metadata.image_data = await this.generateImageData(
         domain.name,
         domain.resolution,

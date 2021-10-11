@@ -147,7 +147,7 @@ describe('MetaDataController', () => {
         name: 'matt.crypto',
         node: eip137Namehash('matt.crypto'),
         resolution: {
-          'social.avatar.value':
+          'social.picture.value':
             'erc721:0x9307edc4f23d87f9783a999f870b728ab9d34fe5/3531',
         },
         location: 'CNS',
