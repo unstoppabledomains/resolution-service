@@ -17,7 +17,7 @@ export const DomainLocations = ['CNS', 'ZNS', 'UNS', 'UNMINTED'];
 export type Location = typeof DomainLocations[number];
 
 @Entity({ name: 'domains_resolution' })
-@Unique(['id', 'blockchain', 'network_id'])
+@Unique(['id', 'blockchain', 'networkId'])
 export default class DomainsResolution extends Model {
   static AddressRegex = /^0x[a-fA-F0-9]{40}$/;
   static NullAddress = '0x0000000000000000000000000000000000000000';
