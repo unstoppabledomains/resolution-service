@@ -23,6 +23,12 @@ if (!process.env.VIEWBLOCK_API_KEY) {
 if (!process.env.ETHEREUM_JSON_RPC_API_URL) {
   requiredEnvNotSet.push('ETHEREUM_JSON_RPC_API_URL');
 }
+if (!process.env.POLYGON_JSON_RPC_API_URL) {
+  requiredEnvNotSet.push('POLYGON_JSON_RPC_API_URL');
+}
+if (!process.env.POLYGON_CHAIN_ID) {
+  requiredEnvNotSet.push('POLYGON_CHAIN_ID');
+}
 
 if (requiredEnvNotSet.length !== 0) {
   throw new Error(
@@ -32,12 +38,33 @@ if (requiredEnvNotSet.length !== 0) {
 
 const ZnsNetwork = process.env.ZNS_NETWORK || 'mainnet';
 
+export type EthUpdaterConfig = {
+  CNS_REGISTRY_EVENTS_STARTING_BLOCK: number;
+  UNS_REGISTRY_EVENTS_STARTING_BLOCK: number;
+  JSON_RPC_API_URL: string;
+  NETWORK_ID: number;
+  CONFIRMATION_BLOCKS: number;
+  BLOCK_FETCH_LIMIT: number;
+  CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK: number;
+  RECORDS_PER_PAGE: number;
+  FETCH_INTERVAL: number;
+  MAX_REORG_SIZE: number;
+  ACCEPTABLE_DELAY_IN_BLOCKS: number;
+};
+
 export const env = {
   APPLICATION: {
     PORT: process.env.RESOLUTION_API_PORT || process.env.PORT || 3000,
     RUNNING_MODE: process.env.RESOLUTION_RUNNING_MODE
       ? process.env.RESOLUTION_RUNNING_MODE.split(',')
-      : ['MIGRATIONS', 'LOAD_SNAPSHOT', 'API', 'ETH_WORKER', 'ZIL_WORKER'],
+      : [
+          'MIGRATIONS',
+          'LOAD_SNAPSHOT',
+          'API',
+          'ETH_WORKER',
+          'MATIC_WORKER',
+          'ZIL_WORKER',
+        ],
     ETHEREUM: {
       CNS_REGISTRY_EVENTS_STARTING_BLOCK: Number(
         process.env.CNS_REGISTRY_EVENTS_STARTING_BLOCK || 9080000,
@@ -60,7 +87,30 @@ export const env = {
       ACCEPTABLE_DELAY_IN_BLOCKS: Number(
         process.env.ETHEREUM_ACCEPTABLE_DELAY_IN_BLOCKS || 100,
       ),
-    },
+    } as EthUpdaterConfig,
+    POLYGON: {
+      CNS_REGISTRY_EVENTS_STARTING_BLOCK: Number(
+        process.env.POLYGON_CNS_REGISTRY_EVENTS_STARTING_BLOCK || 0,
+      ),
+      UNS_REGISTRY_EVENTS_STARTING_BLOCK: Number(
+        process.env.POLYGON_UNS_REGISTRY_EVENTS_STARTING_BLOCK || 0,
+      ),
+      JSON_RPC_API_URL: process.env.POLYGON_JSON_RPC_API_URL,
+      NETWORK_ID: Number(process.env.POLYGON_NETWORK_ID || 1),
+      CONFIRMATION_BLOCKS: Number(
+        process.env.POLYGON_CONFIRMATION_BLOCKS || 20,
+      ),
+      BLOCK_FETCH_LIMIT: Number(process.env.POLYGON_BLOCK_FETCH_LIMIT || 500),
+      CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK: Number(
+        process.env.POLYGON_CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK || 0,
+      ),
+      RECORDS_PER_PAGE: Number(process.env.POLYGON_RECORDS_PER_PAGE || 100),
+      FETCH_INTERVAL: Number(process.env.POLYGON_FETCH_INTERVAL || 5000),
+      MAX_REORG_SIZE: Number(process.env.POLYGON_MAX_REORG_SIZE || 200),
+      ACCEPTABLE_DELAY_IN_BLOCKS: Number(
+        process.env.POLYGON_ACCEPTABLE_DELAY_IN_BLOCKS || 100,
+      ),
+    } as EthUpdaterConfig,
     ZILLIQA: {
       NETWORK: ZnsNetwork,
       NETWORK_ID: Number(ZnsNetwork === 'mainnet' ? 1 : 333),

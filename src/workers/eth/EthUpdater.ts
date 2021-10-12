@@ -7,13 +7,17 @@ import { EntityManager, getConnection, Repository } from 'typeorm';
 import { ETHContracts } from '../../contracts';
 import { eip137Namehash } from '../../utils/namehash';
 import { EthUpdaterError } from '../../errors/EthUpdaterError';
-import { EthereumProvider } from '../../workers/EthereumProvider';
+import {
+  GetProviderForConfig,
+  StaticJsonRpcProvider,
+} from '../../workers/EthereumProvider';
 import { unwrap } from '../../utils/option';
 import { CnsResolverError } from '../../errors/CnsResolverError';
 import { ExecutionRevertedError } from './BlockchainErrors';
 import { CnsResolver } from './CnsResolver';
 import * as ethersUtils from '../../utils/ethersUtils';
 import { Blockchain } from '../../types/common';
+import { EthUpdaterConfig } from '../../env';
 
 export class EthUpdater {
   private unsRegistry: Contract = ETHContracts.UNSRegistry.getContract();
@@ -21,28 +25,38 @@ export class EthUpdater {
   private cnsResolver: CnsResolver = new CnsResolver();
   readonly blockchain: Blockchain = Blockchain.ETH;
   readonly networkId: number = env.APPLICATION.ETHEREUM.NETWORK_ID;
+  private provider: StaticJsonRpcProvider;
+
+  private config: EthUpdaterConfig;
 
   private currentSyncBlock = 0;
   private currentSyncBlockHash = '';
 
-  static async getLatestNetworkBlock(): Promise<number> {
+  constructor(blockchain: Blockchain, config: EthUpdaterConfig) {
+    this.config = config;
+    this.networkId = config.NETWORK_ID;
+    this.blockchain = blockchain;
+    this.provider = GetProviderForConfig(config);
+  }
+
+  async getLatestNetworkBlock(): Promise<number> {
     return (
       (await ethersUtils.getLatestNetworkBlock()) -
-      env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS
+      this.config.CONFIRMATION_BLOCKS
     );
   }
 
-  static getLatestMirroredBlock(): Promise<number> {
-    return WorkerStatus.latestMirroredBlockForWorker('ETH');
+  getLatestMirroredBlock(): Promise<number> {
+    return WorkerStatus.latestMirroredBlockForWorker(this.blockchain);
   }
 
-  static getLatestMirroredBlockHash(): Promise<string | undefined> {
-    return WorkerStatus.latestMirroredBlockHashForWorker('ETH');
+  getLatestMirroredBlockHash(): Promise<string | undefined> {
+    return WorkerStatus.latestMirroredBlockHashForWorker(this.blockchain);
   }
 
   private async saveLastMirroredBlock(manager: EntityManager): Promise<void> {
     return WorkerStatus.saveWorkerStatus(
-      'ETH',
+      this.blockchain,
       this.currentSyncBlock,
       this.currentSyncBlockHash,
       undefined,
@@ -375,13 +389,13 @@ export class EthUpdater {
     blockHash: string;
   }> {
     const latestEventBlocks = await CnsRegistryEvent.latestEventBlocks(
-      env.APPLICATION.ETHEREUM.MAX_REORG_SIZE,
+      this.config.MAX_REORG_SIZE,
     );
 
     // Check first and last blocks as edge cases
     const [firstNetBlock, lastNetBlock] = await Promise.all([
-      EthereumProvider.getBlock(latestEventBlocks[0].blockNumber),
-      EthereumProvider.getBlock(
+      this.provider.getBlock(latestEventBlocks[0].blockNumber),
+      this.provider.getBlock(
         latestEventBlocks[latestEventBlocks.length - 1].blockNumber,
       ),
     ]);
@@ -389,7 +403,7 @@ export class EthUpdater {
     // If the oldest event block doesn't match, the reorg must be too long.
     if (firstNetBlock.hash !== latestEventBlocks[0].blockHash) {
       throw new EthUpdaterError(
-        `Detected reorg that is larger than ${env.APPLICATION.ETHEREUM.MAX_REORG_SIZE} blocks. Manual resync is required.`,
+        `Detected reorg that is larger than ${this.config.MAX_REORG_SIZE} blocks. Manual resync is required.`,
       );
     }
 
@@ -408,7 +422,7 @@ export class EthUpdater {
       const mid =
         searchReorgFrom + Math.floor((searchReorgTo - searchReorgFrom) / 2);
       const ourBlock = latestEventBlocks[mid];
-      const netBlock = await EthereumProvider.getBlock(ourBlock.blockNumber);
+      const netBlock = await this.provider.getBlock(ourBlock.blockNumber);
       if (ourBlock.blockHash !== netBlock.hash) {
         searchReorgTo = mid;
       } else {
@@ -478,10 +492,10 @@ export class EthUpdater {
     fromBlock: number;
     toBlock: number;
   }> {
-    const latestMirrored = await EthUpdater.getLatestMirroredBlock();
-    const latestNetBlock = await EthUpdater.getLatestNetworkBlock();
-    const latestMirroredHash = await EthUpdater.getLatestMirroredBlockHash();
-    const networkHash = (await EthereumProvider.getBlock(latestMirrored))?.hash;
+    const latestMirrored = await this.getLatestMirroredBlock();
+    const latestNetBlock = await this.getLatestNetworkBlock();
+    const latestMirroredHash = await this.getLatestMirroredBlockHash();
+    const networkHash = (await this.provider.getBlock(latestMirrored))?.hash;
 
     const empty = (await CnsRegistryEvent.count()) == 0;
     const blockHeightMatches = latestNetBlock >= latestMirrored;
@@ -521,7 +535,7 @@ export class EthUpdater {
 
     while (this.currentSyncBlock < toBlock) {
       const fetchBlock = Math.min(
-        this.currentSyncBlock + env.APPLICATION.ETHEREUM.BLOCK_FETCH_LIMIT,
+        this.currentSyncBlock + this.config.BLOCK_FETCH_LIMIT,
         toBlock,
       );
 
@@ -534,7 +548,7 @@ export class EthUpdater {
         await this.processEvents(events, manager);
         this.currentSyncBlock = fetchBlock;
         this.currentSyncBlockHash = (
-          await EthereumProvider.getBlock(this.currentSyncBlock)
+          await this.provider.getBlock(this.currentSyncBlock)
         ).hash;
         await this.saveLastMirroredBlock(manager);
       });
@@ -542,15 +556,15 @@ export class EthUpdater {
   }
 }
 
-export function startWorker(): void {
+export function startWorker(blockchain: Blockchain, config: any): void {
   setIntervalAsync(async () => {
     try {
       logger.info('EthUpdater is pulling updates from Ethereum');
-      await new EthUpdater().run();
+      await new EthUpdater(blockchain, config).run();
     } catch (error) {
       logger.error(
         `Unhandled error occured while processing ETH events: ${error}`,
       );
     }
-  }, env.APPLICATION.ETHEREUM.FETCH_INTERVAL);
+  }, config.FETCH_INTERVAL);
 }
