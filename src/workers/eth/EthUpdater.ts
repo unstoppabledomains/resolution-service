@@ -2,7 +2,7 @@ import { logger } from '../../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
 import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import { env } from '../../env';
-import { Contract, Event, BigNumber, ethers } from 'ethers';
+import { Contract, Event, BigNumber } from 'ethers';
 import { EntityManager, getConnection, Repository } from 'typeorm';
 import { ETHContracts } from '../../contracts';
 import { eip137Namehash } from '../../utils/namehash';
@@ -13,6 +13,7 @@ import { CnsResolverError } from '../../errors/CnsResolverError';
 import { ExecutionRevertedError } from './BlockchainErrors';
 import { CnsResolver } from './CnsResolver';
 import * as ethersUtils from '../../utils/ethersUtils';
+import Bugsnag from '@bugsnag/js';
 
 export class EthUpdater {
   private unsRegistry: Contract = ETHContracts.UNSRegistry.getContract();
@@ -529,6 +530,7 @@ export function startWorker(): void {
       logger.error(
         `Unhandled error occured while processing ETH events: ${error}`,
       );
+      Bugsnag.notify(error);
     }
   }, env.APPLICATION.ETHEREUM.FETCH_INTERVAL);
 }
