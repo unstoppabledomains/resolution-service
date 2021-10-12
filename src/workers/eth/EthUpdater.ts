@@ -13,7 +13,6 @@ import { CnsResolverError } from '../../errors/CnsResolverError';
 import { ExecutionRevertedError } from './BlockchainErrors';
 import { CnsResolver } from './CnsResolver';
 import * as ethersUtils from '../../utils/ethersUtils';
-import Bugsnag from '@bugsnag/js';
 
 export class EthUpdater {
   private unsRegistry: Contract = ETHContracts.UNSRegistry.getContract();
@@ -530,7 +529,6 @@ export function startWorker(): void {
       logger.error(
         `Unhandled error occured while processing ETH events: ${error}`,
       );
-      Bugsnag.notify(error);
     }
   }, env.APPLICATION.ETHEREUM.FETCH_INTERVAL);
 }

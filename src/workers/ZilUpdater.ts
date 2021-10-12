@@ -2,7 +2,6 @@ import { logger } from '../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
 import ZilWorker from './zil/ZilWorker';
 import { env } from '../env';
-import Bugsnag from '@bugsnag/js';
 
 const runWorker = async (worker: ZilWorker): Promise<void> => {
   try {
@@ -11,7 +10,6 @@ const runWorker = async (worker: ZilWorker): Promise<void> => {
   } catch (error) {
     logger.error('Failed to run the ZilWorker');
     logger.error(error);
-    Bugsnag.notify(error);
   }
 };
 
