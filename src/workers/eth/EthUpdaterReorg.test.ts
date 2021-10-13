@@ -1,8 +1,8 @@
 import { BigNumber, Contract } from 'ethers';
 import { randomBytes } from 'crypto';
 import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
-import { EthereumProvider } from '../EthereumProvider';
-import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
+import { EthereumProvider } from '../../workers/EthereumProvider';
+import { EthereumHelper } from '../../utils/testing/EthereumTestsHelper';
 import { EthUpdater } from './EthUpdater';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
@@ -12,6 +12,7 @@ import { Block } from '@ethersproject/abstract-provider';
 import DomainsResolution from '../../models/DomainsResolution';
 import { env } from '../../env';
 import { Blockchain } from '../../types/common';
+import { getLatestNetworkBlock } from '../../utils/ethersUtils';
 
 type NSConfig = {
   tld: string;
@@ -74,15 +75,15 @@ describe('EthUpdater handles reorgs', () => {
   };
 
   before(async () => {
-    await EthereumTestsHelper.startNetwork();
-    await EthereumTestsHelper.resetNetwork();
-    owner = EthereumTestsHelper.owner().address;
-    recipient = EthereumTestsHelper.getAccount('9').address;
+    await EthereumHelper.startNetwork();
+    await EthereumHelper.resetNetwork();
+    owner = EthereumHelper.owner().address;
+    recipient = EthereumHelper.getAccount('9').address;
     mintingManager = ETHContracts.MintingManager.getContract().connect(
-      EthereumTestsHelper.minter(),
+      EthereumHelper.minter(),
     );
     unsRegistry = ETHContracts.UNSRegistry.getContract().connect(
-      EthereumTestsHelper.owner(),
+      EthereumHelper.owner(),
     );
   });
 
@@ -97,21 +98,22 @@ describe('EthUpdater handles reorgs', () => {
   // Starting timeline:
   // 0----10b----d1----10b----d2----100b---->
   beforeEach(async () => {
-    await EthereumTestsHelper.startNetwork();
-    await EthereumTestsHelper.resetNetwork();
+    await EthereumHelper.startNetwork();
+    await EthereumHelper.resetNetwork();
 
-    await EthereumTestsHelper.mineBlocksForConfirmation(10);
+    await EthereumHelper.mineBlocksForConfirmation(10);
     domainAt10 = await mintDomain();
 
-    await EthereumTestsHelper.mineBlocksForConfirmation(10);
+    await EthereumHelper.mineBlocksForConfirmation(10);
     domainAt20 = await mintDomain();
 
-    await EthereumTestsHelper.mineBlocksForConfirmation(100);
+    await EthereumHelper.mineBlocksForConfirmation(100);
     oldBlock = await EthereumProvider.getBlock(
-      await EthUpdater.getLatestNetworkBlock(),
+      (await getLatestNetworkBlock()) -
+        env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS,
     );
 
-    service = new EthUpdater();
+    service = new EthUpdater(Blockchain.ETH, env.APPLICATION.ETHEREUM);
     await service.run();
   });
 
@@ -213,9 +215,10 @@ describe('EthUpdater handles reorgs', () => {
   // 0----10b----d1----10b----x----d2----100b----d3----20b---->
   it('should fix a reorg with new events', async () => {
     const domainAt120 = await mintDomain();
-    await EthereumTestsHelper.mineBlocksForConfirmation(20);
+    await EthereumHelper.mineBlocksForConfirmation(20);
     const newBlock = await EthereumProvider.getBlock(
-      await EthUpdater.getLatestNetworkBlock(),
+      (await getLatestNetworkBlock()) -
+        env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS,
     );
     await WorkerStatus.saveWorkerStatus('ETH', oldBlock.number, '0xdead');
     const reorgEvents = await CnsRegistryEvent.find({
@@ -334,9 +337,10 @@ describe('EthUpdater handles reorgs', () => {
       .then((receipt) => {
         return receipt.wait();
       });
-    await EthereumTestsHelper.mineBlocksForConfirmation(20);
+    await EthereumHelper.mineBlocksForConfirmation(20);
     const newBlock = await EthereumProvider.getBlock(
-      await EthUpdater.getLatestNetworkBlock(),
+      (await getLatestNetworkBlock()) -
+        env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS,
     );
 
     const deleteSpy = sinonSandbox.spy(CnsRegistryEvent, 'cleanUpEvents');

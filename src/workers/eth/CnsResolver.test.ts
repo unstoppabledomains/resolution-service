@@ -2,7 +2,7 @@ import { BigNumber, Contract } from 'ethers';
 import { randomBytes } from 'crypto';
 import { env } from '../../env';
 import { Domain, WorkerStatus } from '../../models';
-import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
+import { EthereumHelper } from '../../utils/testing/EthereumTestsHelper';
 import { CnsResolver } from './CnsResolver';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
@@ -67,17 +67,17 @@ describe('CnsResolver', () => {
   const AddressZero = '0x0000000000000000000000000000000000000000';
 
   before(async () => {
-    await EthereumTestsHelper.startNetwork();
-    await EthereumTestsHelper.resetNetwork();
+    await EthereumHelper.startNetwork();
+    await EthereumHelper.resetNetwork();
 
     registry = ETHContracts.CNSRegistry.getContract().connect(
-      EthereumTestsHelper.owner(),
+      EthereumHelper.owner(),
     );
     resolver = ETHContracts.Resolver.getContract().connect(
-      EthereumTestsHelper.owner(),
+      EthereumHelper.owner(),
     );
     whitelistedMinter = ETHContracts.WhitelistedMinter.getContract().connect(
-      EthereumTestsHelper.minter(),
+      EthereumHelper.minter(),
     );
   });
 
@@ -100,13 +100,13 @@ describe('CnsResolver', () => {
     );
     await whitelistedMinter.functions
       .mintSLDToDefaultResolver(
-        EthereumTestsHelper.owner().address,
+        EthereumHelper.owner().address,
         testDomainLabel,
         [],
         [],
       )
       .then((receipt) => receipt.wait());
-    await EthereumTestsHelper.mineBlocksForConfirmation();
+    await EthereumHelper.mineBlocksForConfirmation();
 
     service = new CnsResolver();
   });

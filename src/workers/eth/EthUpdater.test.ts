@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto';
 import { env } from '../../env';
 import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import { EthereumProvider } from '../EthereumProvider';
-import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
+import { EthereumHelper } from '../../utils/testing/EthereumTestsHelper';
 import { EthUpdater } from './EthUpdater';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
@@ -48,28 +48,28 @@ describe('EthUpdater', () => {
   let cns: NSConfig;
 
   before(async () => {
-    await EthereumTestsHelper.startNetwork();
-    await EthereumTestsHelper.resetNetwork();
-    owner = EthereumTestsHelper.owner().address;
+    await EthereumHelper.startNetwork();
+    await EthereumHelper.resetNetwork();
+    owner = EthereumHelper.owner().address;
     unsRegistry = ETHContracts.UNSRegistry.getContract().connect(
-      EthereumTestsHelper.owner(),
+      EthereumHelper.owner(),
     );
     cnsRegistry = ETHContracts.CNSRegistry.getContract().connect(
-      EthereumTestsHelper.owner(),
+      EthereumHelper.owner(),
     );
     resolver = ETHContracts.Resolver.getContract().connect(
-      EthereumTestsHelper.owner(),
+      EthereumHelper.owner(),
     );
     mintingManager = ETHContracts.MintingManager.getContract().connect(
-      EthereumTestsHelper.minter(),
+      EthereumHelper.minter(),
     );
     whitelistedMinter = ETHContracts.WhitelistedMinter.getContract().connect(
-      EthereumTestsHelper.minter(),
+      EthereumHelper.minter(),
     );
   });
 
   after(async () => {
-    await EthereumTestsHelper.stopNetwork();
+    await EthereumHelper.stopNetwork();
   });
 
   beforeEach(async () => {
@@ -89,12 +89,12 @@ describe('EthUpdater', () => {
       .mintSLDToDefaultResolver(owner, cns.label, [], [])
       .then((receipt) => receipt.wait());
 
-    service = new EthUpdater();
+    service = new EthUpdater('ETH', env.APPLICATION.ETHEREUM);
   });
 
   it('should save worker stats', async () => {
     // test domain is created in beforeEach hook
-    await EthereumTestsHelper.mineBlocksForConfirmation();
+    await EthereumHelper.mineBlocksForConfirmation();
 
     await service.run();
 
@@ -111,7 +111,7 @@ describe('EthUpdater', () => {
   describe('basic events', () => {
     it('processes a NewUri event', async () => {
       // test domain is created in beforeEach hook
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -129,14 +129,14 @@ describe('EthUpdater', () => {
     });
 
     it('processes a cns Transfer event', async () => {
-      const recipient = await EthereumTestsHelper.createAccount();
+      const recipient = await EthereumHelper.createAccount();
       const recipientAddress = await recipient.getAddress();
 
       await cnsRegistry.functions
         .transferFrom(owner, recipientAddress, cns.tokenId)
         .then((receipt) => receipt.wait());
 
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -161,14 +161,14 @@ describe('EthUpdater', () => {
     });
 
     it('processes a uns Transfer event', async () => {
-      const recipient = await EthereumTestsHelper.createAccount();
+      const recipient = await EthereumHelper.createAccount();
       const recipientAddress = await recipient.getAddress();
 
       await unsRegistry.functions
         .transferFrom(owner, recipientAddress, uns.tokenId)
         .then((receipt) => receipt.wait());
 
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -205,7 +205,7 @@ describe('EthUpdater', () => {
           cns.tokenId,
         )
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -246,7 +246,7 @@ describe('EthUpdater', () => {
           uns.tokenId,
         )
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -292,7 +292,7 @@ describe('EthUpdater', () => {
       await cnsRegistry.functions
         .burn(cns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
       const domain = await Domain.findOne({
@@ -332,7 +332,7 @@ describe('EthUpdater', () => {
       await unsRegistry.functions
         .burn(uns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
       const domain = await Domain.findOne({
@@ -363,13 +363,13 @@ describe('EthUpdater', () => {
     });
 
     it('processes an approve event', async () => {
-      const recipient = await EthereumTestsHelper.createAccount();
+      const recipient = await EthereumHelper.createAccount();
       const recipientAddress = await recipient.getAddress();
 
       await unsRegistry.functions
         .approve(recipientAddress, uns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -390,7 +390,7 @@ describe('EthUpdater', () => {
       await whitelistedMinter.functions
         .mintSLDToDefaultResolver(owner, expectedLabel, [], [])
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -410,7 +410,7 @@ describe('EthUpdater', () => {
       await mintingManager.functions
         .mintSLD(owner, uns.tldHash, expectedLabel)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -427,7 +427,7 @@ describe('EthUpdater', () => {
       await whitelistedMinter.functions
         .mintSLDToDefaultResolver(owner, expectedLabel, [], [])
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -444,7 +444,7 @@ describe('EthUpdater', () => {
       await mintingManager.functions
         .mintSLD(owner, uns.tldHash, expectedLabel)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -461,7 +461,7 @@ describe('EthUpdater', () => {
       await whitelistedMinter.functions
         .mintSLDToDefaultResolver(owner, expectedDomainName, [], [])
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -478,7 +478,7 @@ describe('EthUpdater', () => {
       await mintingManager.functions
         .mintSLD(owner, uns.tldHash, expectedDomainName)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -499,7 +499,7 @@ describe('EthUpdater', () => {
       await resolver.functions
         .reset(cns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -519,7 +519,7 @@ describe('EthUpdater', () => {
       await unsRegistry.functions
         .reset(uns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -532,7 +532,7 @@ describe('EthUpdater', () => {
     });
 
     it('should get all cns domain records when domain was sent via setOwner method', async () => {
-      const account = await EthereumTestsHelper.createAccount();
+      const account = await EthereumHelper.createAccount();
       await resolver.functions
         .reconfigure(
           ['crypto.ETH.address'],
@@ -543,7 +543,7 @@ describe('EthUpdater', () => {
       await cnsRegistry.functions
         .setOwner(account.address, cns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -558,7 +558,7 @@ describe('EthUpdater', () => {
     });
 
     it('should get all uns domain records when domain was sent via setOwner method', async () => {
-      const account = await EthereumTestsHelper.createAccount();
+      const account = await EthereumHelper.createAccount();
       await unsRegistry.functions
         .set(
           'crypto.ETH.address',
@@ -569,7 +569,7 @@ describe('EthUpdater', () => {
       await unsRegistry.functions
         .setOwner(account.address, uns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -589,7 +589,7 @@ describe('EthUpdater', () => {
       await resolver.functions
         .set('custom-key', 'value', cns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -609,7 +609,7 @@ describe('EthUpdater', () => {
           cns.tokenId,
         )
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -636,7 +636,7 @@ describe('EthUpdater', () => {
         )
         .then((receipt) => receipt.wait());
 
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
