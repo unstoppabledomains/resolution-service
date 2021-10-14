@@ -365,20 +365,6 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
-            id: testDomainOne.name,
-            attributes: {
-              meta: {
-                domain: testDomainOne.name,
-                blockchain: testDomainOne.blockchain,
-                networkId: testDomainOne.networkId,
-                owner: testDomainOne.ownerAddress,
-                registry: testDomainOne.registry,
-                resolver: null,
-              },
-              records: {},
-            },
-          },
-          {
             id: testDomainTwo.name,
             attributes: {
               meta: {
@@ -387,6 +373,20 @@ describe('DomainsController', () => {
                 networkId: testDomainTwo.networkId,
                 owner: testDomainTwo.ownerAddress,
                 registry: testDomainTwo.registry,
+                resolver: null,
+              },
+              records: {},
+            },
+          },
+          {
+            id: testDomainOne.name,
+            attributes: {
+              meta: {
+                domain: testDomainOne.name,
+                blockchain: testDomainOne.blockchain,
+                networkId: testDomainOne.networkId,
+                owner: testDomainOne.ownerAddress,
+                registry: testDomainOne.registry,
                 resolver: null,
               },
               records: {},
@@ -429,14 +429,14 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
-            id: testDomainOne.name,
+            id: testDomainTwo.name,
             attributes: {
               meta: {
-                domain: testDomainOne.name,
-                blockchain: testDomainOne.blockchain,
-                networkId: testDomainOne.networkId,
-                owner: testDomainOne.ownerAddress,
-                registry: testDomainOne.registry,
+                domain: testDomainTwo.name,
+                blockchain: testDomainTwo.blockchain,
+                networkId: testDomainTwo.networkId,
+                owner: testDomainTwo.ownerAddress,
+                registry: testDomainTwo.registry,
                 resolver: null,
               },
               records: {},
