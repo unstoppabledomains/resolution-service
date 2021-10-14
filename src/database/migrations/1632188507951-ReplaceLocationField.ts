@@ -5,21 +5,47 @@ export class ReplaceLocationField1632188507951 implements MigrationInterface {
   name = 'ReplaceLocationField1632188507951';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`ALTER TABLE "domains" ADD "blockchain" text`);
     await queryRunner.query(
-      `ALTER TABLE "domains" ADD "network_id" integer NOT NULL DEFAULT ${env.APPLICATION.ETHEREUM.CHAIN_ID}`,
+      `UPDATE "domains" SET "blockchain"='ETH' WHERE "location"='CNS'`,
     );
     await queryRunner.query(
-      `ALTER TABLE "domains" ADD "blockchain" text NOT NULL DEFAULT 'ETH'`,
+      `UPDATE "domains" SET "blockchain"='ETH' WHERE "location"='UNSL1'`,
     );
     await queryRunner.query(
-      `UPDATE "domains" SET blockchain='ZIL' WHERE location='ZNS'`,
+      `UPDATE "domains" SET "blockchain"='ZIL' WHERE "location"='ZNS'`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "domains" ALTER "blockchain" SET NOT NULL`,
+    );
+    await queryRunner.query(`ALTER TABLE "domains" ADD "network_id" integer`);
+    await queryRunner.query(
+      `UPDATE "domains" SET "network_id"=${env.APPLICATION.ETHEREUM.CHAIN_ID} WHERE "blockchain"='ETH'`,
+    );
+    await queryRunner.query(
+      `UPDATE "domains" SET "network_id"=1 WHERE "blockchain"='ZIL'`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "domains" ALTER "network_id" SET NOT NULL`,
     );
     await queryRunner.query(`ALTER TABLE "domains" DROP COLUMN "location"`);
     await queryRunner.query(
-      `ALTER TABLE "cns_registry_events" ADD "blockchain" text NOT NULL DEFAULT 'ETH'`,
+      `ALTER TABLE "cns_registry_events" ADD "blockchain" text`,
     );
     await queryRunner.query(
-      `ALTER TABLE "cns_registry_events" ADD "network_id" integer NOT NULL DEFAULT ${env.APPLICATION.ETHEREUM.CHAIN_ID}`,
+      `UPDATE "cns_registry_events" SET "blockchain"='ETH'`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "cns_registry_events" ALTER "blockchain" SET NOT NULL`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "cns_registry_events" ADD "network_id" integer`,
+    );
+    await queryRunner.query(
+      `UPDATE "cns_registry_events" SET "network_id"=${env.APPLICATION.ETHEREUM.CHAIN_ID}`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "cns_registry_events" ALTER "network_id" SET NOT NULL`,
     );
   }
 

@@ -22,7 +22,6 @@ import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import { Attributes } from '../types/common';
 import punycode from 'punycode';
 import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
-import { getEthConfig } from '../contracts';
 import { Blockchain } from '../types/common';
 
 export type Location = {
