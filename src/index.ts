@@ -7,7 +7,7 @@ import('newrelic');
 const runningMode = env.APPLICATION.RUNNING_MODE;
 import connect from './database/connect';
 import { startWorker as startEthWorker } from './workers/eth/EthUpdater';
-import ZilUpdater from './workers/ZilUpdater';
+import startZilUpdater from './workers/ZilUpdater';
 
 connect().then(async () => {
   /**
@@ -34,12 +34,12 @@ connect().then(async () => {
   }
 
   if (runningMode.includes('ZIL_WORKER')) {
-    ZilUpdater();
+    startZilUpdater();
     logger.info(`ZIL worker is enabled and running`);
   }
 
-  if (runningMode.includes('API')) {
-    api.listen(env.APPLICATION.PORT);
-    logger.info(`API is enabled and running on port ${env.APPLICATION.PORT}`);
-  }
+  // We're running API on any case since we need to
+  // expose status, readiness and health check endpoints even in workers mode
+  api.listen(env.APPLICATION.PORT);
+  logger.info(`API is enabled and running on port ${env.APPLICATION.PORT}`);
 });

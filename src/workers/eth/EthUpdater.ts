@@ -2,7 +2,7 @@ import { logger } from '../../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
 import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import { env } from '../../env';
-import { Contract, Event, BigNumber, ethers } from 'ethers';
+import { Contract, Event, BigNumber } from 'ethers';
 import { EntityManager, getConnection, Repository } from 'typeorm';
 import { ETHContracts } from '../../contracts';
 import { eip137Namehash } from '../../utils/namehash';

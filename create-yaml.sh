@@ -9,6 +9,22 @@ echo -e "service: resolution-service-${SERVICE_NAME}
 runtime: custom
 env: flex
 
+liveness_check:
+  path: '/liveness_check'
+  check_interval_sec: 30
+  timeout_sec: 4
+  failure_threshold: 4
+  success_threshold: 2
+  initial_delay_sec: 300
+
+readiness_check:
+  path: '/readiness_check'
+  check_interval_sec: 5
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 2
+  app_start_timeout_sec: 300
+
 env_variables:
   RESOLUTION_RUNNING_MODE: ${RESOLUTION_RUNNING_MODE}
   RESOLUTION_POSTGRES_HOST: ${RESOLUTION_POSTGRES_HOST}
