@@ -109,23 +109,30 @@ export const getSocialPictureUrl = async (
   if (!avatarRecord || !ownerAddress) {
     return '';
   }
-  const { nftStandard, contractAddress, tokenId } = parsePictureRecord(
-    avatarRecord,
-  );
-  const nftContract = await constructNFTContract(contractAddress, nftStandard);
-  const isOwner = await isOwnedByAddress(ownerAddress, {
-    contract: nftContract,
-    nftStandard,
-    tokenId,
-  });
-  if (!isOwner) {
-    throw new Error('User does not own NFT');
+  try {
+    const { nftStandard, contractAddress, tokenId } = parsePictureRecord(
+      avatarRecord,
+    );
+    const nftContract = await constructNFTContract(
+      contractAddress,
+      nftStandard,
+    );
+    const isOwner = await isOwnedByAddress(ownerAddress, {
+      contract: nftContract,
+      nftStandard,
+      tokenId,
+    });
+    if (!isOwner) {
+      throw new Error('User does not own NFT');
+    }
+    const tokenURI = await getTokenURI({
+      contract: nftContract,
+      nftStandard,
+      tokenId,
+    });
+    const imageURL = await getImageURLFromTokenURI(tokenURI);
+    return imageURL;
+  } catch {
+    return '';
   }
-  const tokenURI = await getTokenURI({
-    contract: nftContract,
-    nftStandard,
-    tokenId,
-  });
-  const imageURL = await getImageURLFromTokenURI(tokenURI);
-  return imageURL;
 };

@@ -106,7 +106,7 @@ export class MetaDataController {
     const socialPictureUrl = await getSocialPictureUrl(
       domain.resolution['social.picture.value'],
       domain.ownerAddress || '',
-    ).catch(() => '');
+    );
 
     const description = this.getDomainDescription(
       domain.name,
