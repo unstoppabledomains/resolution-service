@@ -8,8 +8,8 @@ import { EthUpdater } from './EthUpdater';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
-import { EthUpdaterError } from '../../errors/EthUpdaterError';
 import { ETHContracts } from '../../contracts';
+import * as ethersUtils from '../../utils/ethersUtils';
 
 type NSConfig = {
   tld: string;
@@ -49,6 +49,7 @@ describe('EthUpdater', () => {
 
   before(async () => {
     await EthereumTestsHelper.startNetwork();
+    await EthereumTestsHelper.resetNetwork();
     owner = EthereumTestsHelper.owner().address;
     unsRegistry = ETHContracts.UNSRegistry.getContract().connect(
       EthereumTestsHelper.owner(),
@@ -67,14 +68,18 @@ describe('EthUpdater', () => {
     );
   });
 
+  after(async () => {
+    await EthereumTestsHelper.stopNetwork();
+  });
+
   beforeEach(async () => {
-    const blocknumber = await EthereumProvider.getBlockNumber();
+    const block = await EthereumProvider.getBlock('latest');
     sinon
       .stub(env.APPLICATION.ETHEREUM, 'UNS_REGISTRY_EVENTS_STARTING_BLOCK')
-      .value(blocknumber);
+      .value(block.number);
     uns = getNSConfig('blockchain');
     cns = getNSConfig('crypto');
-    await WorkerStatus.saveWorkerStatus('ETH', blocknumber);
+    await WorkerStatus.saveWorkerStatus('ETH', block.number, block.hash);
 
     await mintingManager.functions
       .mintSLD(owner, uns.tldHash, uns.label)
@@ -87,14 +92,6 @@ describe('EthUpdater', () => {
     service = new EthUpdater();
   });
 
-  it('should throw if sync block is less than mirrored block', async () => {
-    await WorkerStatus.saveWorkerStatus(
-      'ETH',
-      (await EthereumProvider.getBlockNumber()) + 10,
-    );
-    expect(service.run()).to.be.rejectedWith(EthUpdaterError);
-  });
-
   it('should save worker stats', async () => {
     // test domain is created in beforeEach hook
     await EthereumTestsHelper.mineBlocksForConfirmation();
@@ -102,11 +99,13 @@ describe('EthUpdater', () => {
     await service.run();
 
     const workerStatus = await WorkerStatus.findOne({ location: 'ETH' });
-    const expectedBlockNumber =
-      (await EthereumProvider.getBlockNumber()) -
-      env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS;
+    const netBlockNumber = await ethersUtils.getLatestNetworkBlock();
+    const expectedBlock = await EthereumProvider.getBlock(
+      netBlockNumber - env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS,
+    );
     expect(workerStatus).to.exist;
-    expect(workerStatus?.lastMirroredBlockNumber).to.eq(expectedBlockNumber);
+    expect(workerStatus?.lastMirroredBlockNumber).to.eq(expectedBlock.number);
+    expect(workerStatus?.lastMirroredBlockHash).to.eq(expectedBlock.hash);
   });
 
   describe('basic events', () => {

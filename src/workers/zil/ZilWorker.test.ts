@@ -19,7 +19,7 @@ let worker: ZilWorker;
 
 describe('ZilWorker', () => {
   beforeEach(async () => {
-    await WorkerStatus.saveWorkerStatus('ETH', 0, -1);
+    await WorkerStatus.saveWorkerStatus('ETH', 0, undefined, -1);
     worker = new ZilWorker();
   });
 

@@ -9,7 +9,6 @@ import { znsChildhash } from '../../utils/namehash';
 import { logger } from '../../logger';
 import { isBech32 } from '@zilliqa-js/util/dist/validation';
 import { fromBech32Address } from '@zilliqa-js/crypto';
-import Bugsnag from '@bugsnag/js';
 import { ZnsTransactionEvent } from '../../models/ZnsTransaction';
 
 type ZilWorkerOptions = {
@@ -39,6 +38,7 @@ export default class ZilWorker {
     return WorkerStatus.saveWorkerStatus(
       'ZIL',
       latestBlock,
+      undefined,
       latestAtxuid,
       repository,
     );
@@ -60,7 +60,6 @@ export default class ZilWorker {
         try {
           await this.processTransaction(transaction, queryRunner);
         } catch (error) {
-          Bugsnag.notify(error);
           logger.error(
             `Failed to process Transaction ${JSON.stringify(transaction)}`,
           );
@@ -89,7 +88,6 @@ export default class ZilWorker {
       try {
         await this.processTransactionEvent(event, queryRunner);
       } catch (error) {
-        Bugsnag.notify(error);
         logger.error(`Failed to process event. ${JSON.stringify(event)}`);
         logger.error(error);
       }
