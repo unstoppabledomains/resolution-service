@@ -75,7 +75,7 @@ export const env = {
       VIEWBLOCK_API_URL: 'https://api.viewblock.io/v1/zilliqa',
       FETCH_INTERVAL: Number(process.env.ZNS_FETCH_INTERVAL || 5000),
       ACCEPTABLE_DELAY_IN_BLOCKS: Number(
-        process.env.ZILLIQA_ACCEPTABLE_DELAY_IN_BLOCKS || 100,
+        process.env.ZILLIQA_ACCEPTABLE_DELAY_IN_BLOCKS || 200,
       ),
     },
     ERC721_METADATA: {
