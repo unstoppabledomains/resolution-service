@@ -37,9 +37,9 @@ describe('StatusController', () => {
           isUpToDate: false,
         },
         ZIL: {
-          acceptableDelayInBlocks: 100,
+          acceptableDelayInBlocks: 200,
           latestMirroredBlock: 171102,
-          latestNetworkBlock: 171203,
+          latestNetworkBlock: 171303,
           networkId: 333,
           isUpToDate: false,
         },
@@ -75,7 +75,7 @@ describe('StatusController', () => {
   });
 
   it("should return isUpToDate = false if ETH and ZIL mirror aren't up to date", async () => {
-    const latestNetworkBlock = 201;
+    const latestNetworkBlock = 301;
     const latestMirroredBlock = 100;
     const viewBlockInterceptor = createViewBlockInterceptor(latestNetworkBlock);
     const jsonRpcInterceptor = createEthereumInterceptor(latestNetworkBlock);
@@ -150,8 +150,8 @@ describe('StatusController', () => {
   });
 
   it("should return isUpToDate = false if ZNS mirror isn't up to date", async () => {
-    const latestNetworkBlock = 200;
-    const latestMirroredBlock = 120;
+    const latestNetworkBlock = 300;
+    const latestMirroredBlock = 220;
     const viewBlockInterceptor = createViewBlockInterceptor(latestNetworkBlock);
     const jsonRpcInterceptor = createEthereumInterceptor(latestNetworkBlock);
     await WorkerStatus.saveWorkerStatus(
@@ -162,7 +162,7 @@ describe('StatusController', () => {
     );
     await WorkerStatus.saveWorkerStatus(
       'ZIL',
-      latestMirroredBlock - 100,
+      latestMirroredBlock - 200,
       undefined,
       undefined,
     );
