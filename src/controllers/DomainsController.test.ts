@@ -365,20 +365,6 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
-            id: testDomainTwo.name,
-            attributes: {
-              meta: {
-                domain: testDomainTwo.name,
-                blockchain: testDomainTwo.blockchain,
-                networkId: testDomainTwo.networkId,
-                owner: testDomainTwo.ownerAddress,
-                registry: testDomainTwo.registry,
-                resolver: null,
-              },
-              records: {},
-            },
-          },
-          {
             id: testDomainOne.name,
             attributes: {
               meta: {
@@ -387,6 +373,20 @@ describe('DomainsController', () => {
                 networkId: testDomainOne.networkId,
                 owner: testDomainOne.ownerAddress,
                 registry: testDomainOne.registry,
+                resolver: null,
+              },
+              records: {},
+            },
+          },
+          {
+            id: testDomainTwo.name,
+            attributes: {
+              meta: {
+                domain: testDomainTwo.name,
+                blockchain: testDomainTwo.blockchain,
+                networkId: testDomainTwo.networkId,
+                owner: testDomainTwo.ownerAddress,
+                registry: testDomainTwo.registry,
                 resolver: null,
               },
               records: {},
@@ -429,14 +429,14 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
-            id: testDomainTwo.name,
+            id: testDomainOne.name,
             attributes: {
               meta: {
-                domain: testDomainTwo.name,
-                blockchain: testDomainTwo.blockchain,
-                networkId: testDomainTwo.networkId,
-                owner: testDomainTwo.ownerAddress,
-                registry: testDomainTwo.registry,
+                domain: testDomainOne.name,
+                blockchain: testDomainOne.blockchain,
+                networkId: testDomainOne.networkId,
+                owner: testDomainOne.ownerAddress,
+                registry: testDomainOne.registry,
                 resolver: null,
               },
               records: {},
@@ -695,7 +695,7 @@ describe('DomainsController', () => {
           property: 'networkIds',
           constraints: {
             isIn:
-              'each value in networkIds must be one of the following values: 1, 4, 1337',
+              'each value in networkIds must be one of the following values: 1, 4, 137, 1337, 80001',
           },
         },
       ],
@@ -720,7 +720,7 @@ describe('DomainsController', () => {
           property: 'networkIds',
           constraints: {
             isIn:
-              'each value in networkIds must be one of the following values: 1, 4, 1337',
+              'each value in networkIds must be one of the following values: 1, 4, 137, 1337, 80001',
             isNotEmpty: 'each value in networkIds should not be empty',
           },
         },

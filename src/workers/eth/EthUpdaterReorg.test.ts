@@ -257,6 +257,8 @@ describe('EthUpdater handles reorgs', () => {
       type: 'Transfer',
       blockNumber: oldBlock.number,
       blockHash: '0xdead2',
+      blockchain: 'ETH',
+      networkId: 1337,
       returnValues: { tokenId: domainAt20.domain.tokenId.toHexString() },
     });
     await eventAt120.save();
@@ -303,6 +305,8 @@ describe('EthUpdater handles reorgs', () => {
       type: 'Transfer',
       blockNumber: oldBlock.number,
       blockHash: '0xdead2',
+      blockchain: 'ETH',
+      networkId: 1337,
       returnValues: { tokenId: domainAt20.domain.tokenId.toHexString() },
     });
     await eventAt120.save();
