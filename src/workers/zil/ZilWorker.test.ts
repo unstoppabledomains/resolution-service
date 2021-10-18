@@ -14,12 +14,13 @@ import { env } from '../../env';
 import { isBech32 } from '@zilliqa-js/util/dist/validation';
 import { fromBech32Address } from '@zilliqa-js/crypto';
 import { ZnsTx } from './ZilProvider';
+import { Blockchain } from '../../types/common';
 
 let worker: ZilWorker;
 
 describe('ZilWorker', () => {
   beforeEach(async () => {
-    await WorkerStatus.saveWorkerStatus('ETH', 0, undefined, -1);
+    await WorkerStatus.saveWorkerStatus(Blockchain.ETH, 0, undefined, -1);
     worker = new ZilWorker();
   });
 
@@ -54,7 +55,7 @@ describe('ZilWorker', () => {
       expect(txfromDb?.atxuid).to.eq(transaction.atxuid);
     }
 
-    const workerStatus = await WorkerStatus.findOne({ location: 'ZIL' });
+    const workerStatus = await WorkerStatus.findOne({ location: Blockchain.ZIL });
     expect(workerStatus).to.exist;
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(
       FirstTwoTransactions[0].blockHeight,

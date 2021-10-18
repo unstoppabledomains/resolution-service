@@ -40,7 +40,7 @@ export default class ZilWorker {
   ): Promise<void> {
     const repository = manager.getRepository(WorkerStatus);
     return WorkerStatus.saveWorkerStatus(
-      'ZIL',
+      Blockchain.ZIL,
       latestBlock,
       undefined,
       latestAtxuid,

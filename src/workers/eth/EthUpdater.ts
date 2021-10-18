@@ -463,7 +463,7 @@ export class EthUpdater {
   private async handleReorg(): Promise<number> {
     const reorgStartingBlock = await this.findLastMatchingBlock();
     await WorkerStatus.saveWorkerStatus(
-      'ETH',
+      Blockchain.ETH,
       reorgStartingBlock.blockNumber,
       reorgStartingBlock.blockHash,
     );

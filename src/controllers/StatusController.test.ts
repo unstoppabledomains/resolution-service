@@ -5,6 +5,7 @@ import nock from 'nock';
 import { WorkerStatus } from '../models';
 import * as sinon from 'sinon';
 import * as ProviderModule from '../workers/EthereumProvider';
+import { Blockchain } from '../types/common';
 
 const mockJsonRpcProviderUrl = 'http://test.jsonrpc.provider:8545';
 
@@ -53,13 +54,13 @@ describe('StatusController', () => {
       expectedStatus.blockchain.ETH.latestNetworkBlock,
     );
     await WorkerStatus.saveWorkerStatus(
-      'ETH',
+      Blockchain.ETH,
       expectedStatus.blockchain.ETH.latestMirroredBlock,
       undefined,
       undefined,
     );
     await WorkerStatus.saveWorkerStatus(
-      'ZIL',
+      Blockchain.ZIL,
       expectedStatus.blockchain.ZIL.latestMirroredBlock,
       undefined,
       undefined,
@@ -80,13 +81,13 @@ describe('StatusController', () => {
     const viewBlockInterceptor = createViewBlockInterceptor(latestNetworkBlock);
     const jsonRpcInterceptor = createEthereumInterceptor(latestNetworkBlock);
     await WorkerStatus.saveWorkerStatus(
-      'ETH',
+      Blockchain.ETH,
       latestMirroredBlock,
       undefined,
       undefined,
     );
     await WorkerStatus.saveWorkerStatus(
-      'ZIL',
+      Blockchain.ZIL,
       latestMirroredBlock,
       undefined,
       undefined,
@@ -105,13 +106,13 @@ describe('StatusController', () => {
     const viewBlockInterceptor = createViewBlockInterceptor(latestNetworkBlock);
     const jsonRpcInterceptor = createEthereumInterceptor(latestNetworkBlock);
     await WorkerStatus.saveWorkerStatus(
-      'ETH',
+      Blockchain.ETH,
       latestMirroredBlock,
       undefined,
       undefined,
     );
     await WorkerStatus.saveWorkerStatus(
-      'ZIL',
+      Blockchain.ZIL,
       latestMirroredBlock,
       undefined,
       undefined,
@@ -130,13 +131,13 @@ describe('StatusController', () => {
     const viewBlockInterceptor = createViewBlockInterceptor(latestNetworkBlock);
     const jsonRpcInterceptor = createEthereumInterceptor(latestNetworkBlock);
     await WorkerStatus.saveWorkerStatus(
-      'ETH',
+      Blockchain.ETH,
       latestMirroredBlock - 100,
       undefined,
       undefined,
     );
     await WorkerStatus.saveWorkerStatus(
-      'ZIL',
+      Blockchain.ZIL,
       latestMirroredBlock,
       undefined,
       undefined,
@@ -155,13 +156,13 @@ describe('StatusController', () => {
     const viewBlockInterceptor = createViewBlockInterceptor(latestNetworkBlock);
     const jsonRpcInterceptor = createEthereumInterceptor(latestNetworkBlock);
     await WorkerStatus.saveWorkerStatus(
-      'ETH',
+      Blockchain.ETH,
       latestMirroredBlock,
       undefined,
       undefined,
     );
     await WorkerStatus.saveWorkerStatus(
-      'ZIL',
+      Blockchain.ZIL,
       latestMirroredBlock - 200,
       undefined,
       undefined,

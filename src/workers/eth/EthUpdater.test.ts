@@ -10,6 +10,7 @@ import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
 import { ETHContracts } from '../../contracts';
 import * as ethersUtils from '../../utils/ethersUtils';
+import { Blockchain } from '../../types/common';
 
 type NSConfig = {
   tld: string;
@@ -79,7 +80,7 @@ describe('EthUpdater', () => {
       .value(block.number);
     uns = getNSConfig('blockchain');
     cns = getNSConfig('crypto');
-    await WorkerStatus.saveWorkerStatus('ETH', block.number, block.hash);
+    await WorkerStatus.saveWorkerStatus(Blockchain.ETH, block.number, block.hash);
 
     await mintingManager.functions
       .mintSLD(owner, uns.tldHash, uns.label)
@@ -89,7 +90,7 @@ describe('EthUpdater', () => {
       .mintSLDToDefaultResolver(owner, cns.label, [], [])
       .then((receipt) => receipt.wait());
 
-    service = new EthUpdater('ETH', env.APPLICATION.ETHEREUM);
+    service = new EthUpdater(Blockchain.ETH, env.APPLICATION.ETHEREUM);
   });
 
   it('should save worker stats', async () => {

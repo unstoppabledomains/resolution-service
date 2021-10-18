@@ -134,9 +134,15 @@ export class DomainsController {
         );
       } else {
         resolution = domain.getResolution(
-          Blockchain.ETH,
-          env.APPLICATION.ETHEREUM.NETWORK_ID,
+          Blockchain.MATIC,
+          env.APPLICATION.POLYGON.NETWORK_ID,
         );
+        if (resolution.ownerAddress === null) {
+          resolution = domain.getResolution(
+            Blockchain.ETH,
+            env.APPLICATION.ETHEREUM.NETWORK_ID,
+          );
+        }
       }
       const response = new DomainResponse();
       response.meta = {

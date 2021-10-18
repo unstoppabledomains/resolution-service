@@ -95,7 +95,7 @@ describe('CnsResolver', () => {
     testTokenId = BigNumber.from(testDomainNode);
 
     await WorkerStatus.saveWorkerStatus(
-      'ETH',
+      Blockchain.ETH,
       await ethersUtils.getLatestNetworkBlock(),
     );
     await whitelistedMinter.functions

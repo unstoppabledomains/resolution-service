@@ -6,6 +6,8 @@ import { Domain, WorkerStatus } from '../models';
 import ZilProvider from '../workers/zil/ZilProvider';
 import { env } from '../env';
 import * as ethersUtils from '../utils/ethersUtils';
+import { GetProviderForConfig } from '../workers/EthereumProvider';
+import { Blockchain } from '../types/common';
 
 class BlockchainStatus {
   @IsBoolean()
@@ -29,6 +31,9 @@ class Blockchains {
   ETH: BlockchainStatus;
 
   @ValidateNested()
+  MATIC: BlockchainStatus;
+
+  @ValidateNested()
   ZIL: BlockchainStatus;
 }
 
@@ -40,6 +45,8 @@ class StatusResponse {
 @JsonController()
 export class StatusController {
   private zilProvider = new ZilProvider();
+  private ethProvider = GetProviderForConfig(env.APPLICATION.ETHEREUM);
+  private maticProvider = GetProviderForConfig(env.APPLICATION.POLYGON);
 
   @Get('/status')
   @ResponseSchema(StatusResponse)
@@ -47,12 +54,13 @@ export class StatusController {
     const statusResponse = new StatusResponse();
     const blockchain = new Blockchains();
     blockchain.ETH = new BlockchainStatus();
+    blockchain.MATIC = new BlockchainStatus();
     blockchain.ZIL = new BlockchainStatus();
 
     blockchain.ETH.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
-      'ETH',
+      Blockchain.ETH,
     );
-    blockchain.ETH.latestNetworkBlock = await ethersUtils.getLatestNetworkBlock();
+    blockchain.ETH.latestNetworkBlock = await ethersUtils.getLatestNetworkBlock(this.ethProvider);
     blockchain.ETH.networkId = env.APPLICATION.ETHEREUM.NETWORK_ID;
     blockchain.ETH.acceptableDelayInBlocks =
       env.APPLICATION.ETHEREUM.ACCEPTABLE_DELAY_IN_BLOCKS;
@@ -60,8 +68,21 @@ export class StatusController {
       blockchain.ETH.latestNetworkBlock - blockchain.ETH.latestMirroredBlock <=
       blockchain.ETH.acceptableDelayInBlocks;
 
+    blockchain.MATIC.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
+      Blockchain.MATIC,
+    );
+    blockchain.MATIC.latestNetworkBlock = await ethersUtils.getLatestNetworkBlock(
+      this.maticProvider,
+    );
+    blockchain.MATIC.networkId = env.APPLICATION.POLYGON.NETWORK_ID;
+    blockchain.MATIC.acceptableDelayInBlocks =
+      env.APPLICATION.POLYGON.ACCEPTABLE_DELAY_IN_BLOCKS;
+    blockchain.MATIC.isUpToDate =
+      blockchain.MATIC.latestNetworkBlock - blockchain.MATIC.latestMirroredBlock <=
+      blockchain.MATIC.acceptableDelayInBlocks; 
+
     blockchain.ZIL.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
-      'ZIL',
+      Blockchain.ZIL,
     );
     blockchain.ZIL.latestNetworkBlock = (
       await this.zilProvider.getChainStats()

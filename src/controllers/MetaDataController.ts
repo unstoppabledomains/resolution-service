@@ -114,10 +114,17 @@ export class MetaDataController {
         env.APPLICATION.ZILLIQA.NETWORK_ID,
       );
     }
-    return domain.getResolution(
-      Blockchain.ETH,
-      env.APPLICATION.ETHEREUM.NETWORK_ID,
+    let resolution = domain.getResolution(
+      Blockchain.MATIC,
+      env.APPLICATION.POLYGON.NETWORK_ID,
     );
+    if (resolution.ownerAddress === null) {
+      resolution = domain.getResolution(
+        Blockchain.ETH,
+        env.APPLICATION.ETHEREUM.NETWORK_ID,
+      );
+    }
+    return resolution;
   }
 
   @Get('/metadata/:domainOrToken')
