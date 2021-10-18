@@ -1,6 +1,10 @@
 import { ethers } from 'ethers';
-import { env } from '../env';
+import { env } from '../../env';
 import nodeFetch from 'node-fetch';
+import { Domain } from '../../models';
+import { createCanvas } from 'canvas';
+import createSVGfromTemplate from './svgTemplate';
+import btoa from 'btoa';
 
 const parsePictureRecord = (avatarRecord: string) => {
   const regex = /(1)\/(erc721|erc1155):(0x[a-fA-F0-9]{40})\/(\d+)/;
@@ -96,9 +100,11 @@ const useIpfsGateway = (url: string) => {
 };
 
 const getImageURLFromTokenURI = async (tokenURI: string) => {
-  const metadata = await nodeFetch(useIpfsGateway(tokenURI)).then((resp) =>
-    resp.json(),
-  );
+  const resp = await nodeFetch(useIpfsGateway(tokenURI));
+  if (!resp.ok) {
+    throw new Error('Failed to fetch from tokenURI');
+  }
+  const metadata = await resp.json();
   return metadata.image;
 };
 
@@ -130,9 +136,69 @@ export const getSocialPictureUrl = async (
       nftStandard,
       tokenId,
     });
-    const imageURL = await getImageURLFromTokenURI(tokenURI);
+    const imageURL = await getImageURLFromTokenURI(
+      tokenURI.replace('0x{id}', tokenId),
+    );
     return imageURL;
   } catch {
+    return '';
+  }
+};
+
+export const getNFTSocialPicture = async (
+  imageUrl: string,
+): Promise<[string, string | null]> => {
+  const resp = await nodeFetch(imageUrl);
+  if (!resp.ok) {
+    throw new Error('Failed to fetch NFT image');
+  }
+  const data = await resp.buffer();
+  const mimeType = resp.headers.get('Content-Type');
+  const base64 = data.toString('base64');
+
+  return [base64, mimeType];
+};
+
+const getFontSize = (name: string): number => {
+  const canvas = createCanvas(300, 300);
+  const ctx = canvas.getContext('2d');
+  ctx.font = '18px Arial';
+  const text = ctx.measureText(name);
+  const fontSize = Math.floor(20 * ((200 - name.length) / text.width));
+  return fontSize < 34 ? fontSize : 32;
+};
+
+export const createSocialPictureImage = (
+  domain: Domain,
+  data: string,
+  mimeType: string | null,
+): string => {
+  let name = domain.name;
+  if (name.length > 30) {
+    name = name.substring(0, 30 - 3) + '...';
+  }
+  const fontSize = getFontSize(name);
+  const svg = createSVGfromTemplate({
+    background_image: data,
+    domain: name,
+    fontSize,
+    mimeType: mimeType || undefined,
+  });
+
+  try {
+    return (
+      'data:image/svg+xml;base64,' +
+      btoa(
+        encodeURIComponent(svg).replace(
+          /%([0-9A-F]{2})/g,
+          function (match, p1) {
+            return String.fromCharCode(parseInt(p1, 16));
+          },
+        ),
+      )
+    );
+  } catch (e) {
+    console.log(e);
     return '';
   }
 };
