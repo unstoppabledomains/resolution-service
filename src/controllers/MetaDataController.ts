@@ -12,6 +12,11 @@ import { pathThatSvg } from 'path-that-svg';
 import { IsArray, IsObject, IsOptional, IsString } from 'class-validator';
 import { env } from '../env';
 import { logger } from '../logger';
+import {
+  getSocialPictureUrl,
+  getNFTSocialPicture,
+  createSocialPictureImage,
+} from '../utils/socialPicture';
 import punycode from 'punycode';
 
 const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
@@ -107,18 +112,27 @@ export class MetaDataController {
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain = await Domain.findByNode(token);
     if (!domain) {
-      return await this.defaultMetaResponse(domainOrToken);
+      return this.defaultMetaResponse(domainOrToken);
     }
-
+    const socialPictureUrl = await getSocialPictureUrl(
+      domain.resolution['social.picture.value'],
+      domain.ownerAddress || '',
+    );
+    let socialPicture = '';
+    if (socialPictureUrl) {
+      const [data, mimeType] = await getNFTSocialPicture(socialPictureUrl);
+      socialPicture = createSocialPictureImage(domain, data, mimeType);
+    }
     const description = this.getDomainDescription(
       domain.name,
       domain.resolution,
     );
-    const domainAttributes = this.getDomainAttributes(
-      domain.name,
-      domain.resolution['dweb.ipfs.hash'] ||
+    const domainAttributes = this.getDomainAttributes(domain.name, {
+      ipfsContent:
+        domain.resolution['dweb.ipfs.hash'] ||
         domain.resolution['ipfs.html.value'],
-    );
+      verifiedNftPicture: socialPicture !== '',
+    });
 
     const metadata: OpenSeaMetadata = {
       name: domain.name,
@@ -127,11 +141,11 @@ export class MetaDataController {
         records: domain.resolution,
       },
       external_url: `https://unstoppabledomains.com/search?searchTerm=${domain.name}`,
-      image: this.generateDomainImageUrl(domain.name),
+      image: socialPicture || this.generateDomainImageUrl(domain.name),
       attributes: domainAttributes,
     };
 
-    if (!this.isDomainWithCustomImage(domain.name)) {
+    if (!this.isDomainWithCustomImage(domain.name) && !socialPicture) {
       metadata.image_data = await this.generateImageData(
         domain.name,
         domain.resolution,
@@ -277,17 +291,23 @@ export class MetaDataController {
 
   private getDomainAttributes(
     name: string,
-    ipfsContent?: string,
+    meta?: {
+      ipfsContent?: string;
+      verifiedNftPicture?: boolean;
+    },
   ): OpenSeaMetadataAttribute[] {
     return [
-      ...this.getBasicDomainAttributes(name, ipfsContent),
+      ...this.getBasicDomainAttributes(name, meta),
       ...this.getAnimalAttributes(name),
     ];
   }
 
   private getBasicDomainAttributes(
     name: string,
-    ipfsContent?: string,
+    meta?: {
+      ipfsContent?: string;
+      verifiedNftPicture?: boolean;
+    },
   ): OpenSeaMetadataAttribute[] {
     const attributes: OpenSeaMetadataAttribute[] = [
       {
@@ -304,8 +324,14 @@ export class MetaDataController {
       },
     ];
 
-    if (ipfsContent) {
-      attributes.push({ trait_type: 'IPFS Content', value: ipfsContent });
+    if (meta?.ipfsContent) {
+      attributes.push({ trait_type: 'IPFS Content', value: meta?.ipfsContent });
+    }
+    if (meta?.verifiedNftPicture) {
+      attributes.push({
+        trait_type: 'picture',
+        value: 'verified-nft',
+      });
     }
 
     return attributes;
