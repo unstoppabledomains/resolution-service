@@ -160,11 +160,12 @@ export const getNFTSocialPicture = async (
 };
 
 const getFontSize = (name: string): number => {
+  const [label] = name.split('.');
   const canvas = createCanvas(300, 300);
   const ctx = canvas.getContext('2d');
   ctx.font = '18px Arial';
-  const text = ctx.measureText(name);
-  const fontSize = Math.floor(20 * ((200 - name.length) / text.width));
+  const text = ctx.measureText(label);
+  const fontSize = Math.floor(20 * ((200 - label.length) / text.width));
   return fontSize < 34 ? fontSize : 32;
 };
 
