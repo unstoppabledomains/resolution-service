@@ -20,10 +20,10 @@ export class ReplaceLocationField1632188507951 implements MigrationInterface {
     );
     await queryRunner.query(`ALTER TABLE "domains" ADD "network_id" integer`);
     await queryRunner.query(
-      `UPDATE "domains" SET "network_id"=${env.APPLICATION.ETHEREUM.CHAIN_ID} WHERE "blockchain"='ETH'`,
+      `UPDATE "domains" SET "network_id"=${env.APPLICATION.ETHEREUM.NETWORK_ID} WHERE "blockchain"='ETH'`,
     );
     await queryRunner.query(
-      `UPDATE "domains" SET "network_id"=1 WHERE "blockchain"='ZIL'`,
+      `UPDATE "domains" SET "network_id"=${env.APPLICATION.ZILLIQA.NETWORK_ID} WHERE "blockchain"='ZIL'`,
     );
     await queryRunner.query(
       `ALTER TABLE "domains" ALTER "network_id" SET NOT NULL`,
@@ -42,7 +42,7 @@ export class ReplaceLocationField1632188507951 implements MigrationInterface {
       `ALTER TABLE "cns_registry_events" ADD "network_id" integer`,
     );
     await queryRunner.query(
-      `UPDATE "cns_registry_events" SET "network_id"=${env.APPLICATION.ETHEREUM.CHAIN_ID}`,
+      `UPDATE "cns_registry_events" SET "network_id"=${env.APPLICATION.ETHEREUM.NETWORK_ID}`,
     );
     await queryRunner.query(
       `ALTER TABLE "cns_registry_events" ALTER "network_id" SET NOT NULL`,

@@ -8,6 +8,7 @@ import {
   Repository,
 } from 'typeorm';
 import {
+  IsIn,
   IsNumber,
   IsObject,
   IsOptional,
@@ -19,10 +20,8 @@ import ValidateWith from '../services/ValidateWith';
 import * as _ from 'lodash';
 import { Model } from '.';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
-import { Attributes } from '../types/common';
+import { Attributes, Blockchain } from '../types/common';
 import punycode from 'punycode';
-import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
-import { Blockchain } from '../types/common';
 
 export type Location = {
   networkId: number;
@@ -33,7 +32,6 @@ export type Location = {
 export default class Domain extends Model {
   static AddressRegex = /^0x[a-fA-F0-9]{40}$/;
   static NullAddress = '0x0000000000000000000000000000000000000000';
-  static AnimalHelper = new AnimalDomainHelper();
 
   @IsString()
   @ValidateWith<Domain>('nameMatchesNode', {
@@ -86,6 +84,7 @@ export default class Domain extends Model {
   @Column('int')
   networkId: number;
 
+  @IsIn([Blockchain.ZIL, Blockchain.ETH, Blockchain.MATIC])
   @IsString()
   @Column('text')
   blockchain: keyof typeof Blockchain;

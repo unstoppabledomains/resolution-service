@@ -67,4 +67,4 @@ export const getEthConfig = (
   return cryptoConfig;
 };
 
-export default getEthConfig(env.APPLICATION.ETHEREUM.CHAIN_ID.toString());
+export default getEthConfig(env.APPLICATION.ETHEREUM.NETWORK_ID.toString());

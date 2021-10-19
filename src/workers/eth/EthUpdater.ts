@@ -157,7 +157,7 @@ export class EthUpdater {
     const domain = await Domain.findOrBuildByNode(producedNode);
     domain.name = uri;
     domain.blockchain = Blockchain.ETH;
-    domain.networkId = env.APPLICATION.ETHEREUM.CHAIN_ID;
+    domain.networkId = env.APPLICATION.ETHEREUM.NETWORK_ID;
     domain.ownerAddress = lastProcessedEvent.args?.to.toLowerCase();
     domain.registry = this.cnsRegistry.address;
 
@@ -282,7 +282,7 @@ export class EthUpdater {
         transactionHash: event.transactionHash,
         returnValues: values,
         blockchain: Blockchain.ETH,
-        networkId: env.APPLICATION.ETHEREUM.CHAIN_ID,
+        networkId: env.APPLICATION.ETHEREUM.NETWORK_ID,
       }),
     );
   }
