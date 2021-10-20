@@ -20,6 +20,6 @@ export const EthereumProvider = new StaticJsonRpcProvider(
   env.APPLICATION.ETHEREUM.JSON_RPC_API_URL,
   {
     name: '',
-    chainId: Number(env.APPLICATION.ETHEREUM.CHAIN_ID),
+    chainId: Number(env.APPLICATION.ETHEREUM.NETWORK_ID),
   },
 );

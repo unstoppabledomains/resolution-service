@@ -1,7 +1,7 @@
 import { BigNumber, Contract } from 'ethers';
 import { randomBytes } from 'crypto';
 import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
-import { EthereumProvider } from '../../workers/EthereumProvider';
+import { EthereumProvider } from '../EthereumProvider';
 import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
 import { EthUpdater } from './EthUpdater';
 import * as sinon from 'sinon';
@@ -70,6 +70,8 @@ describe('EthUpdater handles reorgs', () => {
   };
 
   before(async () => {
+    await EthereumTestsHelper.startNetwork();
+    await EthereumTestsHelper.resetNetwork();
     owner = EthereumTestsHelper.owner().address;
     recipient = EthereumTestsHelper.getAccount('9').address;
     mintingManager = ETHContracts.MintingManager.getContract().connect(
@@ -171,6 +173,7 @@ describe('EthUpdater handles reorgs', () => {
   // Reorg timeline:
   // 0----10b----d1----10b----x----d2----100b---->
   it('should fix a reorg with old events', async () => {
+    // todo remove
     await WorkerStatus.saveWorkerStatus('ETH', oldBlock.number, '0xdead');
     const reorgEvents = await CnsRegistryEvent.find({
       blockNumber: domainAt20.blockNumber,
@@ -178,7 +181,7 @@ describe('EthUpdater handles reorgs', () => {
     for (let index = 0; index < reorgEvents.length; index++) {
       const event = reorgEvents[index];
       event.blockHash = '0xdead2';
-      event.logIndex = reorgEvents.length + index; // to bypass `logIndexForBlockIncreases` constraint
+      event.logIndex = index + 100; // to bypass `logIndexForBlockIncreases` constraint
       await event.save();
     }
     const deleteSpy = sinonSandbox.spy(CnsRegistryEvent, 'cleanUpEvents');
@@ -217,7 +220,7 @@ describe('EthUpdater handles reorgs', () => {
     for (let index = 0; index < reorgEvents.length; index++) {
       const event = reorgEvents[index];
       event.blockHash = '0xdead2';
-      event.logIndex = reorgEvents.length + index; // to bypass `logIndexForBlockIncreases` constraint
+      event.logIndex = index + 200; // to bypass `logIndexForBlockIncreases` constraint
       await event.save();
     }
     const deleteSpy = sinonSandbox.spy(CnsRegistryEvent, 'cleanUpEvents');
@@ -257,6 +260,8 @@ describe('EthUpdater handles reorgs', () => {
       type: 'Transfer',
       blockNumber: oldBlock.number,
       blockHash: '0xdead2',
+      blockchain: 'ETH',
+      networkId: 1337,
       returnValues: { tokenId: domainAt20.domain.tokenId.toHexString() },
     });
     await eventAt120.save();
@@ -303,6 +308,8 @@ describe('EthUpdater handles reorgs', () => {
       type: 'Transfer',
       blockNumber: oldBlock.number,
       blockHash: '0xdead2',
+      blockchain: 'ETH',
+      networkId: 1337,
       returnValues: { tokenId: domainAt20.domain.tokenId.toHexString() },
     });
     await eventAt120.save();

@@ -12,6 +12,7 @@ import { unwrap } from '../../utils/option';
 import { CnsResolverError } from '../../errors/CnsResolverError';
 import { ExecutionRevertedError } from './BlockchainErrors';
 import { CnsResolver } from './CnsResolver';
+import { Blockchain } from '../../types/common';
 import * as ethersUtils from '../../utils/ethersUtils';
 
 export class EthUpdater {
@@ -155,7 +156,8 @@ export class EthUpdater {
 
     const domain = await Domain.findOrBuildByNode(producedNode);
     domain.name = uri;
-    domain.location = 'CNS';
+    domain.blockchain = Blockchain.ETH;
+    domain.networkId = env.APPLICATION.ETHEREUM.NETWORK_ID;
     domain.ownerAddress = lastProcessedEvent.args?.to.toLowerCase();
     domain.registry = this.cnsRegistry.address;
 
@@ -163,7 +165,6 @@ export class EthUpdater {
     if (contractAddress === this.unsRegistry.address.toLowerCase()) {
       domain.resolver = contractAddress;
       domain.registry = this.unsRegistry.address.toLowerCase();
-      domain.location = 'UNSL1';
     }
     await domainRepository.save(domain);
   }
@@ -280,6 +281,8 @@ export class EthUpdater {
         logIndex: event.logIndex,
         transactionHash: event.transactionHash,
         returnValues: values,
+        blockchain: Blockchain.ETH,
+        networkId: env.APPLICATION.ETHEREUM.NETWORK_ID,
       }),
     );
   }

@@ -53,7 +53,7 @@ export class StatusController {
       'ETH',
     );
     blockchain.ETH.latestNetworkBlock = await ethersUtils.getLatestNetworkBlock();
-    blockchain.ETH.networkId = env.APPLICATION.ETHEREUM.CHAIN_ID;
+    blockchain.ETH.networkId = env.APPLICATION.ETHEREUM.NETWORK_ID;
     blockchain.ETH.acceptableDelayInBlocks =
       env.APPLICATION.ETHEREUM.ACCEPTABLE_DELAY_IN_BLOCKS;
     blockchain.ETH.isUpToDate =
@@ -67,8 +67,7 @@ export class StatusController {
       await this.zilProvider.getChainStats()
     ).txHeight;
 
-    blockchain.ZIL.networkId =
-      env.APPLICATION.ZILLIQA.NETWORK === 'mainnet' ? 1 : 333;
+    blockchain.ZIL.networkId = env.APPLICATION.ZILLIQA.NETWORK_ID;
     blockchain.ZIL.acceptableDelayInBlocks =
       env.APPLICATION.ZILLIQA.ACCEPTABLE_DELAY_IN_BLOCKS;
     blockchain.ZIL.isUpToDate =

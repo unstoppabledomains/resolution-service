@@ -20,7 +20,13 @@ jobs:
       ETHEREUM_JSON_RPC_API_URL: ${{ secrets.ETHEREUM_JSON_RPC_API_URL}}
       VIEWBLOCK_API_KEY: ${{ secrets.VIEWBLOCK_API_KEY }}
       GCP_SQL_INSTANCE: ${{ secrets.GCP_SQL_INSTANCE }}
-      ETHEREUM_CHAIN_ID: 1
+      ETHEREUM_NETWORK_ID: 1
+      ZNS_NETWORK: mainnet
+      BUGSNAG_API_KEY: ${{ secrets.BUGSNAG_API_KEY }}
+      NEW_RELIC_APP_NAME: ${{ secrets.NEW_RELIC_APP_NAME }}
+      NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+      SERVICE_NAME: api
+      RESOLUTION_RUNNING_MODE: API,MIGRATIONS
 
     steps:
       - uses: actions/checkout@v2
@@ -30,19 +36,15 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.GCP_SA_KEY }}
-          export_default_credentials: true
 
       - name: Create api.yaml
         shell: bash
-        run:
-          ZNS_NETWORK=mainnet ETHEREUM_CHAIN_ID=1 BUGSNAG_API_KEY=${{
-          secrets.BUGSNAG_API_KEY }} NEW_RELIC_APP_NAME=${{
-          secrets.NEW_RELIC_APP_NAME }} NEW_RELIC_LICENSE_KEY=${{
-          secrets.NEW_RELIC_LICENSE_KEY }} SERVICE_NAME=api
-          RESOLUTION_RUNNING_MODE=API bash create-yaml.sh
+        run: bash create-yaml.sh
+
+      - name: Increase deployment timeout up to 20 minutes
+        run: gcloud config set app/cloud_build_timeout 1200
 
       - name: Deploy API
-        if: contains(github.event.inputs.deployables, 'api')
         run: gcloud app deploy api.yaml
 
   deploy_workers:
@@ -56,7 +58,13 @@ jobs:
       ETHEREUM_JSON_RPC_API_URL: ${{ secrets.ETHEREUM_JSON_RPC_API_URL}}
       VIEWBLOCK_API_KEY: ${{ secrets.VIEWBLOCK_API_KEY }}
       GCP_SQL_INSTANCE: ${{ secrets.GCP_SQL_INSTANCE }}
-      ETHEREUM_CHAIN_ID: 1
+      ETHEREUM_NETWORK_ID: 1
+      ZNS_NETWORK: mainnet
+      BUGSNAG_API_KEY: ${{ secrets.BUGSNAG_API_KEY }}
+      NEW_RELIC_APP_NAME: ${{ secrets.NEW_RELIC_APP_NAME }}
+      NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+      SERVICE_NAME: workers
+      RESOLUTION_RUNNING_MODE: ETH_WORKER,ZIL_WORKER
 
     steps:
       - uses: actions/checkout@v2
@@ -66,18 +74,13 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.GCP_SA_KEY }}
-          export_default_credentials: true
 
       - name: Create worker.yaml
         shell: bash
-        run:
-          ZNS_NETWORK=mainnet ETHEREUM_CHAIN_ID=1 BUGSNAG_API_KEY=${{
-          secrets.BUGSNAG_API_KEY }} NEW_RELIC_APP_NAME=${{
-          secrets.NEW_RELIC_APP_NAME }} NEW_RELIC_LICENSE_KEY=${{
-          secrets.NEW_RELIC_LICENSE_KEY }} SERVICE_NAME=workers
-          RESOLUTION_RUNNING_MODE=ETH_WORKER,ZIL_WORKER,MIGRATIONS bash
-          create-yaml.sh
+        run: bash create-yaml.sh
+
+      - name: Increase deployment timeout up to 20 minutes
+        run: gcloud config set app/cloud_build_timeout 1200
 
       - name: Deploy WORKERS
-        if: contains(github.event.inputs.deployables, 'workers')
         run: gcloud app deploy workers.yaml

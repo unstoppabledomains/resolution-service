@@ -52,3 +52,8 @@ export type Serializable = {
 };
 export type SerializableArray = (SerializableBase | Serializable)[];
 export type MetadataImageFontSize = 24 | 20 | 18 | 16;
+export enum Blockchain {
+  ETH = 'ETH',
+  ZIL = 'ZIL',
+  MATIC = 'MATIC',
+}
