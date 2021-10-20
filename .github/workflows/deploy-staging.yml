@@ -45,8 +45,10 @@ jobs:
         shell: bash
         run: bash create-yaml.sh
 
+      - name: Increase deployment timeout up to 20 minutes
+        run: gcloud config set app/cloud_build_timeout 1200
+
       - name: Deploy API
-        if: contains(github.event.inputs.deployables, 'api')
         run: gcloud app deploy api.yaml
 
   deploy_workers:
@@ -81,6 +83,8 @@ jobs:
         shell: bash
         run: bash create-yaml.sh
 
+      - name: Increase deployment timeout up to 20 minutes
+        run: gcloud config set app/cloud_build_timeout 1200
+
       - name: Deploy WORKERS
-        if: contains(github.event.inputs.deployables, 'workers')
         run: gcloud app deploy workers.yaml
