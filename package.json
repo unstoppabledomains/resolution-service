@@ -39,11 +39,14 @@
   "dependencies": {
     "@bugsnag/js": "^7.9.2",
     "@bugsnag/plugin-express": "^7.9.2",
+    "@types/btoa": "^1.2.3",
     "@types/uuid": "^8.3.1",
     "@zilliqa-js/crypto": "^2.3.0-alpha.0",
     "@zilliqa-js/util": "^2.2.0",
     "@zilliqa-js/zilliqa": "^2.3.0-alpha.0",
     "body-parser": "^1.19.0",
+    "btoa": "^1.2.1",
+    "canvas": "^2.8.0",
     "class-transformer": "^0.4.0",
     "class-validator": "^0.13.1",
     "class-validator-jsonschema": "^3.0.1",
@@ -66,7 +69,7 @@
     "set-interval-async": "^2.0.3",
     "swagger-ui-express": "^4.1.6",
     "typeorm": "^0.2.32",
-    "uns": "https://github.com/unstoppabledomains/uns.git#1ee37ef421bb9539b7254b9b0add5215c94282ec",
+    "uns": "https://github.com/unstoppabledomains/uns.git#58d880375cc7996f6ab71dd461f87d1a900a1c40",
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
     "winston-3-bugsnag-transport": "^1.0.2"

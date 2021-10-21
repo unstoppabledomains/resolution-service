@@ -9,9 +9,14 @@ import AnimalDomainHelper, {
 import { DefaultImageData } from '../utils/generalImage';
 import { MetadataImageFontSize } from '../types/common';
 import { pathThatSvg } from 'path-that-svg';
-import { IsArray, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsObject, IsOptional, IsString } from 'class-validator';
 import { env } from '../env';
 import { logger } from '../logger';
+import {
+  getSocialPictureUrl,
+  getNFTSocialPicture,
+  createSocialPictureImage,
+} from '../utils/socialPicture';
 import punycode from 'punycode';
 import DomainsResolution from '../models/DomainsResolution';
 import { LocationFromDomainName } from '../utils/domainLocationUtils';
@@ -29,6 +34,10 @@ const DomainsWithCustomImage: Record<string, string> = {
   'reseller-test-mago012.crypto': 'smiley-face.jpg',
 };
 const AnimalHelper: AnimalDomainHelper = new AnimalDomainHelper();
+
+type DomainProperties = {
+  records: Record<string, string>;
+};
 
 class Erc721Metadata {
   @IsString()
@@ -52,6 +61,9 @@ class OpenSeaMetadata extends Erc721Metadata {
   @IsOptional()
   @IsString()
   image_data?: string | null;
+
+  @IsObject()
+  properties: DomainProperties;
 
   @IsArray()
   attributes: Array<OpenSeaMetadataAttribute>;
@@ -112,28 +124,42 @@ export class MetaDataController {
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain = await Domain.findByNode(token);
     if (!domain) {
-      return await this.defaultMetaResponse(domainOrToken);
+      return this.defaultMetaResponse(domainOrToken);
     }
     const resolution = this.getDomainResolution(domain);
 
+    const socialPictureUrl = await getSocialPictureUrl(
+      resolution.resolution['social.picture.value'],
+      resolution.ownerAddress || '',
+    );
+    let socialPicture = '';
+    if (socialPictureUrl) {
+      const [data, mimeType] = await getNFTSocialPicture(socialPictureUrl);
+      socialPicture = createSocialPictureImage(domain, data, mimeType);
+    }
     const description = this.getDomainDescription(
       domain.name,
       resolution.resolution,
     );
-    const domainAttributes = this.getDomainAttributes(
-      domain.name,
-      resolution.resolution,
-    );
+    const domainAttributes = this.getDomainAttributes(domain.name, {
+      ipfsContent:
+        resolution.resolution['dweb.ipfs.hash'] ||
+        resolution.resolution['ipfs.html.value'],
+      verifiedNftPicture: socialPicture !== '',
+    });
 
     const metadata: OpenSeaMetadata = {
       name: domain.name,
       description,
+      properties: {
+        records: resolution.resolution,
+      },
       external_url: `https://unstoppabledomains.com/search?searchTerm=${domain.name}`,
-      image: this.generateDomainImageUrl(domain.name),
+      image: socialPicture || this.generateDomainImageUrl(domain.name),
       attributes: domainAttributes,
     };
 
-    if (!this.isDomainWithCustomImage(domain.name)) {
+    if (!this.isDomainWithCustomImage(domain.name) && !socialPicture) {
       metadata.image_data = await this.generateImageData(
         domain.name,
         resolution.resolution,
@@ -203,7 +229,7 @@ export class MetaDataController {
   ): Promise<OpenSeaMetadata> {
     const name = domainOrToken.includes('.') ? domainOrToken : null;
     const description = name ? this.getDomainDescription(name, {}) : null;
-    const attributes = name ? this.getDomainAttributes(name, {}) : [];
+    const attributes = name ? this.getDomainAttributes(name) : [];
     const image = name ? this.generateDomainImageUrl(name) : null;
     const image_data = name ? await this.generateImageData(name, {}) : null;
     const external_url = name
@@ -212,6 +238,9 @@ export class MetaDataController {
     return {
       name,
       description,
+      properties: {
+        records: {},
+      },
       external_url,
       attributes,
       image,
@@ -280,17 +309,23 @@ export class MetaDataController {
 
   private getDomainAttributes(
     name: string,
-    resolution: Record<string, string>,
+    meta?: {
+      ipfsContent?: string;
+      verifiedNftPicture?: boolean;
+    },
   ): OpenSeaMetadataAttribute[] {
     return [
-      ...this.getBasicDomainAttributes(name, resolution),
+      ...this.getBasicDomainAttributes(name, meta),
       ...this.getAnimalAttributes(name),
     ];
   }
 
   private getBasicDomainAttributes(
     name: string,
-    resolution: Record<string, string>,
+    meta?: {
+      ipfsContent?: string;
+      verifiedNftPicture?: boolean;
+    },
   ): OpenSeaMetadataAttribute[] {
     const attributes: OpenSeaMetadataAttribute[] = [
       {
@@ -307,19 +342,14 @@ export class MetaDataController {
       },
     ];
 
-    const currencies = Object.keys(resolution)
-      .filter((key) => key.startsWith('crypto') && key.endsWith('address'))
-      .map((key) => ({
-        trait_type: key.slice('crypto.'.length, key.length - '.address'.length),
-        value: resolution[key],
-      }))
-      .filter((r) => r.value);
-    attributes.push(...currencies);
-
-    const ipfsContent =
-      resolution['dweb.ipfs.hash'] || resolution['ipfs.html.value'];
-    if (ipfsContent) {
-      attributes.push({ trait_type: 'IPFS Content', value: ipfsContent });
+    if (meta?.ipfsContent) {
+      attributes.push({ trait_type: 'IPFS Content', value: meta?.ipfsContent });
+    }
+    if (meta?.verifiedNftPicture) {
+      attributes.push({
+        trait_type: 'picture',
+        value: 'verified-nft',
+      });
     }
 
     return attributes;

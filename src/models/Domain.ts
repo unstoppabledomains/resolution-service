@@ -8,12 +8,13 @@ import {
   Repository,
 } from 'typeorm';
 import {
+  IsIn,
+  IsNumber,
   IsObject,
   IsOptional,
   IsString,
   Matches,
   NotEquals,
-  IsEnum,
 } from 'class-validator';
 import ValidateWith from '../services/ValidateWith';
 import * as _ from 'lodash';
@@ -21,14 +22,12 @@ import { Model } from '.';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import { Attributes } from '../types/common';
 import punycode from 'punycode';
-import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
 import DomainsResolution, { BlockchainName } from './DomainsResolution';
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
   static AddressRegex = /^0x[a-fA-F0-9]{40}$/;
   static NullAddress = '0x0000000000000000000000000000000000000000';
-  static AnimalHelper = new AnimalDomainHelper();
 
   @IsString()
   @ValidateWith<Domain>('nameMatchesNode', {

@@ -38,19 +38,11 @@ describe('MetaDataController', () => {
       expect(resWithName.image).eq(
         'https://storage.googleapis.com/dot-crypto-metadata-api/images/unstoppabledomains.svg',
       );
-      expect(resWithName.attributes.length).eq(7);
+      expect(resWithName.attributes.length).eq(5);
       const correctAttributes = [
         { trait_type: 'domain', value: 'testdomain.crypto' },
         { trait_type: 'level', value: 2 },
         { trait_type: 'length', value: 10 },
-        {
-          trait_type: 'BTC',
-          value: 'beabbeabbeabeabeabeabeabeabeabeabeabeabeab',
-        },
-        {
-          trait_type: 'ETH',
-          value: '0xdeadeadeadeadeadeadeadeadeadeadeadeadead',
-        },
         {
           trait_type: 'IPFS Content',
           value: 'QmdyBw5oTgCtTLQ18PbDvPL8iaLoEPhSyzD91q9XmgmAjb',
@@ -58,6 +50,14 @@ describe('MetaDataController', () => {
         { trait_type: 'type', value: 'standard' },
       ];
       expect(resWithName.attributes).to.have.deep.members(correctAttributes);
+      const correctProperties = {
+        records: {
+          'crypto.BTC.address': 'beabbeabbeabeabeabeabeabeabeabeabeabeabeab',
+          'crypto.ETH.address': '0xdeadeadeadeadeadeadeadeadeadeadeadeadead',
+          'ipfs.html.value': 'QmdyBw5oTgCtTLQ18PbDvPL8iaLoEPhSyzD91q9XmgmAjb',
+        },
+      };
+      expect(resWithName.properties).to.deep.eq(correctProperties);
       expect(resWithName.image_data).eq(
         DefaultImageData({
           label: domain.label,
@@ -78,7 +78,8 @@ describe('MetaDataController', () => {
         resolution: {
           'crypto.ETH.address': '0xe7474D07fD2FA286e7e0aa23cd107F8379085037',
         },
-        location: 'CNS',
+        blockchain: 'ETH',
+        networkId: 1,
       });
 
       const response = await supertest(api)
@@ -117,10 +118,6 @@ describe('MetaDataController', () => {
           value: 18,
         },
         {
-          trait_type: 'ETH',
-          value: '0xe7474D07fD2FA286e7e0aa23cd107F8379085037',
-        },
-        {
           trait_type: 'adjective',
           value: 'unstoppable',
         },
@@ -135,12 +132,46 @@ describe('MetaDataController', () => {
       ];
       expect(response.attributes.length).to.eq(correctAttributes.length);
       expect(response.attributes).to.have.deep.members(correctAttributes);
+
+      const correctProperties = {
+        records: {
+          'crypto.ETH.address': '0xe7474D07fD2FA286e7e0aa23cd107F8379085037',
+        },
+      };
+      expect(response.properties).to.deep.eq(correctProperties);
       expect(response.background_color).to.eq('4C47F7');
       const correctImageData = await fetch(
         'https://storage.googleapis.com/dot-crypto-metadata-api/images/animals/lemming.svg',
       ).then((r) => r.text());
       expect(response.image_data).to.eq(correctImageData);
     });
+
+    // it('should return nft image from avatar record', async () => {
+    //   const domain = await DomainTestHelper.createTestDomain({
+    //     name: 'matt.crypto',
+    //     node: eip137Namehash('matt.crypto'),
+    //     resolution: {
+    //       'social.picture.value':
+    //         '1/erc721:0x9307edc4f23d87f9783a999f870b728ab9d34fe5/3531',
+    //     },
+    //     location: 'CNS',
+    //     ownerAddress: '0xa59C818Ddb801f1253edEbf0Cf08c9E481EA2fE5',
+    //   });
+    //   const expectedImageUrl =
+    //     'ipfs://QmYMeZcMhfxt9yvQtHBgudMsAPvLTSb2H2j178orf9ZnNM';
+    //   const response = await supertest(api)
+    //     .get(`/metadata/${domain.name}`)
+    //     .send()
+    //     .then((r) => r.body);
+    //   expect(response.image).to.equal(expectedImageUrl);
+    //   expect(response.attributes).to.deep.equal([
+    //     { trait_type: 'domain', value: 'trustbear.crypto' },
+    //     { trait_type: 'level', value: 2 },
+    //     { trait_type: 'length', value: 4 },
+    //     { trait_type: 'type', value: 'standard' },
+    //     { trait_type: 'avatar', value: 'verified-nft' },
+    //   ]);
+    // });
 
     it('should return branded animal domain metadata', async () => {
       const { domain: animalDomain } = await DomainTestHelper.createTestDomain({
@@ -171,6 +202,9 @@ describe('MetaDataController', () => {
         .then((r) => r.body);
       expect(response).to.deep.eq({
         name: 'unknown.crypto',
+        properties: {
+          records: {},
+        },
         description:
           'A CNS or UNS blockchain domain. Use it to resolve your cryptocurrency addresses and decentralized websites.',
         external_url:
@@ -196,6 +230,9 @@ describe('MetaDataController', () => {
         .then((r) => r.body);
       expect(responseWithNode).to.deep.eq({
         name: null,
+        properties: {
+          records: {},
+        },
         description: null,
         external_url: null,
         image: null,
@@ -324,6 +361,13 @@ describe('MetaDataController', () => {
         trait_type: 'IPFS Content',
         value: 'ipfs hash content',
       });
+
+      expect(dwebHashResponse.properties).to.deep.equals({
+        records: { 'dweb.ipfs.hash': 'ipfs hash content' },
+      });
+      expect(htmlValueResponse.properties).to.deep.equals({
+        records: { 'ipfs.html.value': 'ipfs hash content' },
+      });
     });
 
     it('should return the dweb.ipfs.hash record when ipfs.html.value is also set', async () => {
@@ -337,6 +381,12 @@ describe('MetaDataController', () => {
       expect(response.attributes).to.deep.contain({
         trait_type: 'IPFS Content',
         value: 'correct',
+      });
+      expect(response.properties).to.deep.eq({
+        records: {
+          'dweb.ipfs.hash': 'correct',
+          'ipfs.html.value': 'wrong',
+        },
       });
     });
   });

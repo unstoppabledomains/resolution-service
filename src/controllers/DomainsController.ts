@@ -9,7 +9,6 @@ import {
 import {
   ArrayNotEmpty,
   IsArray,
-  IsEnum,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -17,7 +16,9 @@ import {
   IsString,
   Max,
   Min,
+  IsNumber,
   ValidateNested,
+  IsIn,
 } from 'class-validator';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
@@ -29,6 +30,9 @@ import DomainsResolution, {
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
 import { LocationFromDomainName } from '../utils/domainLocationUtils';
 import { env } from '../env';
+import { Blockchain } from '../types/common';
+import { toNumber } from 'lodash';
+import NetworkConfig from 'uns/uns-config.json';
 
 class DomainMetadata {
   @IsString()
@@ -42,8 +46,15 @@ class DomainMetadata {
   @IsString()
   resolver: string | null = null;
 
-  @IsEnum(DomainLocations)
-  location: Location;
+  @IsOptional()
+  @IsString()
+  @IsIn(Object.values(Blockchain), { each: true })
+  blockchain: keyof typeof Blockchain | null = null;
+
+  @IsOptional()
+  @IsNumber()
+  @IsIn(Object.keys(NetworkConfig.networks).map(toNumber))
+  networkId: number | null = null;
 
   @IsOptional()
   @IsString()
@@ -65,10 +76,17 @@ class DomainsListQuery {
   @IsNotEmpty({ each: true })
   owners: string[];
 
+  @IsArray()
   @ArrayNotEmpty()
   @IsNotEmpty({ each: true })
-  @IsEnum(DomainLocations, { each: true })
-  locations: string[] = DomainLocations;
+  @IsIn(Object.keys(NetworkConfig.networks), { each: true })
+  networkIds: string[] = Object.keys(NetworkConfig.networks);
+
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsNotEmpty({ each: true })
+  @IsIn(Object.values(Blockchain), { each: true })
+  blockchains: string[] = Object.values(Blockchain);
 
   @IsNotEmpty()
   @IsInt()
@@ -127,7 +145,8 @@ export class DomainsController {
       const response = new DomainResponse();
       response.meta = {
         domain: domain.name,
-        location: resolution.location,
+        blockchain: resolution.blockchain,
+        networkId: resolution.networkId,
         owner: resolution.ownerAddress,
         resolver: resolution.resolver,
         registry: resolution.registry,
@@ -141,7 +160,8 @@ export class DomainsController {
         owner: null,
         resolver: null,
         registry: null,
-        location: 'UNMINTED',
+        blockchain: null,
+        networkId: null,
       },
       records: {},
     };
@@ -176,7 +196,8 @@ export class DomainsController {
     const resolutions = await DomainsResolution.find({
       where: {
         ownerAddress: ownersQuery ? In(ownersQuery) : undefined,
-        location: In(query.locations),
+        blockchain: In(query.blockchains),
+        networkId: In(query.networkIds.map(toNumber)),
       },
       relations: ['domain'],
       take: query.perPage,
@@ -190,7 +211,8 @@ export class DomainsController {
         attributes: {
           meta: {
             domain: resolution.domain.name,
-            location: resolution.location,
+            blockchain: resolution.blockchain,
+            networkId: resolution.networkId,
             owner: resolution.ownerAddress,
             resolver: resolution.resolver,
             registry: resolution.registry,

@@ -442,6 +442,7 @@ describe('ZilWorker', () => {
     expect(domainFromDb?.node).eq(
       '0xd81a54e6c75997b2bbd27a0c0d5afa898eae62dbfc3c178964bcceea0c009b3c',
     );
-    expect(dbResolution?.location).eq('ZNS');
+    expect(dbResolution?.blockchain).eq('ZIL');
+    expect(dbResolution?.networkId).eq(333);
   });
 });

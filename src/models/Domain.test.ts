@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { Blockchain } from '../types/common';
 import Domain from './Domain';
 
 describe('Domain', () => {

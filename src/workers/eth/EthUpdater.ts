@@ -2,7 +2,7 @@ import { logger } from '../../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
 import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import { env } from '../../env';
-import { Contract, Event, BigNumber, ethers } from 'ethers';
+import { Contract, Event, BigNumber } from 'ethers';
 import { EntityManager, getConnection, Repository } from 'typeorm';
 import { ETHContracts } from '../../contracts';
 import { eip137Namehash } from '../../utils/namehash';
@@ -14,6 +14,7 @@ import { ExecutionRevertedError } from './BlockchainErrors';
 import { CnsResolver } from './CnsResolver';
 import * as ethersUtils from '../../utils/ethersUtils';
 import { BlockchainName } from '../../models/DomainsResolution';
+import { Blockchain } from '../types/common';
 
 export class EthUpdater {
   private unsRegistry: Contract = ETHContracts.UNSRegistry.getContract();
@@ -166,7 +167,6 @@ export class EthUpdater {
     const resolution = domain.getResolution(this.blockchain, this.networkId);
 
     domain.name = uri;
-    resolution.location = 'CNS';
     resolution.ownerAddress = lastProcessedEvent.args?.to.toLowerCase();
     resolution.registry = this.cnsRegistry.address;
 
@@ -174,7 +174,6 @@ export class EthUpdater {
     if (contractAddress === this.unsRegistry.address.toLowerCase()) {
       resolution.resolver = contractAddress;
       resolution.registry = this.unsRegistry.address.toLowerCase();
-      resolution.location = 'UNS';
     }
     domain.setResolution(resolution);
     await domainRepository.save(domain);
@@ -302,6 +301,8 @@ export class EthUpdater {
         logIndex: event.logIndex,
         transactionHash: event.transactionHash,
         returnValues: values,
+        blockchain: Blockchain.ETH,
+        networkId: env.APPLICATION.ETHEREUM.NETWORK_ID,
       }),
     );
   }

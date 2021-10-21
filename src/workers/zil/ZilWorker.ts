@@ -9,9 +9,8 @@ import { znsChildhash } from '../../utils/namehash';
 import { logger } from '../../logger';
 import { isBech32 } from '@zilliqa-js/util/dist/validation';
 import { fromBech32Address } from '@zilliqa-js/crypto';
-import Bugsnag from '@bugsnag/js';
 import { ZnsTransactionEvent } from '../../models/ZnsTransaction';
-import { BlockchainName } from '../../models/DomainsResolution';
+import { Blockchain } from '../../types/common';
 import { env } from '../../env';
 
 type ZilWorkerOptions = {
@@ -21,7 +20,7 @@ type ZilWorkerOptions = {
 export default class ZilWorker {
   private provider: ZnsProvider;
   private perPage: number;
-  readonly blockchain: BlockchainName = 'ZIL';
+  readonly blockchain: Blockchain = Blockchain.ZIL;
   readonly networkId: number = env.APPLICATION.ZILLIQA.NETWORK_ID;
 
   constructor(options?: ZilWorkerOptions) {
@@ -65,7 +64,6 @@ export default class ZilWorker {
         try {
           await this.processTransaction(transaction, queryRunner);
         } catch (error) {
-          Bugsnag.notify(error as Error);
           logger.error(
             `Failed to process Transaction ${JSON.stringify(transaction)}`,
           );
@@ -94,7 +92,6 @@ export default class ZilWorker {
       try {
         await this.processTransactionEvent(event, queryRunner);
       } catch (error) {
-        Bugsnag.notify(error as Error);
         logger.error(`Failed to process event. ${JSON.stringify(event)}`);
         logger.error(error);
       }
@@ -160,7 +157,6 @@ export default class ZilWorker {
       name: `${label}.${parentDomain.name}`,
     });
     resolution.registry = this.provider.registryAddress;
-    resolution.location = 'ZNS';
     domain.setResolution(resolution);
     await repository.save(domain);
   }

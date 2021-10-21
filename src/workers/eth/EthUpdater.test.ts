@@ -219,8 +219,8 @@ describe('EthUpdater', () => {
       );
       expect(domain).to.containSubset({
         name: cns.name,
-      });
-      expect(resolution).to.containSubset({
+        blockchain: 'ETH',
+        networkId: 1337,
         resolver: resolver.address.toLowerCase(),
         resolution: {
           'crypto.BTC.address': 'qp3gu0flg7tehyv73ua5nznlw8s040nz3uqnyffrcn',
@@ -259,6 +259,8 @@ describe('EthUpdater', () => {
         name: uns.name,
       });
       expect(resolution).to.containSubset({
+        blockchain: 'ETH',
+        networkId: 1337,
         resolver: unsRegistry.address.toLowerCase(),
         ownerAddress: owner.toLowerCase(),
         location: 'UNS',
@@ -394,6 +396,7 @@ describe('EthUpdater', () => {
         relations: ['resolutions'],
       });
       expect(domain.label).to.equal(expectedLabel);
+      expect(domain.registry).to.equal(cnsRegistry.address);
     });
 
     it('should add new uns domain', async () => {

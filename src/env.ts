@@ -46,7 +46,7 @@ export const env = {
         process.env.UNS_REGISTRY_EVENTS_STARTING_BLOCK || 12779230,
       ),
       JSON_RPC_API_URL: process.env.ETHEREUM_JSON_RPC_API_URL,
-      CHAIN_ID: Number(process.env.ETHEREUM_CHAIN_ID || 1),
+      NETWORK_ID: Number(process.env.ETHEREUM_NETWORK_ID || 1),
       CONFIRMATION_BLOCKS: Number(
         process.env.ETHEREUM_CONFIRMATION_BLOCKS || 20,
       ),
@@ -57,6 +57,9 @@ export const env = {
       RECORDS_PER_PAGE: Number(process.env.ETHEREUM_RECORDS_PER_PAGE || 100),
       FETCH_INTERVAL: Number(process.env.ETHEREUM_FETCH_INTERVAL || 5000),
       MAX_REORG_SIZE: Number(process.env.ETHEREUM_MAX_REORG_SIZE || 200),
+      ACCEPTABLE_DELAY_IN_BLOCKS: Number(
+        process.env.ETHEREUM_ACCEPTABLE_DELAY_IN_BLOCKS || 100,
+      ),
     },
     ZILLIQA: {
       NETWORK: ZnsNetwork,
@@ -69,9 +72,13 @@ export const env = {
         ZnsNetwork === 'mainnet'
           ? 'https://api.zilliqa.com/'
           : 'https://dev-api.zilliqa.com/',
+      NETWORK_ID: Number(ZnsNetwork === 'mainnet' ? 1 : 333),
       VIEWBLOCK_API_KEY: process.env.VIEWBLOCK_API_KEY,
       VIEWBLOCK_API_URL: 'https://api.viewblock.io/v1/zilliqa',
       FETCH_INTERVAL: Number(process.env.ZNS_FETCH_INTERVAL || 5000),
+      ACCEPTABLE_DELAY_IN_BLOCKS: Number(
+        process.env.ZILLIQA_ACCEPTABLE_DELAY_IN_BLOCKS || 200,
+      ),
     },
     ERC721_METADATA: {
       GOOGLE_CLOUD_STORAGE_BASE_URL:

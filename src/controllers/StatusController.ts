@@ -1,13 +1,16 @@
 import { Get, JsonController } from 'routing-controllers';
 import 'reflect-metadata';
 import { ResponseSchema } from 'routing-controllers-openapi';
-import { IsNumber, IsString, ValidateNested } from 'class-validator';
-import { WorkerStatus } from '../models';
+import { IsBoolean, IsNumber, ValidateNested } from 'class-validator';
+import { Domain, WorkerStatus } from '../models';
 import ZilProvider from '../workers/zil/ZilProvider';
 import { env } from '../env';
 import * as ethersUtils from '../utils/ethersUtils';
 
 class BlockchainStatus {
+  @IsBoolean()
+  isUpToDate: boolean;
+
   @IsNumber()
   latestNetworkBlock = 0;
 
@@ -16,6 +19,9 @@ class BlockchainStatus {
 
   @IsNumber()
   networkId: number;
+
+  @IsNumber()
+  acceptableDelayInBlocks: number;
 }
 
 class Blockchains {
@@ -47,6 +53,13 @@ export class StatusController {
       'ETH',
     );
     blockchain.ETH.latestNetworkBlock = await ethersUtils.getLatestNetworkBlock();
+    blockchain.ETH.networkId = env.APPLICATION.ETHEREUM.NETWORK_ID;
+    blockchain.ETH.acceptableDelayInBlocks =
+      env.APPLICATION.ETHEREUM.ACCEPTABLE_DELAY_IN_BLOCKS;
+    blockchain.ETH.isUpToDate =
+      blockchain.ETH.latestNetworkBlock - blockchain.ETH.latestMirroredBlock <=
+      blockchain.ETH.acceptableDelayInBlocks;
+
     blockchain.ZIL.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
       'ZIL',
     );
@@ -54,11 +67,26 @@ export class StatusController {
       await this.zilProvider.getChainStats()
     ).txHeight;
 
-    blockchain.ETH.networkId = env.APPLICATION.ETHEREUM.CHAIN_ID;
-    blockchain.ZIL.networkId =
-      env.APPLICATION.ZILLIQA.NETWORK === 'mainnet' ? 1 : 333;
+    blockchain.ZIL.networkId = env.APPLICATION.ZILLIQA.NETWORK_ID;
+    blockchain.ZIL.acceptableDelayInBlocks =
+      env.APPLICATION.ZILLIQA.ACCEPTABLE_DELAY_IN_BLOCKS;
+    blockchain.ZIL.isUpToDate =
+      blockchain.ZIL.latestNetworkBlock - blockchain.ZIL.latestMirroredBlock <=
+      blockchain.ZIL.acceptableDelayInBlocks;
 
     statusResponse.blockchain = blockchain;
     return statusResponse;
+  }
+
+  @Get('/liveness_check')
+  async livenessCheck(): Promise<{ status: string }> {
+    await Domain.findOne();
+    return { status: 'ok' };
+  }
+
+  @Get('/readiness_check')
+  async readinessCheck(): Promise<{ status: string }> {
+    await Domain.findOne();
+    return { status: 'ok' };
   }
 }
