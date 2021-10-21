@@ -6,8 +6,11 @@ import { createCanvas } from 'canvas';
 import createSVGfromTemplate from './svgTemplate';
 import btoa from 'btoa';
 
+const CryptoPunksImageContractAddress =
+  '0x16F5A35647D6F03D5D3da7b35409D65ba03aF3B2';
+
 const parsePictureRecord = (avatarRecord: string) => {
-  const regex = /(1)\/(erc721|erc1155):(0x[a-fA-F0-9]{40})\/(\d+)/;
+  const regex = /(1)\/(erc721|erc1155|cryptopunks):(0x[a-fA-F0-9]{40})\/(\d+)/;
   const matches = regex.exec(avatarRecord);
   if (!matches || matches.length !== 5) {
     throw new Error('Invalid avatar record');
@@ -29,6 +32,10 @@ const constructNFTContract = async (
     erc1155: [
       'function uri(uint256 _id) external view returns (string memory)',
       'function balanceOf(address _owner, uint256 _id) external view returns (uint256)',
+    ],
+    cryptopunks: [
+      'function punkIndexToAddress(uint256 _tokenId) public view returns (address)',
+      'function punkImageSvg(uint16 index) external view returns (string memory)',
     ],
   };
   if (!abis[nftStandard]) {
@@ -67,6 +74,13 @@ const isOwnedByAddress = (
     return contract.functions
       .balanceOf(ownerAddress, tokenId)
       .then((balance) => balance > 0);
+  }
+  if (nftStandard === 'cryptopunks') {
+    return contract.functions
+      .punkIndexToAddress(tokenId)
+      .then(
+        ([address]) => address.toLowerCase() === ownerAddress.toLowerCase(),
+      );
   }
   return '';
 };
@@ -111,9 +125,9 @@ const getImageURLFromTokenURI = async (tokenURI: string) => {
 export const getSocialPictureUrl = async (
   avatarRecord: string,
   ownerAddress: string,
-): Promise<string> => {
+): Promise<{ pictureOrUrl: string; nftStandard: string }> => {
   if (!avatarRecord || !ownerAddress) {
-    return '';
+    return { pictureOrUrl: '', nftStandard: '' };
   }
   try {
     const { nftStandard, contractAddress, tokenId } = parsePictureRecord(
@@ -131,6 +145,16 @@ export const getSocialPictureUrl = async (
     if (!isOwner) {
       throw new Error('User does not own NFT');
     }
+    if (nftStandard === 'cryptopunks') {
+      const cryptoPunksImageContract = await constructNFTContract(
+        CryptoPunksImageContractAddress,
+        'cryptopunks',
+      );
+      const [svgImage] = await cryptoPunksImageContract.functions.punkImageSvg(
+        tokenId,
+      );
+      return { pictureOrUrl: svgImage, nftStandard };
+    }
     const tokenURI = await getTokenURI({
       contract: nftContract,
       nftStandard,
@@ -139,9 +163,9 @@ export const getSocialPictureUrl = async (
     const imageURL = await getImageURLFromTokenURI(
       tokenURI.replace('0x{id}', tokenId),
     );
-    return imageURL;
+    return { pictureOrUrl: imageURL, nftStandard };
   } catch {
-    return '';
+    return { pictureOrUrl: '', nftStandard: '' };
   }
 };
 
