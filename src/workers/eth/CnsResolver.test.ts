@@ -116,7 +116,10 @@ describe('CnsResolver', () => {
 
   describe('basic domain records', () => {
     it('should fetch resolver', async () => {
-      const domain = await Domain.findOrCreateByName(testDomainName, 'CNS');
+      const domain = await Domain.findOrCreateByName(testDomainName, {
+        blockchain: 'ETH',
+        networkId: 1,
+      });
       await service.fetchResolver(domain, Domain.getRepository());
       expect(domain.resolver).to.equal(resolver.address.toLowerCase());
     });
@@ -132,7 +135,10 @@ describe('CnsResolver', () => {
           testTokenId,
         )
         .then((receipt) => receipt.wait());
-      const domain = await Domain.findOrCreateByName(testDomainName, 'CNS');
+      const domain = await Domain.findOrCreateByName(testDomainName, {
+        blockchain: 'ETH',
+        networkId: 1,
+      });
 
       await service.fetchResolver(domain, Domain.getRepository());
 
@@ -146,7 +152,10 @@ describe('CnsResolver', () => {
       await registry.functions
         .resolveTo(AddressZero, testTokenId)
         .then((receipt) => receipt.wait());
-      const domain = await Domain.findOrCreateByName(testDomainName, 'CNS');
+      const domain = await Domain.findOrCreateByName(testDomainName, {
+        blockchain: 'ETH',
+        networkId: 1,
+      });
       await domain.update({
         resolver: resolver.address.toLowerCase(),
         resolution: { hello: 'world' },

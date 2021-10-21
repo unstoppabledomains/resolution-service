@@ -10,6 +10,8 @@ import { logger } from '../../logger';
 import { isBech32 } from '@zilliqa-js/util/dist/validation';
 import { fromBech32Address } from '@zilliqa-js/crypto';
 import { ZnsTransactionEvent } from '../../models/ZnsTransaction';
+import { Blockchain } from '../../types/common';
+import { env } from '../../env';
 
 type ZilWorkerOptions = {
   perPage?: number;
@@ -150,8 +152,9 @@ export default class ZilWorker {
     const domain = await Domain.findOrBuildByNode(node, repository);
     domain.attributes({
       name: `${label}.${parentDomain.name}`,
-      location: 'ZNS',
       registry: this.provider.registryAddress,
+      blockchain: Blockchain.ZIL,
+      networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
     });
     await repository.save(domain);
   }

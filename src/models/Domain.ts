@@ -8,29 +8,30 @@ import {
   Repository,
 } from 'typeorm';
 import {
+  IsIn,
+  IsNumber,
   IsObject,
   IsOptional,
   IsString,
   Matches,
   NotEquals,
-  IsEnum,
 } from 'class-validator';
 import ValidateWith from '../services/ValidateWith';
 import * as _ from 'lodash';
 import { Model } from '.';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
-import { Attributes } from '../types/common';
+import { Attributes, Blockchain } from '../types/common';
 import punycode from 'punycode';
-import AnimalDomainHelper from '../utils/AnimalDomainHelper/AnimalDomainHelper';
 
-export const DomainLocations = ['CNS', 'ZNS', 'UNSL1', 'UNSL2', 'UNMINTED'];
-export type Location = typeof DomainLocations[number];
+export type Location = {
+  networkId: number;
+  blockchain: keyof typeof Blockchain;
+};
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
   static AddressRegex = /^0x[a-fA-F0-9]{40}$/;
   static NullAddress = '0x0000000000000000000000000000000000000000';
-  static AnimalHelper = new AnimalDomainHelper();
 
   @IsString()
   @ValidateWith<Domain>('nameMatchesNode', {
@@ -79,9 +80,14 @@ export default class Domain extends Model {
   @JoinColumn({ name: 'parent_id' })
   children: Promise<Domain[]>;
 
-  @IsEnum(DomainLocations)
+  @IsNumber()
+  @Column('int')
+  networkId: number;
+
+  @IsIn([Blockchain.ZIL, Blockchain.ETH, Blockchain.MATIC])
+  @IsString()
   @Column('text')
-  location: Location;
+  blockchain: keyof typeof Blockchain;
 
   constructor(attributes?: Attributes<Domain>) {
     super();
@@ -147,7 +153,7 @@ export default class Domain extends Model {
     if (!this.name || this.name !== this.name.toLowerCase()) {
       return undefined;
     }
-    if (this.location === 'ZNS') {
+    if (this.blockchain === Blockchain.ZIL) {
       return znsNamehash(this.name);
     }
     return eip137Namehash(this.name);
@@ -166,35 +172,23 @@ export default class Domain extends Model {
     location: Location,
     repository: Repository<Domain> = this.getRepository(),
   ): Promise<Domain> {
-    const domain = await repository.findOne({ name, location });
+    const domain = await repository.findOne({
+      name,
+      blockchain: location.blockchain,
+      networkId: location.networkId,
+    });
     if (domain) {
       return domain;
     }
 
     const newDomain = new Domain();
-    // todo Don't prefill domain registry. Set domain registry from incoming ETH events only.
-    const registry = this.getRegistryAddressFromLocation(location);
     newDomain.attributes({
       name: name,
       node: eip137Namehash(name),
-      location: location,
-      registry,
+      blockchain: location.blockchain,
+      networkId: location.networkId,
     });
     await repository.save(newDomain);
     return newDomain;
-  }
-
-  // todo Don't prefill domain registry. Set domain registry from incoming ETH events only.
-  static getRegistryAddressFromLocation(location: string): string {
-    switch (location) {
-      case 'CNS':
-        return '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe';
-      case 'ZNS':
-        return '0x9611c53be6d1b32058b2747bdececed7e1216793';
-      case 'UNSL1':
-        return '0x049aba7510f45ba5b64ea9e658e342f904db358d';
-      default:
-        return Domain.NullAddress;
-    }
   }
 }
