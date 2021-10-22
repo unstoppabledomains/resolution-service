@@ -8,7 +8,7 @@ on:
         default: 'api workers'
         required: true
 env:
-  IMAGE_NAME: gcr.io/${{ secrets.GCP_STAGING_PROJECT_ID }}/resolution-service:${{ env.GITHUB_SHA }}
+  IMAGE_NAME: gcr.io/${{ secrets.GCP_STAGING_PROJECT_ID }}/resolution-service:${{ GITHUB_SHA }}
   RESOLUTION_POSTGRES_HOST: ${{ secrets.RESOLUTION_STAGING_POSTGRES_HOST }}
   RESOLUTION_POSTGRES_USERNAME: ${{ secrets.RESOLUTION_STAGING_POSTGRES_USERNAME }}
   RESOLUTION_POSTGRES_PASSWORD: ${{ secrets.RESOLUTION_STAGING_POSTGRES_PASSWORD }}
