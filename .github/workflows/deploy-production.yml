@@ -7,35 +7,76 @@ on:
         description: 'api/workers/dispatch.yaml'
         default: 'api workers'
         required: true
+env:
+  IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/resolution-service:${{ github.sha }}
+  RESOLUTION_POSTGRES_HOST: ${{ secrets.RESOLUTION_POSTGRES_HOST }}
+  RESOLUTION_POSTGRES_USERNAME: ${{ secrets.RESOLUTION_POSTGRES_USERNAME }}
+  RESOLUTION_POSTGRES_PASSWORD: ${{ secrets.RESOLUTION_POSTGRES_PASSWORD }}
+  RESOLUTION_POSTGRES_DATABASE: ${{ secrets.RESOLUTION_POSTGRES_DATABASE}}
+  ETHEREUM_JSON_RPC_API_URL: ${{ secrets.ETHEREUM_JSON_RPC_API_URL}}
+  VIEWBLOCK_API_KEY: ${{ secrets.VIEWBLOCK_API_KEY }}
+  GCP_SQL_INSTANCE: ${{ secrets.GCP_SQL_INSTANCE }}
+  ETHEREUM_NETWORK_ID: 1
+  ZNS_NETWORK: mainnet
+  BUGSNAG_API_KEY: ${{ secrets.BUGSNAG_API_KEY }}
+  NEW_RELIC_APP_NAME: ${{ secrets.NEW_RELIC_APP_NAME }}
+  NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
 
 jobs:
-  deploy_api:
-    if: contains(github.event.inputs.deployables, 'api')
+  build_and_push_docker_image:
     runs-on: ubuntu-latest
-    env:
-      RESOLUTION_POSTGRES_HOST: ${{ secrets.RESOLUTION_POSTGRES_HOST }}
-      RESOLUTION_POSTGRES_USERNAME: ${{ secrets.RESOLUTION_POSTGRES_USERNAME }}
-      RESOLUTION_POSTGRES_PASSWORD: ${{ secrets.RESOLUTION_POSTGRES_PASSWORD }}
-      RESOLUTION_POSTGRES_DATABASE: ${{ secrets.RESOLUTION_POSTGRES_DATABASE}}
-      ETHEREUM_JSON_RPC_API_URL: ${{ secrets.ETHEREUM_JSON_RPC_API_URL}}
-      VIEWBLOCK_API_KEY: ${{ secrets.VIEWBLOCK_API_KEY }}
-      GCP_SQL_INSTANCE: ${{ secrets.GCP_SQL_INSTANCE }}
-      ETHEREUM_NETWORK_ID: 1
-      ZNS_NETWORK: mainnet
-      BUGSNAG_API_KEY: ${{ secrets.BUGSNAG_API_KEY }}
-      NEW_RELIC_APP_NAME: ${{ secrets.NEW_RELIC_APP_NAME }}
-      NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
-      SERVICE_NAME: api
-      RESOLUTION_RUNNING_MODE: API,MIGRATIONS
-
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout master
+        uses: actions/checkout@v2
+
+      - name: Restore cached Docker layers
+        uses: satackey/action-docker-layer-caching@v0.0.11
+        # Ignore the failure of a step and avoid terminating the job.
+        continue-on-error: true
+
+      - name: Build docker image and cache docker layers
+        run: docker build . --file Dockerfile --tag $IMAGE_NAME
 
       - name: Set up gcloud SDK
         uses: google-github-actions/setup-gcloud@master
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+
+      - name: Login into Google Cloud Container Registry
+        run: gcloud auth configure-docker -q
+
+      - name: Puch docker image into Registry
+        run: docker push $IMAGE_NAME
+
+      - name: Save app engine yaml generator to reuse between jobs
+        uses: actions/upload-artifact@v2
+        with:
+          name: create-yaml-sh
+          path: create-yaml.sh
+          retention-days: 1
+
+  deploy_api:
+    if: contains(github.event.inputs.deployables, 'api')
+    needs: build_and_push_docker_image
+    runs-on: ubuntu-latest
+    env:
+      SERVICE_NAME: api
+      RESOLUTION_RUNNING_MODE: API,MIGRATIONS
+
+    steps:
+      - name: Set up gcloud SDK
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Download app engine yaml generator
+        uses: actions/download-artifact@v2
+        with:
+          name: create-yaml-sh
+          path: ./
 
       - name: Create api.yaml
         shell: bash
@@ -45,35 +86,28 @@ jobs:
         run: gcloud config set app/cloud_build_timeout 1200
 
       - name: Deploy API
-        run: gcloud app deploy api.yaml
+        run: gcloud app deploy api.yaml --image-url=$IMAGE_NAME
 
   deploy_workers:
     runs-on: ubuntu-latest
+    needs: build_and_push_docker_image
     if: contains(github.event.inputs.deployables, 'workers')
     env:
-      RESOLUTION_POSTGRES_HOST: ${{ secrets.RESOLUTION_POSTGRES_HOST }}
-      RESOLUTION_POSTGRES_USERNAME: ${{ secrets.RESOLUTION_POSTGRES_USERNAME }}
-      RESOLUTION_POSTGRES_PASSWORD: ${{ secrets.RESOLUTION_POSTGRES_PASSWORD }}
-      RESOLUTION_POSTGRES_DATABASE: ${{ secrets.RESOLUTION_POSTGRES_DATABASE}}
-      ETHEREUM_JSON_RPC_API_URL: ${{ secrets.ETHEREUM_JSON_RPC_API_URL}}
-      VIEWBLOCK_API_KEY: ${{ secrets.VIEWBLOCK_API_KEY }}
-      GCP_SQL_INSTANCE: ${{ secrets.GCP_SQL_INSTANCE }}
-      ETHEREUM_NETWORK_ID: 1
-      ZNS_NETWORK: mainnet
-      BUGSNAG_API_KEY: ${{ secrets.BUGSNAG_API_KEY }}
-      NEW_RELIC_APP_NAME: ${{ secrets.NEW_RELIC_APP_NAME }}
-      NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
       SERVICE_NAME: workers
       RESOLUTION_RUNNING_MODE: ETH_WORKER,ZIL_WORKER
 
     steps:
-      - uses: actions/checkout@v2
-
       - name: Set up gcloud SDK
         uses: google-github-actions/setup-gcloud@master
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Download app engine yaml generator
+        uses: actions/download-artifact@v2
+        with:
+          name: create-yaml-sh
+          path: ./
 
       - name: Create worker.yaml
         shell: bash
@@ -83,4 +117,4 @@ jobs:
         run: gcloud config set app/cloud_build_timeout 1200
 
       - name: Deploy WORKERS
-        run: gcloud app deploy workers.yaml
+        run: gcloud app deploy workers.yaml --image-url=$IMAGE_NAME
