@@ -126,12 +126,6 @@ export class DomainsResolutions1633949166388 implements MigrationInterface {
     query += queryItems.join(',');
     query += ` ON CONFLICT (id) DO UPDATE SET "owner_address"=EXCLUDED."owner_address", "registry"=EXCLUDED."registry", "resolver"=EXCLUDED."resolver", "resolution"=EXCLUDED."resolution";`;
     await queryRunner.query(query);
-    await queryRunner.query(
-      `ALTER TABLE "domains" ALTER "network_id" SET NOT NULL`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "domains" ALTER "blockchain" SET NOT NULL`,
-    );
     await queryRunner.query(`DROP INDEX "IDX_c945d466e308bfb10aa7f69014"`);
     await queryRunner.query(`DROP TABLE "domains_resolution"`);
     await queryRunner.query(
