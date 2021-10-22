@@ -171,8 +171,6 @@ describe('DomainsController', () => {
         registry: '0x9611c53be6d1b32058b2747bdececed7e1216793',
         node:
           '0x8052ef7b6b4eee4bc0d7014f0e216db6270bf0055bcd3582368601f2de5e60f0',
-        blockchain: 'ZIL',
-        networkId: 1,
         resolution: {},
       });
       const res = await supertest(api)
@@ -430,8 +428,6 @@ describe('DomainsController', () => {
           '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ZIL',
-        networkId: 1,
       });
 
       const res = await supertest(api)
@@ -502,8 +498,6 @@ describe('DomainsController', () => {
           '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08bbeadb',
-        blockchain: 'ZIL',
-        networkId: 1,
       });
 
       const res = await supertest(api)

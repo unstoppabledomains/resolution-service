@@ -63,7 +63,6 @@ export const env = {
     },
     ZILLIQA: {
       NETWORK: ZnsNetwork,
-      NETWORK_ID: ZnsNetwork === 'mainnet' ? 1 : 333,
       ZNS_REGISTRY_CONTRACT:
         ZnsNetwork === 'mainnet'
           ? '0x9611c53be6d1b32058b2747bdececed7e1216793'

@@ -73,7 +73,7 @@ export class DomainsResolutions1633949166388 implements MigrationInterface {
       const netId =
         item.location == 'ZNS'
           ? env.APPLICATION.ZILLIQA.NETWORK_ID
-          : env.APPLICATION.ETHEREUM.CHAIN_ID;
+          : env.APPLICATION.ETHEREUM.NETWORK_ID;
       queryItems.push(
         `('${item.owner}','${item.registry}','${
           item.resolver

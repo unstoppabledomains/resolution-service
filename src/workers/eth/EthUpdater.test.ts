@@ -396,7 +396,7 @@ describe('EthUpdater', () => {
         relations: ['resolutions'],
       });
       expect(domain.label).to.equal(expectedLabel);
-      expect(domain.registry).to.equal(cnsRegistry.address);
+      expect(domain.extension).to.equal(cns.tld);
     });
 
     it('should add new uns domain', async () => {

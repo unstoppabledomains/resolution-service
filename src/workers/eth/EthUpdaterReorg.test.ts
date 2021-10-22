@@ -44,7 +44,7 @@ describe('EthUpdater handles reorgs', () => {
   let owner: string;
   let recipient: string;
   const sinonSandbox = sinon.createSandbox();
-  const ethNetworkId = env.APPLICATION.ETHEREUM.CHAIN_ID;
+  const ethNetworkId = env.APPLICATION.ETHEREUM.NETWORK_ID;
 
   type DomainBlockInfo = {
     blockNumber: number;

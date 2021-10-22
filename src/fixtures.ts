@@ -18,7 +18,7 @@ export default async (): Promise<void> => {
     `,
   );
   const zilNetId = env.APPLICATION.ZILLIQA.NETWORK_ID;
-  const ethNetId = env.APPLICATION.ETHEREUM.CHAIN_ID;
+  const ethNetId = env.APPLICATION.ETHEREUM.NETWORK_ID;
   await getConnection().query(
     `INSERT INTO "domains_resolution" (domain_id, location, blockchain, network_id)
        VALUES (0, 'ZNS', 'ZIL', ${zilNetId}),

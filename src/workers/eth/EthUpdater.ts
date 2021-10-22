@@ -14,14 +14,14 @@ import { ExecutionRevertedError } from './BlockchainErrors';
 import { CnsResolver } from './CnsResolver';
 import * as ethersUtils from '../../utils/ethersUtils';
 import { BlockchainName } from '../../models/DomainsResolution';
-import { Blockchain } from '../types/common';
+import { Blockchain } from '../../types/common';
 
 export class EthUpdater {
   private unsRegistry: Contract = ETHContracts.UNSRegistry.getContract();
   private cnsRegistry: Contract = ETHContracts.CNSRegistry.getContract();
   private cnsResolver: CnsResolver = new CnsResolver();
   readonly blockchain: BlockchainName = 'ETH';
-  readonly networkId: number = env.APPLICATION.ETHEREUM.CHAIN_ID;
+  readonly networkId: number = env.APPLICATION.ETHEREUM.NETWORK_ID;
 
   private currentSyncBlock = 0;
   private currentSyncBlockHash = '';

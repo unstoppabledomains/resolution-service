@@ -112,7 +112,7 @@ export class MetaDataController {
       case 'ZNS':
         return domain.getResolution('ZIL', env.APPLICATION.ZILLIQA.NETWORK_ID);
       default:
-        return domain.getResolution('ETH', env.APPLICATION.ETHEREUM.CHAIN_ID);
+        return domain.getResolution('ETH', env.APPLICATION.ETHEREUM.NETWORK_ID);
     }
   }
 

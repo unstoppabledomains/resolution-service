@@ -23,10 +23,7 @@ import {
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
 import { In } from 'typeorm';
-import DomainsResolution, {
-  DomainLocations,
-  Location,
-} from '../models/DomainsResolution';
+import DomainsResolution from '../models/DomainsResolution';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
 import { LocationFromDomainName } from '../utils/domainLocationUtils';
 import { env } from '../env';
@@ -139,7 +136,7 @@ export class DomainsController {
       } else {
         resolution = domain.getResolution(
           'ETH',
-          env.APPLICATION.ETHEREUM.CHAIN_ID,
+          env.APPLICATION.ETHEREUM.NETWORK_ID,
         );
       }
       const response = new DomainResponse();

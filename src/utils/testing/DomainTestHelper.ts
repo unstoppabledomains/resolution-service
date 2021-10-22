@@ -25,7 +25,7 @@ export class DomainTestHelper {
   ): Promise<{ domain: Domain; resolution: DomainsResolution }> {
     const resolution = new DomainsResolution({
       blockchain: options.blockchain ?? 'ETH',
-      networkId: options.networkId ?? env.APPLICATION.ETHEREUM.CHAIN_ID,
+      networkId: options.networkId ?? env.APPLICATION.ETHEREUM.NETWORK_ID,
       ownerAddress:
         options.ownerAddress ?? '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
       location: options.location ?? 'CNS',
