@@ -1,10 +1,18 @@
 FROM node:14.16.1-alpine
-RUN apk add --no-cache git
-RUN apk add gcc make g++ zlib-dev xfce4-dev-tools postgresql-client cairo-dev pango-dev
-ADD ./ /app
+RUN apk add --no-cache git gcc make g++ zlib-dev xfce4-dev-tools postgresql-client cairo-dev pango-dev && \
+    mkdir /app
+
 WORKDIR /app
-RUN rm -rf node_modules && \
-    yarn install && \
-    yarn build
+# We need to add package.json in separate step to get node_modules as separate docker layer and cache it
+ADD ./package.json /package.json
+
+# Run yarn install separately from build to get node_modules as separate docker layer and cache ti
+RUN yarn install --production=false --no-lockfile
+
+ADD . /
+RUN yarn build
+
+# Cleanup development packages
+RUN yarn install --production=true --no-lockfile --offline
 
 ENTRYPOINT ["node", "build/src/index.js"]
