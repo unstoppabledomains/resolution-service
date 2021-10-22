@@ -4,12 +4,12 @@ RUN apk add --no-cache git gcc make g++ zlib-dev xfce4-dev-tools postgresql-clie
 
 WORKDIR /app
 # We need to add package.json in separate step to get node_modules as separate docker layer and cache it
-ADD ./package.json /package.json
+ADD ./package.json ./package.json
 
 # Run yarn install separately from build to get node_modules as separate docker layer and cache ti
 RUN yarn install --production=false --no-lockfile
 
-ADD . /
+ADD . ./
 RUN yarn build
 
 # Cleanup development packages
