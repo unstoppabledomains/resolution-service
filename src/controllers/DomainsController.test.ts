@@ -70,7 +70,7 @@ describe('DomainsController', () => {
           '0x08c2e9d2a30aa81623fcc758848d5556696868222fbc80a15ca46ec2fe2cba4f',
         ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
         blockchain: Blockchain.ETH,
-        networkId: 1,
+        networkId: 1337,
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         resolution: {
           'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
@@ -89,7 +89,7 @@ describe('DomainsController', () => {
           resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
           registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
           blockchain: 'ETH',
-          networkId: 1,
+          networkId: 1337,
         },
         records: {
           'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
@@ -111,7 +111,7 @@ describe('DomainsController', () => {
         node: eip137Namehash('test.nft'),
         registry: getRegistryAddressFromLocation('UNS'),
         blockchain: Blockchain.ETH,
-        networkId: 1,
+        networkId: 1337,
       });
 
       const znsResult = await supertest(api)
@@ -163,7 +163,7 @@ describe('DomainsController', () => {
 
     it('should return minted domain ending on .zil', async () => {
       await DomainTestHelper.createTestDomain({
-        blockchain: 'ZIL',
+        blockchain: Blockchain.ZIL,
         networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
         name: 'sometestforzil.zil',
         ownerAddress: '0xcea21f5a6afc11b3a4ef82e986d63b8b050b6910',
@@ -171,8 +171,6 @@ describe('DomainsController', () => {
         registry: '0x9611c53be6d1b32058b2747bdececed7e1216793',
         node:
           '0x8052ef7b6b4eee4bc0d7014f0e216db6270bf0055bcd3582368601f2de5e60f0',
-        blockchain: 'ZIL',
-        networkId: 1,
         resolution: {},
       });
       const res = await supertest(api)
@@ -187,7 +185,7 @@ describe('DomainsController', () => {
           resolver: '0x34bbdee3404138430c76c2d1b2d4a2d223a896df',
           registry: '0x9611c53be6d1b32058b2747bdececed7e1216793',
           blockchain: 'ZIL',
-          networkId: 1,
+          networkId: 333,
         },
         records: {},
       });
@@ -199,8 +197,6 @@ describe('DomainsController', () => {
         ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
         node:
           '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
-        blockchain: 'ETH',
-        networkId: 1,
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         resolution: {
           'gundb.username.value':
@@ -229,7 +225,7 @@ describe('DomainsController', () => {
           resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
           registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
           blockchain: 'ETH',
-          networkId: 1,
+          networkId: 1337,
         },
         records: {
           'gundb.username.value':
@@ -277,8 +273,6 @@ describe('DomainsController', () => {
           '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
 
       const res = await supertest(api)
@@ -315,8 +309,6 @@ describe('DomainsController', () => {
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
 
       const res = await supertest(api)
@@ -355,8 +347,6 @@ describe('DomainsController', () => {
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
       const {
         domain: testDomainTwo,
@@ -367,8 +357,6 @@ describe('DomainsController', () => {
           '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
 
       const res = await supertest(api)
@@ -419,19 +407,15 @@ describe('DomainsController', () => {
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
       await DomainTestHelper.createTestDomain({
-        blockchain: 'ZIL',
+        blockchain: Blockchain.ZIL,
         networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
         name: 'test1.zil',
         node:
           '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ZIL',
-        networkId: 1,
       });
 
       const res = await supertest(api)
@@ -467,8 +451,6 @@ describe('DomainsController', () => {
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
       const res = await supertest(api)
         .get(
@@ -491,24 +473,20 @@ describe('DomainsController', () => {
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        blockchain: 'ETH',
-        networkId: 1,
       });
       await DomainTestHelper.createTestDomain({
-        blockchain: 'ZIL',
+        blockchain: Blockchain.ZIL,
         networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
         name: 'test1.zil',
         node:
           '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08bbeadb',
-        blockchain: 'ZIL',
-        networkId: 1,
       });
 
       const res = await supertest(api)
         .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]=ETH',
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1337&blockchains[]=ETH',
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();

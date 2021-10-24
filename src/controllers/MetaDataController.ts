@@ -7,7 +7,7 @@ import AnimalDomainHelper, {
   OpenSeaMetadataAttribute,
 } from '../utils/AnimalDomainHelper/AnimalDomainHelper';
 import { DefaultImageData } from '../utils/generalImage';
-import { MetadataImageFontSize } from '../types/common';
+import { Blockchain, MetadataImageFontSize } from '../types/common';
 import { pathThatSvg } from 'path-that-svg';
 import { IsArray, IsObject, IsOptional, IsString } from 'class-validator';
 import { env } from '../env';
@@ -19,7 +19,7 @@ import {
 } from '../utils/socialPicture';
 import punycode from 'punycode';
 import DomainsResolution from '../models/DomainsResolution';
-import { LocationFromDomainName } from '../utils/domainLocationUtils';
+import { IsZilDomain } from '../utils/domainLocationUtils';
 
 const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
 const CUSTOM_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/custom` as const;
@@ -107,13 +107,16 @@ export class MetaDataController {
   }
 
   private getDomainResolution(domain: Domain): DomainsResolution {
-    const location = LocationFromDomainName(domain.name);
-    switch (location) {
-      case 'ZNS':
-        return domain.getResolution('ZIL', env.APPLICATION.ZILLIQA.NETWORK_ID);
-      default:
-        return domain.getResolution('ETH', env.APPLICATION.ETHEREUM.CHAIN_ID);
+    if (IsZilDomain(domain.name)) {
+      return domain.getResolution(
+        Blockchain.ZIL,
+        env.APPLICATION.ZILLIQA.NETWORK_ID,
+      );
     }
+    return domain.getResolution(
+      Blockchain.ETH,
+      env.APPLICATION.ETHEREUM.NETWORK_ID,
+    );
   }
 
   @Get('/metadata/:domainOrToken')

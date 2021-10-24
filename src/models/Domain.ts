@@ -7,22 +7,15 @@ import {
   OneToMany,
   Repository,
 } from 'typeorm';
-import {
-  IsIn,
-  IsNumber,
-  IsObject,
-  IsOptional,
-  IsString,
-  Matches,
-  NotEquals,
-} from 'class-validator';
+import { IsOptional, IsString, Matches } from 'class-validator';
 import ValidateWith from '../services/ValidateWith';
 import * as _ from 'lodash';
 import { Model } from '.';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import { Attributes } from '../types/common';
 import punycode from 'punycode';
-import DomainsResolution, { BlockchainName } from './DomainsResolution';
+import DomainsResolution from './DomainsResolution';
+import { Blockchain } from '../types/common';
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
@@ -128,7 +121,7 @@ export default class Domain extends Model {
   }
 
   public getResolution(
-    blockchain: BlockchainName,
+    blockchain: Blockchain,
     networkId: number,
   ): DomainsResolution {
     let resolution = this.resolutions?.filter(

@@ -63,7 +63,7 @@ export const env = {
     },
     ZILLIQA: {
       NETWORK: ZnsNetwork,
-      NETWORK_ID: ZnsNetwork === 'mainnet' ? 1 : 333,
+      NETWORK_ID: Number(ZnsNetwork === 'mainnet' ? 1 : 333),
       ZNS_REGISTRY_CONTRACT:
         ZnsNetwork === 'mainnet'
           ? '0x9611c53be6d1b32058b2747bdececed7e1216793'
@@ -72,7 +72,6 @@ export const env = {
         ZnsNetwork === 'mainnet'
           ? 'https://api.zilliqa.com/'
           : 'https://dev-api.zilliqa.com/',
-      NETWORK_ID: Number(ZnsNetwork === 'mainnet' ? 1 : 333),
       VIEWBLOCK_API_KEY: process.env.VIEWBLOCK_API_KEY,
       VIEWBLOCK_API_URL: 'https://api.viewblock.io/v1/zilliqa',
       FETCH_INTERVAL: Number(process.env.ZNS_FETCH_INTERVAL || 5000),

@@ -23,12 +23,9 @@ import {
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
 import { In } from 'typeorm';
-import DomainsResolution, {
-  DomainLocations,
-  Location,
-} from '../models/DomainsResolution';
+import DomainsResolution from '../models/DomainsResolution';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
-import { LocationFromDomainName } from '../utils/domainLocationUtils';
+import { IsZilDomain } from '../utils/domainLocationUtils';
 import { env } from '../env';
 import { Blockchain } from '../types/common';
 import { toNumber } from 'lodash';
@@ -129,17 +126,16 @@ export class DomainsController {
       relations: ['resolutions'],
     });
     if (domain) {
-      const location = LocationFromDomainName(domain.name);
       let resolution: DomainsResolution;
-      if (location === 'ZNS') {
+      if (IsZilDomain(domain.name)) {
         resolution = domain.getResolution(
-          'ZIL',
+          Blockchain.ZIL,
           env.APPLICATION.ZILLIQA.NETWORK_ID,
         );
       } else {
         resolution = domain.getResolution(
-          'ETH',
-          env.APPLICATION.ETHEREUM.CHAIN_ID,
+          Blockchain.ETH,
+          env.APPLICATION.ETHEREUM.NETWORK_ID,
         );
       }
       const response = new DomainResponse();

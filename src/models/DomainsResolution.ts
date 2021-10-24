@@ -9,12 +9,7 @@ import {
 import ValidateWith from '../services/ValidateWith';
 import * as _ from 'lodash';
 import { Domain, Model } from '.';
-import { Attributes } from '../types/common';
-
-export type BlockchainName = 'ETH' | 'ZIL' | 'MATIC';
-
-export const DomainLocations = ['CNS', 'ZNS', 'UNS', 'UNMINTED'];
-export type Location = typeof DomainLocations[number];
+import { Attributes, Blockchain } from '../types/common';
 
 @Entity({ name: 'domains_resolution' })
 @Unique(['id', 'blockchain', 'networkId'])
@@ -38,10 +33,6 @@ export default class DomainsResolution extends Model {
   @Column('text', { nullable: true })
   registry: string | null = null;
 
-  @IsEnum(DomainLocations)
-  @Column('text')
-  location: Location;
-
   @IsOptional()
   @IsObject()
   @ValidateWith<DomainsResolution>('validResolution', {
@@ -50,8 +41,9 @@ export default class DomainsResolution extends Model {
   @Column('jsonb', { default: {} })
   resolution: Record<string, string> = {};
 
+  @IsEnum(Blockchain)
   @Column('text')
-  blockchain: BlockchainName;
+  blockchain: Blockchain;
 
   @Column('int')
   networkId: number;

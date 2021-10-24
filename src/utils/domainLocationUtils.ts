@@ -1,16 +1,9 @@
-import DomainsResolution, { Location } from '../models/DomainsResolution';
+import DomainsResolution from '../models/DomainsResolution';
 
-export function LocationFromDomainName(name: string): Location {
+export function IsZilDomain(name: string): boolean {
   const tokens = name.split('.');
   const tld = tokens[tokens.length - 1];
-  switch (tld) {
-    case 'zil':
-      return 'ZNS';
-    case 'crypto':
-      return 'CNS';
-    default:
-      return 'UNS';
-  }
+  return tld === 'zil';
 }
 
 // todo Don't prefill domain registry. Set domain registry from incoming ETH events only.
