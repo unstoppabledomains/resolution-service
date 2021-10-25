@@ -1,8 +1,9 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, Unique } from 'typeorm';
 import {
-  IsEnum,
   IsObject,
   IsOptional,
+  IsIn,
+  IsString,
   Matches,
   NotEquals,
 } from 'class-validator';

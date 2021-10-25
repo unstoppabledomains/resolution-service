@@ -71,14 +71,10 @@ export class DomainsResolutions1633949166388 implements MigrationInterface {
     const query = `INSERT INTO "domains_resolution" ("owner_address", "registry", "resolver", "blockchain", "network_id", "resolution", "domain_id") VALUES `;
     const queryItems = [];
     for (const item of domainsData) {
-      const blockchain = item.blockchain;
-      const netId = item.networkId;
       queryItems.push(
-        `('${item.owner}','${item.registry}','${
-          item.resolver
-        }','${blockchain}',${netId},'${JSON.stringify(item.resolution)}',${
-          item.id
-        })`,
+        `('${item.owner}','${item.registry}','${item.resolver}','${
+          item.blockchain
+        }',${item.networkId},'${JSON.stringify(item.resolution)}',${item.id})`,
       );
     }
     await queryRunner.query(query + queryItems.join(','));
@@ -86,10 +82,10 @@ export class DomainsResolutions1633949166388 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "domains" DROP COLUMN "owner_address"`,
     );
-    await queryRunner.query(`ALTER TABLE "domains" DROP COLUMN "resolver"`);
-    await queryRunner.query(`ALTER TABLE "domains" DROP COLUMN "resolution"`);
     await queryRunner.query(`ALTER TABLE "domains" DROP COLUMN "blockchain"`);
     await queryRunner.query(`ALTER TABLE "domains" DROP COLUMN "network_id"`);
+    await queryRunner.query(`ALTER TABLE "domains" DROP COLUMN "resolver"`);
+    await queryRunner.query(`ALTER TABLE "domains" DROP COLUMN "resolution"`);
     await queryRunner.query(`ALTER TABLE "domains" DROP COLUMN "registry"`);
     await queryRunner.query(
       `ALTER TABLE "cns_registry_events" ALTER COLUMN "contract_address" DROP DEFAULT`,
@@ -107,13 +103,13 @@ export class DomainsResolutions1633949166388 implements MigrationInterface {
       `ALTER TABLE "cns_registry_events" ALTER COLUMN "contract_address" SET DEFAULT '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe'`,
     );
     await queryRunner.query(`ALTER TABLE "domains" ADD "registry" text`);
-    await queryRunner.query(`ALTER TABLE "domains" ADD "blockchain" text`);
-    await queryRunner.query(`ALTER TABLE "domains" ADD "network_id" integer`);
     await queryRunner.query(
       `ALTER TABLE "domains" ADD "resolution" jsonb NOT NULL DEFAULT '{}'`,
     );
     await queryRunner.query(`ALTER TABLE "domains" ADD "resolver" text`);
     await queryRunner.query(`ALTER TABLE "domains" ADD "owner_address" text`);
+    await queryRunner.query(`ALTER TABLE "domains" ADD "blockchain" text`);
+    await queryRunner.query(`ALTER TABLE "domains" ADD "network_id" integer`);
 
     const domainsData = await this.getDomainsResolutionData(queryRunner);
     let query = `INSERT INTO "domains" ("id", "name", "node", "owner_address", "registry", "resolver", "blockchain", "network_id", "resolution") VALUES `;
@@ -130,7 +126,6 @@ export class DomainsResolutions1633949166388 implements MigrationInterface {
     query += queryItems.join(',');
     query += ` ON CONFLICT (id) DO UPDATE SET "owner_address"=EXCLUDED."owner_address", "registry"=EXCLUDED."registry", "resolver"=EXCLUDED."resolver", "blockchain"=EXCLUDED."blockchain", "network_id"=EXCLUDED."network_id", "resolution"=EXCLUDED."resolution";`;
     await queryRunner.query(query);
-
     await queryRunner.query(`DROP INDEX "IDX_c945d466e308bfb10aa7f69014"`);
     await queryRunner.query(`DROP TABLE "domains_resolution"`);
     await queryRunner.query(

@@ -400,6 +400,7 @@ describe('EthUpdater', () => {
       });
       expect(domain.label).to.equal(expectedLabel);
       expect(domain.resolutions[0].registry).to.equal(cnsRegistry.address);
+      expect(domain.extension).to.equal(cns.tld);
     });
 
     it('should add new uns domain', async () => {

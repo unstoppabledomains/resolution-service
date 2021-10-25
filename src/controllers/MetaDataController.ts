@@ -20,6 +20,7 @@ import {
 import punycode from 'punycode';
 import DomainsResolution from '../models/DomainsResolution';
 import { IsZilDomain } from '../utils/domainLocationUtils';
+import btoa from 'btoa';
 
 const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
 const CUSTOM_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/custom` as const;
@@ -131,13 +132,27 @@ export class MetaDataController {
     }
     const resolution = this.getDomainResolution(domain);
 
-    const socialPictureUrl = await getSocialPictureUrl(
+    const { pictureOrUrl, nftStandard } = await getSocialPictureUrl(
       resolution.resolution['social.picture.value'],
       resolution.ownerAddress || '',
     );
     let socialPicture = '';
-    if (socialPictureUrl) {
-      const [data, mimeType] = await getNFTSocialPicture(socialPictureUrl);
+    if (pictureOrUrl) {
+      let data = '',
+        mimeType = null;
+      if (nftStandard === 'cryptopunks') {
+        data = btoa(
+          pictureOrUrl
+            .replace(`data:image/svg+xml;utf8,`, ``)
+            .replace(
+              `<svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 24 24">`,
+              `<svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 24 24"><rect width="100%" height="100%" fill="#648595"/>`,
+            ),
+        );
+        mimeType = 'image/svg+xml';
+      } else {
+        [data, mimeType] = await getNFTSocialPicture(pictureOrUrl);
+      }
       socialPicture = createSocialPictureImage(domain, data, mimeType);
     }
     const description = this.getDomainDescription(

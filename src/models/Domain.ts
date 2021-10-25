@@ -136,7 +136,7 @@ export default class Domain extends Model {
     return resolution;
   }
 
-  public setResolution(resolution: DomainsResolution) {
+  public setResolution(resolution: DomainsResolution): void {
     const otherResolutions = this.resolutions?.filter(
       (res) =>
         res.blockchain != resolution.blockchain &&
