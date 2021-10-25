@@ -29,7 +29,7 @@ export default class ZilWorker {
   }
 
   private async getLastAtxuid() {
-    const lastAtxuid = await WorkerStatus.latestAtxuidForWorker('ZIL');
+    const lastAtxuid = await WorkerStatus.latestAtxuidForWorker(Blockchain.ZIL);
     return lastAtxuid === undefined ? -1 : lastAtxuid;
   }
 

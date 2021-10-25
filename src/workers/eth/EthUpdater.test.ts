@@ -80,7 +80,11 @@ describe('EthUpdater', () => {
       .value(block.number);
     uns = getNSConfig('blockchain');
     cns = getNSConfig('crypto');
-    await WorkerStatus.saveWorkerStatus(Blockchain.ETH, block.number, block.hash);
+    await WorkerStatus.saveWorkerStatus(
+      Blockchain.ETH,
+      block.number,
+      block.hash,
+    );
 
     await mintingManager.functions
       .mintSLD(owner, uns.tldHash, uns.label)
@@ -99,7 +103,9 @@ describe('EthUpdater', () => {
 
     await service.run();
 
-    const workerStatus = await WorkerStatus.findOne({ location: 'ETH' });
+    const workerStatus = await WorkerStatus.findOne({
+      location: Blockchain.ETH,
+    });
     const netBlockNumber = await ethersUtils.getLatestNetworkBlock();
     const expectedBlock = await EthereumProvider.getBlock(
       netBlockNumber - env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS,

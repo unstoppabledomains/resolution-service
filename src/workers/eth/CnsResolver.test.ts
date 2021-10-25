@@ -11,6 +11,7 @@ import { ETHContracts } from '../../contracts';
 import supportedKeysJson from 'dot-crypto/src/supported-keys/supported-keys.json';
 import * as ethersUtils from '../../utils/ethersUtils';
 import { DomainTestHelper } from '../../utils/testing/DomainTestHelper';
+import { Blockchain } from '../../types/common';
 
 describe('CnsResolver', () => {
   let service: CnsResolver;

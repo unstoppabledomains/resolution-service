@@ -17,7 +17,7 @@ import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
 import { ETHContracts } from '../../contracts';
 import * as ethersUtils from '../../utils/ethersUtils';
-import { BlockchainName } from '../../models/DomainsResolution';
+import { Blockchain } from '../../types/common';
 
 type NSConfig = {
   tld: string;
@@ -51,10 +51,10 @@ class LayerTestFixture {
   mintingManager: Contract;
   provider: StaticJsonRpcProvider;
   config: EthUpdaterConfig;
-  network: BlockchainName;
+  network: Blockchain;
 
   async setup(
-    network: BlockchainName,
+    network: Blockchain,
     updaterConfig: EthUpdaterConfig,
     networkConfig: any,
   ) {
@@ -96,8 +96,8 @@ describe('EthUpdater l2 worker', () => {
 
   before(async () => {
     await EthereumHelper.stopNetwork();
-    await L1Fixture.setup('ETH', env.APPLICATION.ETHEREUM, {});
-    await L2Fixture.setup('MATIC', env.APPLICATION.POLYGON, {
+    await L1Fixture.setup(Blockchain.ETH, env.APPLICATION.ETHEREUM, {});
+    await L2Fixture.setup(Blockchain.MATIC, env.APPLICATION.POLYGON, {
       network: {
         url: 'http://localhost:7546',
         chainId: 1337,
@@ -126,7 +126,9 @@ describe('EthUpdater l2 worker', () => {
     await L1Fixture.service.run();
     await L2Fixture.service.run();
 
-    const workerStatus = await WorkerStatus.findOne({ location: 'ETH' });
+    const workerStatus = await WorkerStatus.findOne({
+      location: Blockchain.ETH,
+    });
     const netBlockNumber = await ethersUtils.getLatestNetworkBlock(
       L1Fixture.provider,
     );
@@ -137,7 +139,9 @@ describe('EthUpdater l2 worker', () => {
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(expectedBlock.number);
     expect(workerStatus?.lastMirroredBlockHash).to.eq(expectedBlock.hash);
 
-    const workerStatusL2 = await WorkerStatus.findOne({ location: 'MATIC' });
+    const workerStatusL2 = await WorkerStatus.findOne({
+      location: Blockchain.MATIC,
+    });
     const netBlockNumberL2 = await ethersUtils.getLatestNetworkBlock(
       L2Fixture.provider,
     );
@@ -166,13 +170,13 @@ describe('EthUpdater l2 worker', () => {
     expect(domain.label).to.equal(uns.label);
     const l1Resolution = domain.getResolution(
       L1Fixture.network,
-      L1Fixture.config.CHAIN_ID,
+      L1Fixture.config.NETWORK_ID,
     );
     expect(l1Resolution).to.exist;
     expect(l1Resolution.ownerAddress).to.be(owner);
     const l2Resolution = domain.getResolution(
       L2Fixture.network,
-      L2Fixture.config.CHAIN_ID,
+      L2Fixture.config.NETWORK_ID,
     );
     expect(l2Resolution).to.exist;
     expect(l2Resolution.ownerAddress).to.be(owner);
@@ -199,14 +203,14 @@ describe('EthUpdater l2 worker', () => {
     });
     const resolution = domain?.getResolution(
       L1Fixture.network,
-      L1Fixture.config.CHAIN_ID,
+      L1Fixture.config.NETWORK_ID,
     );
     expect(resolution.resolution).to.deep.equal({
       'crypto.ETH.address': '0x829BD824B016326A401d083B33D092293333A830',
     });
     const resolutionL2 = domain?.getResolution(
       L2Fixture.network,
-      L2Fixture.config.CHAIN_ID,
+      L2Fixture.config.NETWORK_ID,
     );
     expect(resolutionL2.resolution).to.be.empty;
   });
@@ -232,14 +236,14 @@ describe('EthUpdater l2 worker', () => {
     });
     const resolution = domain?.getResolution(
       L1Fixture.network,
-      L1Fixture.config.CHAIN_ID,
+      L1Fixture.config.NETWORK_ID,
     );
     expect(resolution.resolution).to.deep.equal({
       'crypto.ETH.address': '0x829BD824B016326A401d083B33D092293333A830',
     });
     const resolutionL2 = domain?.getResolution(
       L2Fixture.network,
-      L2Fixture.config.CHAIN_ID,
+      L2Fixture.config.NETWORK_ID,
     );
     expect(resolutionL2.resolution).to.be.empty;
   });
