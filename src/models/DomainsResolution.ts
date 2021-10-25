@@ -2,10 +2,9 @@ import { Column, Entity, Index, JoinColumn, ManyToOne, Unique } from 'typeorm';
 import {
   IsObject,
   IsOptional,
-  IsIn,
-  IsString,
   Matches,
   NotEquals,
+  IsEnum,
 } from 'class-validator';
 import ValidateWith from '../services/ValidateWith';
 import * as _ from 'lodash';
