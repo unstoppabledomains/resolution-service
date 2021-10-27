@@ -1,8 +1,8 @@
+import { ETHContracts } from '../../contracts';
 import { env } from '../../env';
 import { Domain } from '../../models';
 import DomainsResolution from '../../models/DomainsResolution';
 import { Attributes, Blockchain } from '../../types/common';
-import { getRegistryAddressFromLocation } from '../domainLocationUtils';
 
 export type CreateTestDomainOptions = {
   name: string;
@@ -15,7 +15,22 @@ export type CreateTestDomainOptions = {
   networkId: number;
 };
 
+// todo Don't prefill domain registry. Set domain registry from incoming ETH events only.
+
 export class DomainTestHelper {
+  private static getRegistryAddressFromLocation(location: string): string {
+    switch (location) {
+      case 'CNS':
+        return ETHContracts.CNSRegistry.address;
+      case 'ZNS':
+        return env.APPLICATION.ZILLIQA.ZNS_REGISTRY_CONTRACT;
+      case 'UNS':
+        return ETHContracts.UNSRegistry.address;
+      default:
+        return DomainsResolution.NullAddress;
+    }
+  }
+
   static async createTestDomain(
     options: Attributes<CreateTestDomainOptions> = {},
   ): Promise<{ domain: Domain; resolution: DomainsResolution }> {
@@ -29,7 +44,9 @@ export class DomainTestHelper {
         options.resolver ?? '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
       registry:
         options.registry ??
-        getRegistryAddressFromLocation(options.blockchain ?? 'CNS'),
+        DomainTestHelper.getRegistryAddressFromLocation(
+          options.blockchain ?? 'CNS',
+        ),
     });
 
     const domain = new Domain({

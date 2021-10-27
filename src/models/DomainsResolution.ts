@@ -12,12 +12,12 @@ import { Domain, Model } from '.';
 import { Attributes, Blockchain } from '../types/common';
 
 @Entity({ name: 'domains_resolution' })
-@Unique(['id', 'blockchain', 'networkId'])
+@Unique(['domain', 'blockchain', 'networkId'])
+@Index(['domain', 'blockchain', 'networkId', 'ownerAddress'])
 export default class DomainsResolution extends Model {
   static AddressRegex = /^0x[a-fA-F0-9]{40}$/;
   static NullAddress = '0x0000000000000000000000000000000000000000';
 
-  @Index()
   @IsOptional()
   @Matches(DomainsResolution.AddressRegex)
   @Column('text', { nullable: true })

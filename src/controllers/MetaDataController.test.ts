@@ -2,7 +2,6 @@ import supertest from 'supertest';
 import { api } from '../api';
 import { expect } from 'chai';
 import { DomainTestHelper } from '../utils/testing/DomainTestHelper';
-import fetch from 'node-fetch';
 import { eip137Namehash } from '../utils/namehash';
 import { DefaultImageData, BackgroundColor } from '../utils/generalImage';
 import nock from 'nock';
@@ -76,8 +75,7 @@ describe('MetaDataController', () => {
 
       const { domain: animalDomain } = await DomainTestHelper.createTestDomain({
         name: 'unstoppablelemming.crypto',
-        node:
-          '0xccfd2756994b2ea38fcd2deaf3ae2b2a4678fce6e81fbe4f856ceb0cb50dfee9',
+        node: '0xccfd2756994b2ea38fcd2deaf3ae2b2a4678fce6e81fbe4f856ceb0cb50dfee9',
         ownerAddress: '0xe7474d07fd2fa286e7e0aa23cd107f8379085037',
         resolution: {
           'crypto.ETH.address': '0xe7474D07fD2FA286e7e0aa23cd107F8379085037',
@@ -179,8 +177,7 @@ describe('MetaDataController', () => {
 
       const { domain: animalDomain } = await DomainTestHelper.createTestDomain({
         name: 'trustbear.crypto',
-        node:
-          '0x329b868d34359c1961358088be9bfbd21e65eb8ab95e90b21e50d99c02b34c72',
+        node: '0x329b868d34359c1961358088be9bfbd21e65eb8ab95e90b21e50d99c02b34c72',
       });
       const expectedImageUrl =
         'https://storage.googleapis.com/dot-crypto-metadata-api/images/trust/bear.svg';
@@ -245,7 +242,8 @@ describe('MetaDataController', () => {
     });
 
     it('should work with special domains', async () => {
-      const CUSTOM_IMAGE_URL = 'https://storage.googleapis.com/dot-crypto-metadata-api/images/custom' as const;
+      const CUSTOM_IMAGE_URL =
+        'https://storage.googleapis.com/dot-crypto-metadata-api/images/custom' as const;
       const domainsWithCustomImage: Record<string, string> = {
         'code.crypto': 'code.svg',
         'web3.crypto': 'web3.svg',
@@ -332,18 +330,16 @@ describe('MetaDataController', () => {
     });
 
     it('should return the same attributes regardless of what record key is used for ipfs', async () => {
-      const {
-        domain: domainHtmlValue,
-      } = await DomainTestHelper.createTestDomain({
-        resolution: { 'ipfs.html.value': 'ipfs hash content' },
-      });
-      const {
-        domain: domainDwebHash,
-      } = await DomainTestHelper.createTestDomain({
-        name: 'testdomain2.crypto',
-        node: eip137Namehash('testdomain2.crypto'),
-        resolution: { 'dweb.ipfs.hash': 'ipfs hash content' },
-      });
+      const { domain: domainHtmlValue } =
+        await DomainTestHelper.createTestDomain({
+          resolution: { 'ipfs.html.value': 'ipfs hash content' },
+        });
+      const { domain: domainDwebHash } =
+        await DomainTestHelper.createTestDomain({
+          name: 'testdomain2.crypto',
+          node: eip137Namehash('testdomain2.crypto'),
+          resolution: { 'dweb.ipfs.hash': 'ipfs hash content' },
+        });
 
       const htmlValueResponse = await supertest(api)
         .get(`/metadata/${domainHtmlValue.name}`)

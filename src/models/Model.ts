@@ -63,12 +63,10 @@ export default abstract class Model extends BaseEntity {
     for (const key of Object.keys(attributes)) {
       const value = await (attributes as any)[key];
       const relation = that.relation(key);
-      if (relation) {
-        if (relation.joinColumns[0]) {
-          where[
-            relation.joinColumns[0].propertyName
-          ] = ((await value) as Model).id!;
-        }
+      if (relation?.joinColumns[0]) {
+        where[relation.joinColumns[0].propertyName] = (
+          (await value) as Model
+        ).id!;
       } else {
         where[key] = value;
       }

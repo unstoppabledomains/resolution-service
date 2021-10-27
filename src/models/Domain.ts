@@ -9,7 +9,6 @@ import {
 } from 'typeorm';
 import { IsOptional, IsString, Matches } from 'class-validator';
 import ValidateWith from '../services/ValidateWith';
-import * as _ from 'lodash';
 import { Model } from '.';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import { Attributes } from '../types/common';
@@ -37,16 +36,16 @@ export default class Domain extends Model {
 
   @IsOptional()
   @Index()
-  @ManyToOne((type) => Domain, { nullable: true })
+  @ManyToOne(() => Domain, { nullable: true })
   @JoinColumn()
   parent: Promise<Domain | null>;
 
-  @OneToMany((type) => Domain, (domain) => domain.parent)
+  @OneToMany(() => Domain, (domain) => domain.parent)
   @JoinColumn({ name: 'parent_id' })
   children: Promise<Domain[]>;
 
   @OneToMany(
-    (type) => DomainsResolution,
+    () => DomainsResolution,
     (domainResolution) => domainResolution.domain,
     {
       cascade: ['insert', 'update', 'remove'],
