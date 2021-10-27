@@ -273,13 +273,8 @@ describe('EthUpdater handles reorgs', () => {
       domainAt20.domain.tokenId.toHexString(),
     );
     if (changedDomain) {
-      changedDomain.resolutions = [
-        new DomainsResolution({
-          ownerAddress: '0x000000000000000000000000000000000000dead',
-          blockchain: Blockchain.ETH,
-          networkId: ethNetworkId,
-        }),
-      ];
+      changedDomain.resolutions[0].ownerAddress =
+        '0x000000000000000000000000000000000000dead';
       await changedDomain.save();
     }
 
@@ -329,13 +324,8 @@ describe('EthUpdater handles reorgs', () => {
       domainAt20.domain.tokenId.toHexString(),
     );
     if (changedDomain) {
-      changedDomain.resolutions = [
-        new DomainsResolution({
-          ownerAddress: '0x000000000000000000000000000000000000dead',
-          blockchain: Blockchain.ETH,
-          networkId: ethNetworkId,
-        }),
-      ];
+      changedDomain.resolutions[0].ownerAddress =
+        '0x000000000000000000000000000000000000dead';
       await changedDomain.save();
     }
 
