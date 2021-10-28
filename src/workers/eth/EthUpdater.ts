@@ -390,6 +390,8 @@ export class EthUpdater {
   }> {
     const latestEventBlocks = await CnsRegistryEvent.latestEventBlocks(
       this.config.MAX_REORG_SIZE,
+      this.blockchain,
+      this.networkId,
     );
 
     // Check first and last blocks as edge cases
@@ -549,7 +551,7 @@ export class EthUpdater {
         this.currentSyncBlock = fetchBlock;
         this.currentSyncBlockHash = (
           await this.provider.getBlock(this.currentSyncBlock)
-        ).hash;
+        )?.hash;
         await this.saveLastMirroredBlock(manager);
       });
     }

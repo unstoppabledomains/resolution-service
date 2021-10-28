@@ -1,5 +1,8 @@
 import { ethers, Wallet, BigNumber } from 'ethers';
-import { EthereumProvider } from '../../workers/EthereumProvider';
+import {
+  EthereumProvider,
+  StaticJsonRpcProvider,
+} from '../../workers/EthereumProvider';
 import { env } from '../../env';
 import Sandbox from 'uns/sandbox';
 
@@ -9,6 +12,11 @@ export class EthereumNetworkHelper {
   private sandbox: any;
   private sandboxInitialized = false;
   private accounts: Record<string, Wallet> = {};
+  private provider: StaticJsonRpcProvider;
+
+  constructor(provider: StaticJsonRpcProvider = EthereumProvider) {
+    this.provider = provider;
+  }
 
   public async fundAccounts(...accounts: Wallet[]): Promise<void> {
     for (const account of accounts) {
@@ -18,7 +26,7 @@ export class EthereumNetworkHelper {
 
   public async createAccount(): Promise<Wallet> {
     const account = Wallet.createRandom();
-    return account.connect(EthereumProvider);
+    return account.connect(this.provider);
   }
 
   public async fundFaucet(): Promise<void> {
@@ -57,7 +65,7 @@ export class EthereumNetworkHelper {
       Object.keys(accounts).forEach((key: string) => {
         this.accounts[key] = new Wallet(
           accounts[key].privateKey,
-          EthereumProvider,
+          this.provider,
         );
       });
     }

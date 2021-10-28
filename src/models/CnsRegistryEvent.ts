@@ -29,12 +29,14 @@ export const EventTypes = [
   'Approval',
   'ApprovalForAll',
   'NewURIPrefix',
+  'Upgraded',
+  'AdminChanged',
 ] as const;
 
 type EventType = typeof EventTypes[any];
 
 @Entity({ name: 'cns_registry_events' })
-@Index(['blockNumber', 'logIndex'], { unique: true })
+@Index(['blockNumber', 'blockchain', 'networkId', 'logIndex'], { unique: true })
 export default class CnsRegistryEvent extends Model {
   static EventTypes = EventTypes;
   static DomainOperationTypes = DomainOperationTypes;
@@ -47,17 +49,12 @@ export default class CnsRegistryEvent extends Model {
   type: EventType;
 
   @IsString()
-  @Column('text')
+  @Column({ type: 'text' })
   blockchain: keyof typeof Blockchain;
 
   @IsNumber()
   @Column('int')
   networkId: number;
-
-  @IsOptional()
-  @IsString()
-  @Column({ type: 'text', nullable: true })
-  blockchainId: string | null = null;
 
   @IsNumber()
   @ValidateWith<CnsRegistryEvent>('blockNumberIncreases')
@@ -111,12 +108,16 @@ export default class CnsRegistryEvent extends Model {
       return true;
     }
     return !(await CnsRegistryEvent.findOne({
+      blockchain: this.blockchain,
+      networkId: this.networkId,
       blockNumber: MoreThan(this.blockNumber),
     }));
   }
 
   async logIndexForBlockIncreases(): Promise<boolean> {
     return !(await CnsRegistryEvent.findOne({
+      blockchain: this.blockchain,
+      networkId: this.networkId,
       blockNumber: this.blockNumber,
       logIndex: MoreThan(this.logIndex),
     }));
@@ -139,6 +140,8 @@ export default class CnsRegistryEvent extends Model {
 
   async consistentBlockNumberForHash(): Promise<boolean> {
     const inconsistentEvent = await CnsRegistryEvent.findOne({
+      blockchain: this.blockchain,
+      networkId: this.networkId,
       transactionHash: this.transactionHash,
       blockNumber: Not(this.blockNumber),
     });
@@ -147,11 +150,15 @@ export default class CnsRegistryEvent extends Model {
 
   static async latestEventBlocks(
     count: number,
+    blockchain: Blockchain,
+    networkId: number,
     repository: Repository<CnsRegistryEvent> = this.getRepository(),
   ): Promise<{ blockNumber: number; blockHash: string }[]> {
     const res = await repository
       .createQueryBuilder()
       .select('block_number, block_hash')
+      .where('blockchain = :blockchain', { blockchain })
+      .andWhere('network_id = :networkId', { networkId })
       .groupBy('block_number, block_hash')
       .orderBy('block_number', 'ASC')
       .limit(count)

@@ -3,7 +3,6 @@ import { randomBytes } from 'crypto';
 import { env, EthUpdaterConfig } from '../../env';
 import { Domain, WorkerStatus } from '../../models';
 import {
-  EthereumProvider,
   GetProviderForConfig,
   StaticJsonRpcProvider,
 } from '../EthereumProvider';
@@ -59,7 +58,9 @@ class LayerTestFixture {
     networkConfig: any,
   ) {
     this.network = network;
-    this.networkHelper = new EthereumNetworkHelper();
+    this.config = updaterConfig;
+    this.provider = GetProviderForConfig(this.config);
+    this.networkHelper = new EthereumNetworkHelper(this.provider);
     await this.networkHelper.startNetwork(networkConfig);
     await this.networkHelper.resetNetwork();
 
@@ -69,11 +70,11 @@ class LayerTestFixture {
     this.mintingManager = ETHContracts.MintingManager.getContract().connect(
       this.networkHelper.minter(),
     );
-    this.config = updaterConfig;
-    this.provider = GetProviderForConfig(updaterConfig);
   }
 
   async prepareService(owner: string, uns: NSConfig) {
+    await this.networkHelper.resetNetwork();
+
     const block = await this.provider.getBlock('latest');
     sinon
       .stub(this.config, 'UNS_REGISTRY_EVENTS_STARTING_BLOCK')
