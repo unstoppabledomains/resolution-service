@@ -109,7 +109,7 @@ describe('CnsResolver', () => {
       .then((receipt) => receipt.wait());
     await EthereumHelper.mineBlocksForConfirmation();
 
-    service = new CnsResolver();
+    service = new CnsResolver(ETHContracts);
   });
 
   afterEach(() => {

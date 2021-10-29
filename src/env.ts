@@ -26,8 +26,8 @@ if (!process.env.ETHEREUM_JSON_RPC_API_URL) {
 if (!process.env.POLYGON_JSON_RPC_API_URL) {
   requiredEnvNotSet.push('POLYGON_JSON_RPC_API_URL');
 }
-if (!process.env.POLYGON_CHAIN_ID) {
-  requiredEnvNotSet.push('POLYGON_CHAIN_ID');
+if (!process.env.POLYGON_NETWORK_ID) {
+  requiredEnvNotSet.push('POLYGON_NETWORK_ID');
 }
 
 if (requiredEnvNotSet.length !== 0) {

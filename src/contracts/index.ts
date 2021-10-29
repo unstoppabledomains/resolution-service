@@ -1,1 +1,1 @@
-export { default as ETHContracts, getEthConfig } from './eth';
+export { default as ETHContracts, getEthConfig, CryptoConfig } from './eth';

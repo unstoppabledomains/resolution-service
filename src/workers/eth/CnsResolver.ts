@@ -2,7 +2,7 @@ import { env } from '../../env';
 import { Contract, Event, BigNumber, EventFilter, ethers } from 'ethers';
 import { Domain } from '../../models';
 import { Repository } from 'typeorm';
-import { ETHContracts } from '../../contracts';
+import { CryptoConfig } from '../../contracts';
 import supportedKeysJson from 'dot-crypto/src/supported-keys/supported-keys.json';
 import {
   InvalidValuesError,
@@ -15,8 +15,9 @@ import DomainsResolution from '../../models/DomainsResolution';
 const RecordsPerPage = env.APPLICATION.ETHEREUM.RECORDS_PER_PAGE;
 
 export class CnsResolver {
-  private registry: Contract = ETHContracts.CNSRegistry.getContract();
-  private resolver: Contract = ETHContracts.Resolver.getContract();
+  private config: CryptoConfig;
+  private registry: Contract;
+  private resolver: Contract;
   private static DefaultKeysHashes = Object.keys(supportedKeysJson.keys).reduce(
     (a, v) => {
       a[BigNumber.from(ethers.utils.id(v)).toString()] = v;
@@ -25,8 +26,14 @@ export class CnsResolver {
     {} as Record<string, string>,
   );
 
+  constructor(config: CryptoConfig) {
+    this.config = config;
+    this.registry = config.CNSRegistry.getContract();
+    this.resolver = config.Resolver.getContract();
+  }
+
   private isNotLegacyResolver(resolver: string) {
-    return !ETHContracts.Resolver.legacyAddresses.find(
+    return !this.config.Resolver.legacyAddresses.find(
       (x) => x.toLowerCase() === resolver.toLowerCase(),
     );
   }

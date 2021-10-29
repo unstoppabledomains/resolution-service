@@ -4,7 +4,7 @@ import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import { env } from '../../env';
 import { Contract, Event, BigNumber } from 'ethers';
 import { EntityManager, getConnection, Repository } from 'typeorm';
-import { ETHContracts } from '../../contracts';
+import { CryptoConfig, getEthConfig } from '../../contracts';
 import { eip137Namehash } from '../../utils/namehash';
 import { EthUpdaterError } from '../../errors/EthUpdaterError';
 import {
@@ -18,16 +18,18 @@ import { CnsResolver } from './CnsResolver';
 import * as ethersUtils from '../../utils/ethersUtils';
 import { Blockchain } from '../../types/common';
 import { EthUpdaterConfig } from '../../env';
+import NetworkConfig from 'uns/uns-config.json';
 
 export class EthUpdater {
-  private unsRegistry: Contract = ETHContracts.UNSRegistry.getContract();
-  private cnsRegistry: Contract = ETHContracts.CNSRegistry.getContract();
-  private cnsResolver: CnsResolver = new CnsResolver();
+  private unsRegistry: Contract;
+  private cnsRegistry: Contract;
+  private cnsResolver: CnsResolver;
   readonly blockchain: Blockchain = Blockchain.ETH;
   readonly networkId: number = env.APPLICATION.ETHEREUM.NETWORK_ID;
   private provider: StaticJsonRpcProvider;
 
   private config: EthUpdaterConfig;
+  private cryptoConfig: CryptoConfig;
 
   private currentSyncBlock = 0;
   private currentSyncBlockHash = '';
@@ -37,6 +39,15 @@ export class EthUpdater {
     this.networkId = config.NETWORK_ID;
     this.blockchain = blockchain;
     this.provider = GetProviderForConfig(config);
+    this.cryptoConfig = getEthConfig(
+      this.networkId.toString(),
+      NetworkConfig.networks,
+      this.provider,
+    );
+
+    this.unsRegistry = this.cryptoConfig.UNSRegistry.getContract();
+    this.cnsRegistry = this.cryptoConfig.CNSRegistry.getContract();
+    this.cnsResolver = new CnsResolver(this.cryptoConfig);
   }
 
   async getLatestNetworkBlock(): Promise<number> {
@@ -525,7 +536,7 @@ export class EthUpdater {
   }
 
   public async run(): Promise<void> {
-    logger.info('EthUpdater is pulling updates from Ethereum');
+    logger.info(`EthUpdater is pulling updates from ${this.blockchain}`);
 
     const { fromBlock, toBlock } = await this.syncBlockRanges();
 
