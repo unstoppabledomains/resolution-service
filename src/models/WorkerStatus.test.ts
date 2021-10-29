@@ -53,13 +53,17 @@ describe('WorkerStatus', () => {
       });
       await status.save();
 
-      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker(Blockchain.ETH);
+      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker(
+        Blockchain.ETH,
+      );
       expect(lastBlock).to.equal(expectedBlockNumber);
     });
 
     it('should return zero if no stats are saved', async () => {
       const expectedBlockNumber = 0;
-      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker(Blockchain.ETH);
+      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker(
+        Blockchain.ETH,
+      );
       expect(lastBlock).to.equal(expectedBlockNumber);
     });
   });
@@ -74,12 +78,16 @@ describe('WorkerStatus', () => {
       });
       await status.save();
 
-      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker(Blockchain.ZIL);
+      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker(
+        Blockchain.ZIL,
+      );
       expect(lastAtxuid).to.equal(expectedAtxuid);
     });
 
     it('should return undefined if no stats are saved', async () => {
-      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker(Blockchain.ZIL);
+      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker(
+        Blockchain.ZIL,
+      );
       expect(lastAtxuid).to.be.undefined;
     });
   });
@@ -103,8 +111,12 @@ describe('WorkerStatus', () => {
         expectedlastAtxuid,
       );
 
-      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker(Blockchain.ETH);
-      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker(Blockchain.ETH);
+      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker(
+        Blockchain.ETH,
+      );
+      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker(
+        Blockchain.ETH,
+      );
 
       expect(lastBlock).to.equal(expectedBlockNumber);
       expect(lastAtxuid).to.deep.equal(expectedlastAtxuid);
@@ -121,8 +133,12 @@ describe('WorkerStatus', () => {
         expectedlastAtxuid,
       );
 
-      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker(Blockchain.ETH);
-      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker(Blockchain.ETH);
+      const lastBlock = await WorkerStatus.latestMirroredBlockForWorker(
+        Blockchain.ETH,
+      );
+      const lastAtxuid = await WorkerStatus.latestAtxuidForWorker(
+        Blockchain.ETH,
+      );
 
       expect(lastBlock).to.equal(expectedBlockNumber);
       expect(lastAtxuid).to.deep.equal(expectedlastAtxuid);

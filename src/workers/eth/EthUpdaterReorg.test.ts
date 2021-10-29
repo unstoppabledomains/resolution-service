@@ -126,11 +126,17 @@ describe('EthUpdater handles reorgs', () => {
   // Reorg timeline:
   // 0----10b----d1----10b----d2----100b----x->
   it('should fix a reorg', async () => {
-    await WorkerStatus.saveWorkerStatus(Blockchain.ETH, oldBlock.number, 'incorrect');
+    await WorkerStatus.saveWorkerStatus(
+      Blockchain.ETH,
+      oldBlock.number,
+      'incorrect',
+    );
 
     await service.run();
 
-    const workerStatus = await WorkerStatus.findOne({ location: Blockchain.ETH });
+    const workerStatus = await WorkerStatus.findOne({
+      location: Blockchain.ETH,
+    });
     expect(workerStatus).to.exist;
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(oldBlock.number);
     expect(workerStatus?.lastMirroredBlockHash).to.eq(oldBlock.hash);
@@ -149,7 +155,9 @@ describe('EthUpdater handles reorgs', () => {
 
     await service.run();
 
-    const workerStatus = await WorkerStatus.findOne({ location: Blockchain.ETH });
+    const workerStatus = await WorkerStatus.findOne({
+      location: Blockchain.ETH,
+    });
     expect(workerStatus).to.exist;
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(oldBlock.number);
     expect(workerStatus?.lastMirroredBlockHash).to.eq(oldBlock.hash);
@@ -168,7 +176,9 @@ describe('EthUpdater handles reorgs', () => {
 
     await service.run();
 
-    const workerStatus = await WorkerStatus.findOne({ location: Blockchain.ETH });
+    const workerStatus = await WorkerStatus.findOne({
+      location: Blockchain.ETH,
+    });
     expect(workerStatus).to.exist;
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(oldBlock.number);
     expect(workerStatus?.lastMirroredBlockHash).to.eq(oldBlock.hash);
@@ -180,7 +190,11 @@ describe('EthUpdater handles reorgs', () => {
   // 0----10b----d1----10b----x----d2----100b---->
   it('should fix a reorg with old events', async () => {
     // todo remove
-    await WorkerStatus.saveWorkerStatus(Blockchain.ETH, oldBlock.number, '0xdead');
+    await WorkerStatus.saveWorkerStatus(
+      Blockchain.ETH,
+      oldBlock.number,
+      '0xdead',
+    );
     const reorgEvents = await CnsRegistryEvent.find({
       blockNumber: domainAt20.blockNumber,
     });
@@ -196,7 +210,9 @@ describe('EthUpdater handles reorgs', () => {
 
     expect(deleteSpy).to.be.calledOnceWith(domainAt10.blockNumber); // delete all events starting from the last matching
 
-    const workerStatus = await WorkerStatus.findOne({ location: Blockchain.ETH });
+    const workerStatus = await WorkerStatus.findOne({
+      location: Blockchain.ETH,
+    });
     expect(workerStatus).to.exist;
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(oldBlock.number);
     expect(workerStatus?.lastMirroredBlockHash).to.eq(oldBlock.hash);
@@ -220,7 +236,11 @@ describe('EthUpdater handles reorgs', () => {
       (await getLatestNetworkBlock()) -
         env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS,
     );
-    await WorkerStatus.saveWorkerStatus(Blockchain.ETH, oldBlock.number, '0xdead');
+    await WorkerStatus.saveWorkerStatus(
+      Blockchain.ETH,
+      oldBlock.number,
+      '0xdead',
+    );
     const reorgEvents = await CnsRegistryEvent.find({
       blockNumber: domainAt20.blockNumber,
     });
@@ -236,7 +256,9 @@ describe('EthUpdater handles reorgs', () => {
 
     expect(deleteSpy).to.be.calledOnceWith(domainAt10.blockNumber); // delete all events starting from the last matching
 
-    const workerStatus = await WorkerStatus.findOne({ location: Blockchain.ETH });
+    const workerStatus = await WorkerStatus.findOne({
+      location: Blockchain.ETH,
+    });
     expect(workerStatus).to.exist;
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(newBlock.number);
     expect(workerStatus?.lastMirroredBlockHash).to.eq(newBlock.hash);
@@ -261,7 +283,11 @@ describe('EthUpdater handles reorgs', () => {
   // Reorg timeline:
   // 0----10b----d1----10b----d2----100b----x->
   it('should fix a reorg and revert domain changes', async () => {
-    await WorkerStatus.saveWorkerStatus(Blockchain.ETH, oldBlock.number + 20, '0xdead');
+    await WorkerStatus.saveWorkerStatus(
+      Blockchain.ETH,
+      oldBlock.number + 20,
+      '0xdead',
+    );
     const eventAt120 = new CnsRegistryEvent({
       contractAddress: unsRegistry.address,
       type: 'Transfer',
@@ -287,7 +313,9 @@ describe('EthUpdater handles reorgs', () => {
 
     expect(deleteSpy).to.be.calledOnceWith(domainAt20.blockNumber); // delete all events starting from the last matching
 
-    const workerStatus = await WorkerStatus.findOne({ location: Blockchain.ETH });
+    const workerStatus = await WorkerStatus.findOne({
+      location: Blockchain.ETH,
+    });
     expect(workerStatus).to.exist;
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(oldBlock.number);
     expect(workerStatus?.lastMirroredBlockHash).to.eq(oldBlock.hash);
@@ -312,7 +340,11 @@ describe('EthUpdater handles reorgs', () => {
   // Reorg timeline:
   // 0----10b----d1----10b----d2----100b----x----d4----20b---->
   it('should fix a reorg and update domains', async () => {
-    await WorkerStatus.saveWorkerStatus(Blockchain.ETH, oldBlock.number + 20, '0xdead');
+    await WorkerStatus.saveWorkerStatus(
+      Blockchain.ETH,
+      oldBlock.number + 20,
+      '0xdead',
+    );
     const eventAt120 = new CnsRegistryEvent({
       contractAddress: unsRegistry.address,
       type: 'Transfer',
@@ -349,7 +381,9 @@ describe('EthUpdater handles reorgs', () => {
 
     expect(deleteSpy).to.be.calledOnceWith(domainAt20.blockNumber); // delete all events starting from the last matching
 
-    const workerStatus = await WorkerStatus.findOne({ location: Blockchain.ETH });
+    const workerStatus = await WorkerStatus.findOne({
+      location: Blockchain.ETH,
+    });
     expect(workerStatus).to.exist;
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(newBlock.number);
     expect(workerStatus?.lastMirroredBlockHash).to.eq(newBlock.hash);

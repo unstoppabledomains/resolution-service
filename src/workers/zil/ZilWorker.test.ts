@@ -55,7 +55,9 @@ describe('ZilWorker', () => {
       expect(txfromDb?.atxuid).to.eq(transaction.atxuid);
     }
 
-    const workerStatus = await WorkerStatus.findOne({ location: Blockchain.ZIL });
+    const workerStatus = await WorkerStatus.findOne({
+      location: Blockchain.ZIL,
+    });
     expect(workerStatus).to.exist;
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(
       FirstTwoTransactions[0].blockHeight,
