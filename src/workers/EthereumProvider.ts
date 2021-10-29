@@ -17,6 +17,7 @@ export class StaticJsonRpcProvider extends ethers.providers.JsonRpcProvider {
 }
 
 export const EthereumProvider = GetProviderForConfig(env.APPLICATION.ETHEREUM);
+export const MaticProvider = GetProviderForConfig(env.APPLICATION.POLYGON);
 
 export function GetProviderForConfig(
   config: EthUpdaterConfig,

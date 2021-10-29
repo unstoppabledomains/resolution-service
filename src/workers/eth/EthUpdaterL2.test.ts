@@ -14,7 +14,7 @@ import { EthUpdater } from './EthUpdater';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
-import { ETHContracts } from '../../contracts';
+import { getEthConfig } from '../../contracts';
 import * as ethersUtils from '../../utils/ethersUtils';
 import { Blockchain } from '../../types/common';
 
@@ -64,10 +64,14 @@ class LayerTestFixture {
     await this.networkHelper.startNetwork(networkConfig);
     await this.networkHelper.resetNetwork();
 
-    this.unsRegistry = ETHContracts.UNSRegistry.getContract().connect(
+    const ethContracts = getEthConfig(
+      this.config.NETWORK_ID.toString(),
+      this.provider,
+    );
+    this.unsRegistry = ethContracts.UNSRegistry.getContract().connect(
       this.networkHelper.owner(),
     );
-    this.mintingManager = ETHContracts.MintingManager.getContract().connect(
+    this.mintingManager = ethContracts.MintingManager.getContract().connect(
       this.networkHelper.minter(),
     );
   }
@@ -81,9 +85,12 @@ class LayerTestFixture {
       .value(block.number);
     await WorkerStatus.saveWorkerStatus(this.network, block.number, block.hash);
 
-    await this.mintingManager.functions
-      .mintSLD(owner, uns.tldHash, uns.label)
-      .then((receipt) => receipt.wait());
+    const receipt = await this.mintingManager.functions.mintSLD(
+      owner,
+      uns.tldHash,
+      uns.label,
+    );
+    await receipt.wait();
 
     this.service = new EthUpdater(this.network, this.config);
   }
@@ -174,13 +181,18 @@ describe('EthUpdater l2 worker', () => {
       L1Fixture.config.NETWORK_ID,
     );
     expect(l1Resolution).to.exist;
-    expect(l1Resolution.ownerAddress).to.be(owner);
+    expect(l1Resolution.ownerAddress?.toLowerCase()).to.equal(
+      owner.toLowerCase(),
+    );
+
     const l2Resolution = domain.getResolution(
       L2Fixture.network,
       L2Fixture.config.NETWORK_ID,
     );
     expect(l2Resolution).to.exist;
-    expect(l2Resolution.ownerAddress).to.be(owner);
+    expect(l2Resolution.ownerAddress?.toLowerCase()).to.equal(
+      owner.toLowerCase(),
+    );
   });
 
   it('should set records on L1', async () => {
@@ -239,13 +251,14 @@ describe('EthUpdater l2 worker', () => {
       L1Fixture.network,
       L1Fixture.config.NETWORK_ID,
     );
-    expect(resolution.resolution).to.deep.equal({
-      'crypto.ETH.address': '0x829BD824B016326A401d083B33D092293333A830',
-    });
+    expect(resolution.resolution).to.be.empty;
+
     const resolutionL2 = domain?.getResolution(
       L2Fixture.network,
       L2Fixture.config.NETWORK_ID,
     );
-    expect(resolutionL2.resolution).to.be.empty;
+    expect(resolutionL2.resolution).to.deep.equal({
+      'crypto.ETH.address': '0x829BD824B016326A401d083B33D092293333A830',
+    });
   });
 });

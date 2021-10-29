@@ -14,7 +14,7 @@ export class EthereumNetworkHelper {
   private accounts: Record<string, Wallet> = {};
   private provider: StaticJsonRpcProvider;
 
-  constructor(provider: StaticJsonRpcProvider = EthereumProvider) {
+  constructor(provider: StaticJsonRpcProvider) {
     this.provider = provider;
   }
 
@@ -101,4 +101,4 @@ export class EthereumNetworkHelper {
   }
 }
 
-export const EthereumHelper = new EthereumNetworkHelper();
+export const EthereumHelper = new EthereumNetworkHelper(EthereumProvider);

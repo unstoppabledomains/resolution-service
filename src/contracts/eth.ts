@@ -11,6 +11,7 @@ import proxyReaderJson from 'uns/artifacts/ProxyReader.json';
 import NetworkConfig from 'uns/uns-config.json';
 import {
   EthereumProvider,
+  MaticProvider,
   StaticJsonRpcProvider,
 } from '../workers/EthereumProvider';
 import { env } from '../env';
@@ -40,8 +41,8 @@ export type CryptoConfig = Record<
 
 export const getEthConfig = (
   networkId: string,
+  provider: StaticJsonRpcProvider,
   networks: { [key: string]: { contracts: any } } = NetworkConfig.networks,
-  provider: StaticJsonRpcProvider = EthereumProvider,
 ): CryptoConfig => {
   const cryptoConfig = {} as CryptoConfig;
   if (Object.keys(networks).includes(networkId)) {
@@ -71,4 +72,11 @@ export const getEthConfig = (
   return cryptoConfig;
 };
 
-export default getEthConfig(env.APPLICATION.ETHEREUM.NETWORK_ID.toString());
+export const ETHContracts = getEthConfig(
+  env.APPLICATION.ETHEREUM.NETWORK_ID.toString(),
+  EthereumProvider,
+);
+export const MATICContracts = getEthConfig(
+  env.APPLICATION.POLYGON.NETWORK_ID.toString(),
+  MaticProvider,
+);

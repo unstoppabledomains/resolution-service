@@ -1,7 +1,6 @@
 import { WorkerLogger } from '../../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
 import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
-import { env } from '../../env';
 import { Contract, Event, BigNumber } from 'ethers';
 import { EntityManager, getConnection, Repository } from 'typeorm';
 import { CryptoConfig, getEthConfig } from '../../contracts';
@@ -18,15 +17,14 @@ import { CnsResolver } from './CnsResolver';
 import * as ethersUtils from '../../utils/ethersUtils';
 import { Blockchain } from '../../types/common';
 import { EthUpdaterConfig } from '../../env';
-import NetworkConfig from 'uns/uns-config.json';
 import winston from 'winston';
 
 export class EthUpdater {
   private unsRegistry: Contract;
   private cnsRegistry: Contract;
   private cnsResolver: CnsResolver;
-  readonly blockchain: Blockchain = Blockchain.ETH;
-  readonly networkId: number = env.APPLICATION.ETHEREUM.NETWORK_ID;
+  readonly blockchain: Blockchain;
+  readonly networkId: number;
   private provider: StaticJsonRpcProvider;
 
   private config: EthUpdaterConfig;
@@ -43,11 +41,7 @@ export class EthUpdater {
     this.networkId = config.NETWORK_ID;
     this.blockchain = blockchain;
     this.provider = GetProviderForConfig(config);
-    this.cryptoConfig = getEthConfig(
-      this.networkId.toString(),
-      NetworkConfig.networks,
-      this.provider,
-    );
+    this.cryptoConfig = getEthConfig(this.networkId.toString(), this.provider);
 
     this.unsRegistry = this.cryptoConfig.UNSRegistry.getContract();
     this.cnsRegistry = this.cryptoConfig.CNSRegistry.getContract();
@@ -56,7 +50,7 @@ export class EthUpdater {
 
   async getLatestNetworkBlock(): Promise<number> {
     return (
-      (await ethersUtils.getLatestNetworkBlock()) -
+      (await ethersUtils.getLatestNetworkBlock(this.provider)) -
       this.config.CONFIRMATION_BLOCKS
     );
   }
@@ -390,7 +384,7 @@ export class EthUpdater {
       } catch (error) {
         if (error instanceof EthUpdaterError) {
           this.logger.error(
-            `Failed to process ETH event: ${JSON.stringify(
+            `Failed to process ${this.blockchain} event: ${JSON.stringify(
               event,
             )}. Error:  ${error}`,
           );
@@ -480,7 +474,7 @@ export class EthUpdater {
   private async handleReorg(): Promise<number> {
     const reorgStartingBlock = await this.findLastMatchingBlock();
     await WorkerStatus.saveWorkerStatus(
-      Blockchain.ETH,
+      this.blockchain,
       reorgStartingBlock.blockNumber,
       reorgStartingBlock.blockHash,
     );
@@ -546,7 +540,7 @@ export class EthUpdater {
       const { fromBlock, toBlock } = await this.syncBlockRanges();
 
       this.logger.info(
-        `[Current network block ${toBlock}]: Syncing mirror from ${fromBlock} to ${toBlock}`,
+        `Current network block ${toBlock}: Syncing mirror from ${fromBlock} to ${toBlock}`,
       );
 
       this.currentSyncBlock = fromBlock;
