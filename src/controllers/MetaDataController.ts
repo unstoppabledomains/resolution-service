@@ -112,7 +112,9 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
   ): Promise<OpenSeaMetadata> {
     const token = this.normalizeDomainOrToken(domainOrToken);
-    const domain = await Domain.findByNode(token);
+    const domain =
+      (await Domain.findByNode(token)) ||
+      (await Domain.findOnChainNoSafe(token));
     if (!domain) {
       return this.defaultMetaResponse(domainOrToken);
     }
@@ -190,7 +192,9 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
   ): Promise<ImageResponse> {
     const token = this.normalizeDomainOrToken(domainOrToken);
-    const domain = await Domain.findByNode(token);
+    const domain =
+      (await Domain.findByNode(token)) ||
+      (await Domain.findOnChainNoSafe(token));
 
     const name = domain ? domain.name : domainOrToken;
     const resolution = domain ? getDomainResolution(domain).resolution : {};
@@ -211,7 +215,9 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
   ): Promise<string> {
     const token = this.normalizeDomainOrToken(domainOrToken);
-    const domain = await Domain.findByNode(token);
+    const domain =
+      (await Domain.findByNode(token)) ||
+      (await Domain.findOnChainNoSafe(token));
 
     const name = domain ? domain.name : domainOrToken;
     const resolution = domain ? getDomainResolution(domain).resolution : {};
