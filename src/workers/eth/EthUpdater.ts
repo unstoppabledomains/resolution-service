@@ -1,4 +1,4 @@
-import { logger } from '../../logger';
+import { WorkerLogger } from '../../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
 import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import { env } from '../../env';
@@ -19,6 +19,7 @@ import * as ethersUtils from '../../utils/ethersUtils';
 import { Blockchain } from '../../types/common';
 import { EthUpdaterConfig } from '../../env';
 import NetworkConfig from 'uns/uns-config.json';
+import winston from 'winston';
 
 export class EthUpdater {
   private unsRegistry: Contract;
@@ -34,7 +35,10 @@ export class EthUpdater {
   private currentSyncBlock = 0;
   private currentSyncBlockHash = '';
 
+  private logger: winston.Logger;
+
   constructor(blockchain: Blockchain, config: EthUpdaterConfig) {
+    this.logger = WorkerLogger(blockchain);
     this.config = config;
     this.networkId = config.NETWORK_ID;
     this.blockchain = blockchain;
@@ -104,14 +108,14 @@ export class EthUpdater {
       return a.blockNumber < b.blockNumber ? -1 : 1;
     });
 
-    logger.info(
+    this.logger.info(
       `Fetched ${
         cnsEvents.length
       } cnsEvents from ${fromBlock} to ${toBlock} by ${
         toBlock - fromBlock + 1
       } `,
     );
-    logger.info(
+    this.logger.info(
       `Fetched ${
         unsEvents.length
       } unsEvents from ${fromBlock} to ${toBlock} by ${
@@ -295,7 +299,7 @@ export class EthUpdater {
       resolution.resolution[resolutionRecord.key] = resolutionRecord.value;
     } catch (error: unknown) {
       if (error instanceof CnsResolverError) {
-        logger.warn(error);
+        this.logger.warn(error);
       } else if (
         error instanceof Error &&
         error.message.includes(ExecutionRevertedError)
@@ -340,7 +344,7 @@ export class EthUpdater {
     let lastProcessedEvent: Event | undefined = undefined;
     for (const event of events) {
       try {
-        logger.debug(
+        this.logger.debug(
           `Processing event: type - '${event.event}'; args - ${JSON.stringify(
             event.args,
           )}`,
@@ -385,7 +389,7 @@ export class EthUpdater {
         lastProcessedEvent = event;
       } catch (error) {
         if (error instanceof EthUpdaterError) {
-          logger.error(
+          this.logger.error(
             `Failed to process ETH event: ${JSON.stringify(
               event,
             )}. Error:  ${error}`,
@@ -451,7 +455,7 @@ export class EthUpdater {
   ) {
     const domain = await Domain.findByNode(tokenId);
 
-    logger.debug(`Rebuilding domain ${domain?.name} from db events`);
+    this.logger.debug(`Rebuilding domain ${domain?.name} from db events`);
     const domainEvents = await CnsRegistryEvent.find({
       where: { node: tokenId },
       order: { blockNumber: 'ASC', logIndex: 'ASC' },
@@ -493,7 +497,7 @@ export class EthUpdater {
       }
       await Promise.all(promises);
 
-      logger.warn(
+      this.logger.warn(
         `Deleted ${cleanUp.deleted} events after reorg and reverted ${cleanUp.affected.size} domains`,
       );
     });
@@ -518,17 +522,17 @@ export class EthUpdater {
     }
 
     if (!blockHeightMatches) {
-      logger.warn(
+      this.logger.warn(
         `Blockchain reorg detected: Sync last block ${latestMirrored} is less than the current mirror block ${latestNetBlock}`,
       );
     } else {
-      logger.warn(
+      this.logger.warn(
         `Blockchain reorg detected: last mirrored block hash ${latestMirroredHash} does not match the network block hash ${networkHash}`,
       );
     }
 
     const reorgStartingBlock = await this.handleReorg();
-    logger.warn(
+    this.logger.warn(
       `Handled blockchain reorg starting from block ${reorgStartingBlock}`,
     );
 
@@ -536,48 +540,47 @@ export class EthUpdater {
   }
 
   public async run(): Promise<void> {
-    logger.info(`EthUpdater is pulling updates from ${this.blockchain}`);
+    try {
+      this.logger.info(`EthUpdater is pulling updates from ${this.blockchain}`);
 
-    const { fromBlock, toBlock } = await this.syncBlockRanges();
+      const { fromBlock, toBlock } = await this.syncBlockRanges();
 
-    logger.info(
-      `[Current network block ${toBlock}]: Syncing mirror from ${fromBlock} to ${toBlock}`,
-    );
-
-    this.currentSyncBlock = fromBlock;
-
-    while (this.currentSyncBlock < toBlock) {
-      const fetchBlock = Math.min(
-        this.currentSyncBlock + this.config.BLOCK_FETCH_LIMIT,
-        toBlock,
+      this.logger.info(
+        `[Current network block ${toBlock}]: Syncing mirror from ${fromBlock} to ${toBlock}`,
       );
 
-      const events = await this.getRegistryEvents(
-        this.currentSyncBlock + 1,
-        fetchBlock,
-      );
+      this.currentSyncBlock = fromBlock;
 
-      await getConnection().transaction(async (manager) => {
-        await this.processEvents(events, manager);
-        this.currentSyncBlock = fetchBlock;
-        this.currentSyncBlockHash = (
-          await this.provider.getBlock(this.currentSyncBlock)
-        )?.hash;
-        await this.saveLastMirroredBlock(manager);
-      });
+      while (this.currentSyncBlock < toBlock) {
+        const fetchBlock = Math.min(
+          this.currentSyncBlock + this.config.BLOCK_FETCH_LIMIT,
+          toBlock,
+        );
+
+        const events = await this.getRegistryEvents(
+          this.currentSyncBlock + 1,
+          fetchBlock,
+        );
+
+        await getConnection().transaction(async (manager) => {
+          await this.processEvents(events, manager);
+          this.currentSyncBlock = fetchBlock;
+          this.currentSyncBlockHash = (
+            await this.provider.getBlock(this.currentSyncBlock)
+          )?.hash;
+          await this.saveLastMirroredBlock(manager);
+        });
+      }
+    } catch (error) {
+      this.logger.error(
+        `Unhandled error occured while processing ${this.blockchain} events: ${error}`,
+      );
     }
   }
 }
 
 export function startWorker(blockchain: Blockchain, config: any): void {
   setIntervalAsync(async () => {
-    try {
-      logger.info('EthUpdater is pulling updates from Ethereum');
-      await new EthUpdater(blockchain, config).run();
-    } catch (error) {
-      logger.error(
-        `Unhandled error occured while processing ETH events: ${error}`,
-      );
-    }
+    await new EthUpdater(blockchain, config).run();
   }, config.FETCH_INTERVAL);
 }

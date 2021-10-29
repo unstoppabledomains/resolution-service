@@ -6,7 +6,7 @@ import ZnsTransaction, {
   ConfiguredEvent,
 } from '../../models/ZnsTransaction';
 import { znsChildhash } from '../../utils/namehash';
-import { logger } from '../../logger';
+import { WorkerLogger } from '../../logger';
 import { isBech32 } from '@zilliqa-js/util/dist/validation';
 import { fromBech32Address } from '@zilliqa-js/crypto';
 import { ZnsTransactionEvent } from '../../models/ZnsTransaction';
@@ -16,6 +16,8 @@ import { env } from '../../env';
 type ZilWorkerOptions = {
   perPage?: number;
 };
+
+const logger = WorkerLogger(Blockchain.ZIL);
 
 export default class ZilWorker {
   private provider: ZnsProvider;
