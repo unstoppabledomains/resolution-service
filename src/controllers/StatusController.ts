@@ -46,54 +46,52 @@ class StatusResponse {
 export class StatusController {
   private zilProvider = new ZilProvider();
 
+  private static async blockchainStatusForNetwork(
+    blockchain: Blockchain,
+    config: { NETWORK_ID: number; ACCEPTABLE_DELAY_IN_BLOCKS: number },
+    latestBlockCallback: () => Promise<number>,
+  ): Promise<BlockchainStatus> {
+    const status: BlockchainStatus = {
+      latestMirroredBlock: await WorkerStatus.latestMirroredBlockForWorker(
+        blockchain,
+      ),
+      latestNetworkBlock: await latestBlockCallback(),
+      networkId: config.NETWORK_ID,
+      acceptableDelayInBlocks: config.ACCEPTABLE_DELAY_IN_BLOCKS,
+      isUpToDate: false,
+    };
+    status.isUpToDate =
+      status.latestNetworkBlock - status.latestMirroredBlock <=
+      status.acceptableDelayInBlocks;
+    return status;
+  }
+
   @Get('/status')
   @ResponseSchema(StatusResponse)
   async getStatus(): Promise<StatusResponse> {
     const statusResponse = new StatusResponse();
     const blockchain = new Blockchains();
-    blockchain.ETH = new BlockchainStatus();
-    blockchain.MATIC = new BlockchainStatus();
-    blockchain.ZIL = new BlockchainStatus();
-
-    blockchain.ETH.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
+    blockchain.ETH = await StatusController.blockchainStatusForNetwork(
       Blockchain.ETH,
+      env.APPLICATION.ETHEREUM,
+      () => {
+        return ethersUtils.getLatestNetworkBlock(EthereumProvider);
+      },
     );
-    blockchain.ETH.latestNetworkBlock = await ethersUtils.getLatestNetworkBlock(
-      EthereumProvider,
-    );
-    blockchain.ETH.networkId = env.APPLICATION.ETHEREUM.NETWORK_ID;
-    blockchain.ETH.acceptableDelayInBlocks =
-      env.APPLICATION.ETHEREUM.ACCEPTABLE_DELAY_IN_BLOCKS;
-    blockchain.ETH.isUpToDate =
-      blockchain.ETH.latestNetworkBlock - blockchain.ETH.latestMirroredBlock <=
-      blockchain.ETH.acceptableDelayInBlocks;
-
-    blockchain.MATIC.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
+    blockchain.MATIC = await StatusController.blockchainStatusForNetwork(
       Blockchain.MATIC,
+      env.APPLICATION.POLYGON,
+      () => {
+        return ethersUtils.getLatestNetworkBlock(MaticProvider);
+      },
     );
-    blockchain.MATIC.latestNetworkBlock = await ethersUtils.getLatestNetworkBlock(
-      MaticProvider,
-    );
-    blockchain.MATIC.networkId = env.APPLICATION.POLYGON.NETWORK_ID;
-    blockchain.MATIC.acceptableDelayInBlocks =
-      env.APPLICATION.POLYGON.ACCEPTABLE_DELAY_IN_BLOCKS;
-    blockchain.MATIC.isUpToDate =
-      blockchain.MATIC.latestNetworkBlock -
-        blockchain.MATIC.latestMirroredBlock <=
-      blockchain.MATIC.acceptableDelayInBlocks;
-
-    blockchain.ZIL.latestMirroredBlock = await WorkerStatus.latestMirroredBlockForWorker(
+    blockchain.ZIL = await StatusController.blockchainStatusForNetwork(
       Blockchain.ZIL,
+      env.APPLICATION.ZILLIQA,
+      async () => {
+        return (await this.zilProvider.getChainStats()).txHeight;
+      },
     );
-    blockchain.ZIL.latestNetworkBlock = (
-      await this.zilProvider.getChainStats()
-    ).txHeight;
-    blockchain.ZIL.networkId = env.APPLICATION.ZILLIQA.NETWORK_ID;
-    blockchain.ZIL.acceptableDelayInBlocks =
-      env.APPLICATION.ZILLIQA.ACCEPTABLE_DELAY_IN_BLOCKS;
-    blockchain.ZIL.isUpToDate =
-      blockchain.ZIL.latestNetworkBlock - blockchain.ZIL.latestMirroredBlock <=
-      blockchain.ZIL.acceptableDelayInBlocks;
 
     statusResponse.blockchain = blockchain;
     return statusResponse;

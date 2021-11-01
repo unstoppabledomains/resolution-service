@@ -23,7 +23,7 @@ describe('CnsResolver', () => {
   let testDomainName: string;
   let testTokenId: BigNumber;
   let testDomainLabel: string;
-  let testDomainNode: BigNumber;
+  let testDomainNode: string;
   const sinonSandbox = sinon.createSandbox();
   const PredefinedRecordKeys = Object.keys(supportedKeysJson.keys);
 
@@ -92,7 +92,7 @@ describe('CnsResolver', () => {
 
     testDomainLabel = randomBytes(16).toString('hex');
     testDomainName = `${testDomainLabel}.crypto`;
-    testDomainNode = BigNumber.from(eip137Namehash(testDomainName));
+    testDomainNode = eip137Namehash(testDomainName);
     testTokenId = BigNumber.from(testDomainNode);
 
     await WorkerStatus.saveWorkerStatus(
@@ -120,7 +120,7 @@ describe('CnsResolver', () => {
     it('should fetch resolver', async () => {
       const { domain, resolution } = await DomainTestHelper.createTestDomain({
         name: testDomainName,
-        node: testTokenId.toHexString(),
+        node: testDomainNode,
       });
       await service.fetchResolver(domain, resolution, Domain.getRepository());
       expect(resolution.resolver).to.equal(resolver.address.toLowerCase());
@@ -139,7 +139,7 @@ describe('CnsResolver', () => {
         .then((receipt) => receipt.wait());
       const { domain, resolution } = await DomainTestHelper.createTestDomain({
         name: testDomainName,
-        node: testTokenId.toHexString(),
+        node: testDomainNode,
       });
 
       await service.fetchResolver(domain, resolution, Domain.getRepository());
@@ -156,7 +156,7 @@ describe('CnsResolver', () => {
         .then((receipt) => receipt.wait());
       const { domain, resolution } = await DomainTestHelper.createTestDomain({
         name: testDomainName,
-        node: testTokenId.toHexString(),
+        node: testDomainNode,
       });
       resolution.resolver = resolver.address.toLowerCase();
       (resolution.resolution = { hello: 'world' }),
@@ -175,7 +175,7 @@ describe('CnsResolver', () => {
         .then((receipt) => receipt.wait());
       const resolverRecords = await service._getAllDomainRecords(
         resolver.address,
-        testDomainNode,
+        testTokenId,
       );
       expect(resolverRecords).to.deep.equal(ExpectedResolverRecords);
     });
@@ -190,14 +190,14 @@ describe('CnsResolver', () => {
       );
       const resolverRecords = await service._getAllDomainRecords(
         resolver.address,
-        testDomainNode,
+        testTokenId,
         1,
       );
       RecordKeys.forEach((key, callNumber) => {
         expect(ethereumCallSpy.getCall(callNumber)).to.be.calledWith(
           resolver.address,
           [key],
-          testDomainNode,
+          testTokenId,
         );
       });
       expect(resolverRecords).to.deep.equal(ExpectedResolverRecords);
@@ -254,7 +254,7 @@ describe('CnsResolver', () => {
 
       const records = await service._getAllDomainRecords(
         legacyResolver.address,
-        testDomainNode,
+        testTokenId,
       );
       expect(records).to.deep.equal({
         'crypto.BTC.address': 'bc1qj5jdpvg0u73qxgvwulc2nkcrjvwvhvm0fnyy85',
@@ -279,7 +279,7 @@ describe('CnsResolver', () => {
       const ethereumCallSpy = sinonSandbox.spy(service, '_getResolverEvents');
       const domainRecords = await service._getAllDomainRecords(
         resolver.address,
-        testDomainNode,
+        testTokenId,
       );
       expect(ethereumCallSpy.firstCall).to.be.calledWith(
         sinonSandbox.match.any,
@@ -287,7 +287,7 @@ describe('CnsResolver', () => {
           address: resolver.address,
           topics: [
             '0x185c30856dadb58bf097c1f665a52ada7029752dbcad008ea3fefc73bee8c9fe', // signature of ResetRecords event
-            testDomainNode.toHexString(),
+            testDomainNode,
           ],
         },
         env.APPLICATION.ETHEREUM.CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK,
@@ -298,7 +298,7 @@ describe('CnsResolver', () => {
           address: resolver.address,
           topics: [
             '0x7ae4f661958fbecc2f77be6b0eb280d2a6f604b29e1e7221c82b9da0c4af7f86', // signature of NewKey event
-            testDomainNode.toHexString(),
+            testDomainNode,
           ],
         },
         resetRecordsBlockNumber,
@@ -315,7 +315,7 @@ describe('CnsResolver', () => {
       );
       await service._getAllDomainRecords(
         legacyResolver.address,
-        testDomainNode,
+        testTokenId,
         200,
       );
       expect(ethereumCallSpy).to.be.calledWith(

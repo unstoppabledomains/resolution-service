@@ -25,11 +25,10 @@ import { Domain } from '../models';
 import { In } from 'typeorm';
 import DomainsResolution from '../models/DomainsResolution';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
-import { IsZilDomain } from '../utils/domainLocationUtils';
-import { env } from '../env';
 import { Blockchain } from '../types/common';
 import { toNumber } from 'lodash';
 import NetworkConfig from 'uns/uns-config.json';
+import { getDomainResolution } from '../services/L2Resolution';
 
 class DomainMetadata {
   @IsString()
@@ -126,24 +125,7 @@ export class DomainsController {
       relations: ['resolutions'],
     });
     if (domain) {
-      let resolution: DomainsResolution;
-      if (IsZilDomain(domain.name)) {
-        resolution = domain.getResolution(
-          Blockchain.ZIL,
-          env.APPLICATION.ZILLIQA.NETWORK_ID,
-        );
-      } else {
-        resolution = domain.getResolution(
-          Blockchain.MATIC,
-          env.APPLICATION.POLYGON.NETWORK_ID,
-        );
-        if (resolution.ownerAddress === null) {
-          resolution = domain.getResolution(
-            Blockchain.ETH,
-            env.APPLICATION.ETHEREUM.NETWORK_ID,
-          );
-        }
-      }
+      const resolution = getDomainResolution(domain);
       const response = new DomainResponse();
       response.meta = {
         domain: domain.name,

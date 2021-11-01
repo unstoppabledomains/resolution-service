@@ -316,7 +316,7 @@ describe('EthUpdater', () => {
       expect(resolution).to.containSubset({
         resolution: {},
         resolver: null,
-        ownerAddress: null,
+        ownerAddress: Domain.NullAddress,
       });
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
@@ -356,7 +356,7 @@ describe('EthUpdater', () => {
       expect(resolution).to.containSubset({
         resolution: {},
         resolver: null,
-        ownerAddress: null,
+        ownerAddress: Domain.NullAddress,
       });
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({

@@ -136,7 +136,7 @@ export class EthUpdater {
 
       //Check if it's a burn
       if (event.args?.to === Domain.NullAddress) {
-        resolution.ownerAddress = null;
+        resolution.ownerAddress = Domain.NullAddress;
         resolution.resolution = {};
         resolution.resolver = null;
         resolution.registry = null;
