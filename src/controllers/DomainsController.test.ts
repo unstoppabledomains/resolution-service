@@ -293,6 +293,11 @@ describe('DomainsController', () => {
             },
           },
         ],
+        meta: {
+          hasMore: false,
+          page: 1,
+          perPage: 100,
+        },
       });
       expect(res.status).eq(200);
     });
@@ -331,6 +336,11 @@ describe('DomainsController', () => {
             },
           },
         ],
+        meta: {
+          hasMore: false,
+          page: 1,
+          perPage: 100,
+        },
       });
       expect(res.status).eq(200);
     });
@@ -393,6 +403,11 @@ describe('DomainsController', () => {
             },
           },
         ],
+        meta: {
+          hasMore: false,
+          page: 1,
+          perPage: 100,
+        },
       });
       expect(res.status).eq(200);
     });
@@ -443,6 +458,11 @@ describe('DomainsController', () => {
             },
           },
         ],
+        meta: {
+          hasMore: true,
+          page: 1,
+          perPage: 1,
+        },
       });
       expect(res.status).eq(200);
     });
@@ -465,6 +485,11 @@ describe('DomainsController', () => {
         .send();
       expect(res.body).to.deep.equal({
         data: [],
+        meta: {
+          hasMore: false,
+          page: 2,
+          perPage: 100,
+        },
       });
       expect(res.status).eq(200);
     });
@@ -514,6 +539,11 @@ describe('DomainsController', () => {
             },
           },
         ],
+        meta: {
+          hasMore: false,
+          page: 1,
+          perPage: 100,
+        },
       });
       expect(res.status).eq(200);
     });

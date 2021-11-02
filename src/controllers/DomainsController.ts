@@ -9,6 +9,7 @@ import {
 import {
   ArrayNotEmpty,
   IsArray,
+  IsBoolean,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -102,8 +103,25 @@ class DomainAttributes {
   attributes: DomainResponse;
 }
 
+class DomainsListMeta {
+  @IsNotEmpty()
+  @IsInt()
+  @Min(1)
+  page = 1;
+
+  @IsNotEmpty()
+  @IsInt()
+  @Min(1)
+  @Max(200)
+  perPage = 100;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  hasMore = false;
+}
 class DomainsListResponse {
   data: DomainAttributes[];
+  meta: DomainsListMeta;
 }
 
 @OpenAPI({
@@ -198,6 +216,11 @@ export class DomainsController {
         },
       });
     }
+    response.meta = {
+      perPage: query.perPage,
+      page: query.page,
+      hasMore: domains.length === query.perPage,
+    };
     return response;
   }
 }
