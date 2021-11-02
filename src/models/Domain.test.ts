@@ -9,28 +9,16 @@ describe('Domain', () => {
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
       const domainTwo = Domain.create({
         name: 'test1.zil',
         node:
           '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0x9611c53be6d1b32058b2747bdececed7e1216793',
-        blockchain: 'ZIL',
-        networkId: 1,
       });
       const domainThree = Domain.create({
         name: 'test1.x',
         node:
           '0xd40233894d702a593754963512f52ff891dbe215dd06195717dace1212a03fa7',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0x049aba7510f45ba5b64ea9e658e342f904db358d',
-        blockchain: 'ETH',
-        networkId: 1,
       });
       await domain.save();
       await domainTwo.save();
@@ -40,30 +28,11 @@ describe('Domain', () => {
       expect(domainThree.id).to.be.a('number');
     });
 
-    it('should fail on uppercased ownerAddress', async () => {
-      const domain = Domain.create({
-        name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2'.toUpperCase(),
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
-      });
-      await expect(domain.save()).to.be.rejectedWith(
-        '- property ownerAddress has failed the following constraints: matches',
-      );
-    });
-
     it('should fail nameMatchesNode validation', async () => {
       const domain = Domain.create({
         name: 'test1.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
       await expect(domain.save()).to.be.rejectedWith(
         '- property name has failed the following constraints: validate name with nameMatchesNode',
@@ -77,10 +46,6 @@ describe('Domain', () => {
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
       expect(domain.label).to.equal('test');
     });
@@ -92,10 +57,6 @@ describe('Domain', () => {
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
       expect(domain.extension).to.equal('crypto');
     });
@@ -107,10 +68,6 @@ describe('Domain', () => {
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: Blockchain.ETH,
-        networkId: 1,
       };
       const domain = Domain.create(domainMetaData);
       await domain.save();
@@ -151,13 +108,8 @@ describe('Domain', () => {
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        blockchain: 'ETH',
-        networkId: 1,
       };
-      await Domain.findOrCreateByName(expectedDomain.name, {
-        blockchain: 'ETH',
-        networkId: 1,
-      });
+      await Domain.findOrCreateByName(expectedDomain.name);
       const foundDomain = await Domain.findOne({ name: expectedDomain.name });
 
       expect(foundDomain).to.containSubset(expectedDomain);
@@ -168,18 +120,11 @@ describe('Domain', () => {
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: Blockchain.ETH,
-        networkId: 1,
       };
       const domain = Domain.create(expectedDomain);
       await domain.save();
 
-      const foundDomain = await Domain.findOrCreateByName(expectedDomain.name, {
-        blockchain: 'ETH',
-        networkId: 1,
-      });
+      const foundDomain = await Domain.findOrCreateByName(expectedDomain.name);
 
       expect(foundDomain).to.containSubset(expectedDomain);
     });
@@ -191,10 +136,6 @@ describe('Domain', () => {
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: Blockchain.ETH,
-        networkId: 1,
       };
       await Domain.create(domainMetaData).save();
       const fromDb = await Domain.findOrBuildByNode(
@@ -210,9 +151,6 @@ describe('Domain', () => {
       expect(domainFromDb).to.containSubset({
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303107',
-        resolution: {},
-        ownerAddress: null,
-        resolver: null,
       });
     });
   });

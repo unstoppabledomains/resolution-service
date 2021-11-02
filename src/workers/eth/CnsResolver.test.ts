@@ -10,6 +10,7 @@ import { eip137Namehash } from '../../utils/namehash';
 import { ETHContracts } from '../../contracts';
 import supportedKeysJson from 'dot-crypto/src/supported-keys/supported-keys.json';
 import * as ethersUtils from '../../utils/ethersUtils';
+import { DomainTestHelper } from '../../utils/testing/DomainTestHelper';
 
 describe('CnsResolver', () => {
   let service: CnsResolver;
@@ -116,12 +117,12 @@ describe('CnsResolver', () => {
 
   describe('basic domain records', () => {
     it('should fetch resolver', async () => {
-      const domain = await Domain.findOrCreateByName(testDomainName, {
-        blockchain: 'ETH',
-        networkId: 1,
+      const { domain, resolution } = await DomainTestHelper.createTestDomain({
+        name: testDomainName,
+        node: testTokenId.toHexString(),
       });
-      await service.fetchResolver(domain, Domain.getRepository());
-      expect(domain.resolver).to.equal(resolver.address.toLowerCase());
+      await service.fetchResolver(domain, resolution, Domain.getRepository());
+      expect(resolution.resolver).to.equal(resolver.address.toLowerCase());
     });
 
     it('should fetch resolver with domain records', async () => {
@@ -135,14 +136,14 @@ describe('CnsResolver', () => {
           testTokenId,
         )
         .then((receipt) => receipt.wait());
-      const domain = await Domain.findOrCreateByName(testDomainName, {
-        blockchain: 'ETH',
-        networkId: 1,
+      const { domain, resolution } = await DomainTestHelper.createTestDomain({
+        name: testDomainName,
+        node: testTokenId.toHexString(),
       });
 
-      await service.fetchResolver(domain, Domain.getRepository());
+      await service.fetchResolver(domain, resolution, Domain.getRepository());
 
-      expect(domain.resolution).to.deep.equal({
+      expect(resolution.resolution).to.deep.equal({
         'crypto.BTC.address': 'qp3gu0flg7tehyv73ua5nznlw8s040nz3uqnyffrcn',
         'crypto.ETH.address': '0x461781022A9C2De74f2171EB3c44F27320b13B8c',
       });
@@ -152,18 +153,19 @@ describe('CnsResolver', () => {
       await registry.functions
         .resolveTo(AddressZero, testTokenId)
         .then((receipt) => receipt.wait());
-      const domain = await Domain.findOrCreateByName(testDomainName, {
-        blockchain: 'ETH',
-        networkId: 1,
+      const { domain, resolution } = await DomainTestHelper.createTestDomain({
+        name: testDomainName,
+        node: testTokenId.toHexString(),
       });
-      await domain.update({
-        resolver: resolver.address.toLowerCase(),
-        resolution: { hello: 'world' },
-      });
+      resolution.resolver = resolver.address.toLowerCase();
+      (resolution.resolution = { hello: 'world' }),
+        await domain.update({
+          resolutions: [resolution],
+        });
 
-      await service.fetchResolver(domain, Domain.getRepository());
+      await service.fetchResolver(domain, resolution, Domain.getRepository());
 
-      expect(domain.resolution).to.be.empty;
+      expect(domain.resolutions[0].resolution).to.be.empty;
     });
 
     it('should get all predefined resolver records', async () => {

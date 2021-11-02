@@ -1,10 +1,6 @@
 import { expect } from 'chai';
 import WorkerStatus from './WorkerStatus';
 
-type TestStatsType = {
-  testStats: string;
-};
-
 describe('WorkerStatus', () => {
   describe('constructor', () => {
     it('should successfully create entity', async () => {

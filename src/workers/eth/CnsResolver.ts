@@ -10,6 +10,7 @@ import {
   Revert,
 } from './BlockchainErrors';
 import { CnsResolverError } from '../../errors/CnsResolverError';
+import DomainsResolution from '../../models/DomainsResolution';
 
 const RecordsPerPage = env.APPLICATION.ETHEREUM.RECORDS_PER_PAGE;
 
@@ -40,13 +41,14 @@ export class CnsResolver {
 
   private async getDomainResolution(
     domain: Domain,
+    resolution: DomainsResolution,
   ): Promise<Record<string, string>> {
-    if (!domain.resolver) {
+    if (!resolution.resolver) {
       return {};
     }
     try {
       return await this._getAllDomainRecords(
-        domain.resolver,
+        resolution.resolver,
         BigNumber.from(domain.node),
       );
     } catch (error: any) {
@@ -198,15 +200,16 @@ export class CnsResolver {
 
   async fetchResolver(
     domain: Domain,
+    resolution: DomainsResolution,
     domainRepository: Repository<Domain>,
   ): Promise<void> {
     const resolverAddress = await this.getResolverAddress(domain.node);
-    if (domain.resolver === resolverAddress) {
+    if (resolution.resolver === resolverAddress) {
       return;
     }
-    domain.resolver = resolverAddress;
-    domain.resolution = await this.getDomainResolution(domain);
-
+    resolution.resolver = resolverAddress;
+    resolution.resolution = await this.getDomainResolution(domain, resolution);
+    domain.setResolution(resolution);
     await domainRepository.save(domain);
   }
 }

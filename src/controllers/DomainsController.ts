@@ -23,7 +23,10 @@ import {
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
 import { In } from 'typeorm';
+import DomainsResolution from '../models/DomainsResolution';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
+import { IsZilDomain } from '../utils/domainLocationUtils';
+import { env } from '../env';
 import { Blockchain } from '../types/common';
 import { toNumber } from 'lodash';
 import NetworkConfig from 'uns/uns-config.json';
@@ -118,18 +121,33 @@ export class DomainsController {
     @Param('domainName') domainName: string,
   ): Promise<DomainResponse> {
     domainName = domainName.toLowerCase();
-    const domain = await Domain.findOne({ name: domainName });
+    const domain = await Domain.findOne({
+      where: { name: domainName },
+      relations: ['resolutions'],
+    });
     if (domain) {
+      let resolution: DomainsResolution;
+      if (IsZilDomain(domain.name)) {
+        resolution = domain.getResolution(
+          Blockchain.ZIL,
+          env.APPLICATION.ZILLIQA.NETWORK_ID,
+        );
+      } else {
+        resolution = domain.getResolution(
+          Blockchain.ETH,
+          env.APPLICATION.ETHEREUM.NETWORK_ID,
+        );
+      }
       const response = new DomainResponse();
       response.meta = {
-        domain: domainName,
-        owner: domain.ownerAddress,
-        resolver: domain.resolver,
-        registry: domain.registry,
-        blockchain: domain.blockchain,
-        networkId: domain.networkId,
+        domain: domain.name,
+        blockchain: resolution.blockchain,
+        networkId: resolution.networkId,
+        owner: resolution.ownerAddress,
+        resolver: resolution.resolver,
+        registry: resolution.registry,
       };
-      response.records = domain.resolution;
+      response.records = resolution.resolution;
       return response;
     }
     return {
@@ -171,30 +189,31 @@ export class DomainsController {
     @QueryParams() query: DomainsListQuery,
   ): Promise<DomainsListResponse> {
     const ownersQuery = query.owners.map((owner) => owner.toLowerCase());
-    const domains = await Domain.find({
+    const resolutions = await DomainsResolution.find({
       where: {
         ownerAddress: ownersQuery ? In(ownersQuery) : undefined,
         blockchain: In(query.blockchains),
         networkId: In(query.networkIds.map(toNumber)),
       },
+      relations: ['domain'],
       take: query.perPage,
       skip: (query.page - 1) * query.perPage,
     });
     const response = new DomainsListResponse();
     response.data = [];
-    for (const domain of domains) {
+    for (const resolution of resolutions) {
       response.data.push({
-        id: domain.name,
+        id: resolution.domain.name,
         attributes: {
           meta: {
-            blockchain: domain.blockchain,
-            networkId: domain.networkId,
-            owner: domain.ownerAddress,
-            resolver: domain.resolver,
-            registry: domain.registry,
-            domain: domain.name,
+            domain: resolution.domain.name,
+            blockchain: resolution.blockchain,
+            networkId: resolution.networkId,
+            owner: resolution.ownerAddress,
+            resolver: resolution.resolver,
+            registry: resolution.registry,
           },
-          records: domain.resolution,
+          records: resolution.resolution,
         },
       });
     }
