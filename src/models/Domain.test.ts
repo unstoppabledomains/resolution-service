@@ -154,4 +154,19 @@ describe('Domain', () => {
       });
     });
   });
+
+  describe('domain parent', () => {
+    it('should fill domain parent', async () => {
+      const domainMetaData = {
+        name: 'test.crypto',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+      };
+      await Domain.create(domainMetaData).save();
+      const fromDb = await Domain.findByNode(
+        '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+      );
+      expect(fromDb?.parent?.name).to.equal('crypto');
+    });
+  });
 });
