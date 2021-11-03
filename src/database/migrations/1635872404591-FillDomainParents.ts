@@ -1,6 +1,11 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-type DomainData = { id: number; name: string; parent: number | null };
+type DomainData = {
+  id: number;
+  node: string;
+  name: string;
+  parent: number | null;
+};
 
 export class FillDomainParents1635872404591 implements MigrationInterface {
   name = 'FillDomainParents1635872404591';
@@ -14,7 +19,8 @@ export class FillDomainParents1635872404591 implements MigrationInterface {
       for (const item of data) {
         resolutions.push({
           id: item['id'],
-          name: item['owner_address'],
+          name: item['name'],
+          node: item['node'],
           parent: null,
         });
       }
@@ -44,17 +50,19 @@ export class FillDomainParents1635872404591 implements MigrationInterface {
       }
     }
 
-    let query = `INSERT INTO "domains" ("id", "name", "parent") VALUES `;
+    let query = `INSERT INTO "domains" ("id", "name", "node", "parent_id") VALUES `;
     const queryItems = [];
     for (const item of domains) {
-      queryItems.push(`(${item.id}, '${item.name}', ${item.parent})`);
+      queryItems.push(
+        `(${item.id}, '${item.name}', '${item.node}', ${item.parent})`,
+      );
     }
     query += queryItems.join(',');
-    query += ` ON CONFLICT (id) DO UPDATE SET "parent"=EXCLUDED."parent";`;
+    query += ` ON CONFLICT (id) DO UPDATE SET "parent_id"=EXCLUDED."parent_id";`;
     await queryRunner.query(query);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`UPDATE "domains" SET "parent" = NULL`);
+    await queryRunner.query(`UPDATE "domains" SET "parent_id" = NULL`);
   }
 }
