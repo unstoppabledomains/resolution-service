@@ -19,6 +19,7 @@ import {
 } from '../utils/socialPicture';
 import punycode from 'punycode';
 import btoa from 'btoa';
+import { getDomainResolution } from '../services/Resolution';
 
 const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
 const CUSTOM_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/custom` as const;
@@ -115,9 +116,11 @@ export class MetaDataController {
     if (!domain) {
       return this.defaultMetaResponse(domainOrToken);
     }
+    const resolution = getDomainResolution(domain);
+
     const { pictureOrUrl, nftStandard } = await getSocialPictureUrl(
-      domain.resolution['social.picture.value'],
-      domain.ownerAddress || '',
+      resolution.resolution['social.picture.value'],
+      resolution.ownerAddress || '',
     );
     let socialPicture = '';
     if (pictureOrUrl) {
@@ -140,12 +143,12 @@ export class MetaDataController {
     }
     const description = this.getDomainDescription(
       domain.name,
-      domain.resolution,
+      resolution.resolution,
     );
     const domainAttributes = this.getDomainAttributes(domain.name, {
       ipfsContent:
-        domain.resolution['dweb.ipfs.hash'] ||
-        domain.resolution['ipfs.html.value'],
+        resolution.resolution['dweb.ipfs.hash'] ||
+        resolution.resolution['ipfs.html.value'],
       verifiedNftPicture: socialPicture !== '',
     });
 
@@ -153,7 +156,7 @@ export class MetaDataController {
       name: domain.name,
       description,
       properties: {
-        records: domain.resolution,
+        records: resolution.resolution,
       },
       external_url: `https://unstoppabledomains.com/search?searchTerm=${domain.name}`,
       image: socialPicture || this.generateDomainImageUrl(domain.name),
@@ -163,7 +166,7 @@ export class MetaDataController {
     if (!this.isDomainWithCustomImage(domain.name) && !socialPicture) {
       metadata.image_data = await this.generateImageData(
         domain.name,
-        domain.resolution,
+        resolution.resolution,
       );
       metadata.background_color = '4C47F7';
     }
@@ -190,7 +193,7 @@ export class MetaDataController {
     const domain = await Domain.findByNode(token);
 
     const name = domain ? domain.name : domainOrToken;
-    const resolution = domain ? domain.resolution : {};
+    const resolution = domain ? getDomainResolution(domain).resolution : {};
 
     if (!name.includes('.')) {
       return { image_data: '' };
@@ -211,7 +214,7 @@ export class MetaDataController {
     const domain = await Domain.findByNode(token);
 
     const name = domain ? domain.name : domainOrToken;
-    const resolution = domain ? domain.resolution : {};
+    const resolution = domain ? getDomainResolution(domain).resolution : {};
 
     if (!name.includes('.')) {
       return '';

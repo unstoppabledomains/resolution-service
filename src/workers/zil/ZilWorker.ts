@@ -6,7 +6,7 @@ import ZnsTransaction, {
   ConfiguredEvent,
 } from '../../models/ZnsTransaction';
 import { znsChildhash } from '../../utils/namehash';
-import { logger } from '../../logger';
+import { WorkerLogger } from '../../logger';
 import { isBech32 } from '@zilliqa-js/util/dist/validation';
 import { fromBech32Address } from '@zilliqa-js/crypto';
 import { ZnsTransactionEvent } from '../../models/ZnsTransaction';
@@ -17,9 +17,13 @@ type ZilWorkerOptions = {
   perPage?: number;
 };
 
+const logger = WorkerLogger(Blockchain.ZIL);
+
 export default class ZilWorker {
   private provider: ZnsProvider;
   private perPage: number;
+  readonly blockchain: Blockchain = Blockchain.ZIL;
+  readonly networkId: number = env.APPLICATION.ZILLIQA.NETWORK_ID;
 
   constructor(options?: ZilWorkerOptions) {
     this.perPage = options?.perPage || 25;
@@ -27,7 +31,7 @@ export default class ZilWorker {
   }
 
   private async getLastAtxuid() {
-    const lastAtxuid = await WorkerStatus.latestAtxuidForWorker('ZIL');
+    const lastAtxuid = await WorkerStatus.latestAtxuidForWorker(Blockchain.ZIL);
     return lastAtxuid === undefined ? -1 : lastAtxuid;
   }
 
@@ -38,7 +42,7 @@ export default class ZilWorker {
   ): Promise<void> {
     const repository = manager.getRepository(WorkerStatus);
     return WorkerStatus.saveWorkerStatus(
-      'ZIL',
+      Blockchain.ZIL,
       latestBlock,
       undefined,
       latestAtxuid,
@@ -150,12 +154,12 @@ export default class ZilWorker {
     }
     const node = znsChildhash(parentDomain.node, label);
     const domain = await Domain.findOrBuildByNode(node, repository);
+    const resolution = domain.getResolution(this.blockchain, this.networkId);
     domain.attributes({
       name: `${label}.${parentDomain.name}`,
-      registry: this.provider.registryAddress,
-      blockchain: Blockchain.ZIL,
-      networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
     });
+    resolution.registry = this.provider.registryAddress;
+    domain.setResolution(resolution);
     await repository.save(domain);
   }
 
@@ -177,13 +181,16 @@ export default class ZilWorker {
       const resolution = await this.provider.requestZilliqaResolutionFor(
         resolver,
       );
-      domain.attributes({
-        resolver: resolver !== Domain.NullAddress ? resolver : null,
-        ownerAddress: owner !== Domain.NullAddress ? owner : null,
-        resolution: resolution ? resolution : {},
-        registry:
-          owner !== Domain.NullAddress ? this.provider.registryAddress : null,
-      });
+      const dbResolution = domain.getResolution(
+        this.blockchain,
+        this.networkId,
+      );
+      dbResolution.resolver = resolver !== Domain.NullAddress ? resolver : null;
+      dbResolution.ownerAddress = owner !== Domain.NullAddress ? owner : null;
+      dbResolution.resolution = resolution ? resolution : {};
+      dbResolution.registry =
+        owner !== Domain.NullAddress ? this.provider.registryAddress : null;
+      domain.setResolution(dbResolution);
       await repository.save(domain);
     }
   }

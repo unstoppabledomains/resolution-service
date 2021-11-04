@@ -1,9 +1,19 @@
 import winston from 'winston';
 import { BugsnagTransport } from 'winston-3-bugsnag-transport';
 import { env } from './env';
+import { Blockchain } from './types/common';
+
+const loggerFormat = winston.format.printf(
+  ({ level, message, workerNetwork }) => {
+    if (workerNetwork) {
+      return `${level}:\t[${workerNetwork}]\t${message}`;
+    }
+    return `${level}:\t${message}`;
+  },
+);
 
 export const logger = winston.createLogger({
-  format: winston.format.cli(),
+  format: loggerFormat,
   defaultMeta: { service: 'resolution-service' },
   transports: [
     new winston.transports.Console(),
@@ -17,3 +27,9 @@ export const logger = winston.createLogger({
       : []),
   ],
 });
+
+export function WorkerLogger(workerNetwork: Blockchain) {
+  return logger.child({
+    workerNetwork,
+  });
+}

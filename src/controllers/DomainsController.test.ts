@@ -1,12 +1,14 @@
 import supertest from 'supertest';
 import { api } from '../api';
 import { expect } from 'chai';
-import { ApiKey, Domain } from '../models';
+import { ApiKey } from '../models';
 import { DomainTestHelper } from '../utils/testing/DomainTestHelper';
 import { znsNamehash, eip137Namehash } from '../utils/namehash';
-import ethConfig from '../contracts/eth';
 import { env } from '../env';
 import { getConnection } from 'typeorm';
+import { Blockchain } from '../types/common';
+import { ETHContracts } from '../contracts';
+import { BigNumber } from 'ethers';
 
 describe('DomainsController', () => {
   let testApiKey: ApiKey;
@@ -63,13 +65,13 @@ describe('DomainsController', () => {
     });
 
     it('should return correct domain resolution for domain in lowercase', async () => {
-      await Domain.findOrCreate({
+      await DomainTestHelper.createTestDomain({
         name: 'testdomainforcase.crypto',
-        ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
         node:
           '0x08c2e9d2a30aa81623fcc758848d5556696868222fbc80a15ca46ec2fe2cba4f',
-        blockchain: 'ETH',
-        networkId: 1,
+        ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+        blockchain: Blockchain.ETH,
+        networkId: 1337,
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         resolution: {
           'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
@@ -88,7 +90,7 @@ describe('DomainsController', () => {
           resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
           registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
           blockchain: 'ETH',
-          networkId: 1,
+          networkId: 1337,
         },
         records: {
           'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
@@ -97,20 +99,20 @@ describe('DomainsController', () => {
     });
 
     it('should return correct registry for all locations domains', async () => {
-      const znsDomain = await DomainTestHelper.createTestDomain({
+      const { domain: znsDomain } = await DomainTestHelper.createTestDomain({
+        blockchain: Blockchain.ZIL,
+        networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
         name: 'test.zil',
         node: znsNamehash('test.zil'),
         registry: env.APPLICATION.ZILLIQA.ZNS_REGISTRY_CONTRACT,
-        blockchain: 'ZIL',
-        networkId: 1,
       });
-      const cnsDomain = await DomainTestHelper.createTestDomain();
-      const unsDomain = await DomainTestHelper.createTestDomain({
+      const { domain: cnsDomain } = await DomainTestHelper.createTestDomain();
+      const { domain: unsDomain } = await DomainTestHelper.createTestDomain({
         name: 'test.nft',
         node: eip137Namehash('test.nft'),
-        registry: ethConfig.UNSRegistry.address,
-        blockchain: 'ETH',
-        networkId: 1,
+        registry: ETHContracts.UNSRegistry.address,
+        blockchain: Blockchain.ETH,
+        networkId: env.APPLICATION.ETHEREUM.NETWORK_ID,
       });
 
       const znsResult = await supertest(api)
@@ -127,14 +129,14 @@ describe('DomainsController', () => {
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
       expect(cnsResult.status).eq(200);
-      expect(cnsResult.body.meta.registry).eq(ethConfig.UNSRegistry.address);
+      expect(cnsResult.body.meta.registry).eq(ETHContracts.CNSRegistry.address);
 
       const unsResult = await supertest(api)
         .get(`/domains/${unsDomain.name}`)
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
       expect(unsResult.status).eq(200);
-      expect(unsResult.body.meta.registry).eq(ethConfig.UNSRegistry.address);
+      expect(unsResult.body.meta.registry).eq(ETHContracts.UNSRegistry.address);
     });
 
     it('should return non-minted domain ending on .zil', async () => {
@@ -157,15 +159,15 @@ describe('DomainsController', () => {
     });
 
     it('should return minted domain ending on .zil', async () => {
-      await Domain.findOrCreate({
+      await DomainTestHelper.createTestDomain({
+        blockchain: Blockchain.ZIL,
+        networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
         name: 'sometestforzil.zil',
         ownerAddress: '0xcea21f5a6afc11b3a4ef82e986d63b8b050b6910',
         resolver: '0x34bbdee3404138430c76c2d1b2d4a2d223a896df',
         registry: '0x9611c53be6d1b32058b2747bdececed7e1216793',
         node:
           '0x8052ef7b6b4eee4bc0d7014f0e216db6270bf0055bcd3582368601f2de5e60f0',
-        blockchain: 'ZIL',
-        networkId: 1,
         resolution: {},
       });
       const res = await supertest(api)
@@ -180,20 +182,18 @@ describe('DomainsController', () => {
           resolver: '0x34bbdee3404138430c76c2d1b2d4a2d223a896df',
           registry: '0x9611c53be6d1b32058b2747bdececed7e1216793',
           blockchain: 'ZIL',
-          networkId: 1,
+          networkId: 333,
         },
         records: {},
       });
     });
 
     it('should return correct domain resolution for minted .crypto domain', async () => {
-      await Domain.findOrCreate({
+      await DomainTestHelper.createTestDomain({
         name: 'brad.crypto',
         ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
         node:
           '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
-        blockchain: 'ETH',
-        networkId: 1,
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         resolution: {
           'gundb.username.value':
@@ -222,7 +222,7 @@ describe('DomainsController', () => {
           resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
           registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
           blockchain: 'ETH',
-          networkId: 1,
+          networkId: 1337,
         },
         records: {
           'gundb.username.value':
@@ -239,6 +239,89 @@ describe('DomainsController', () => {
     });
   });
 
+  it('should return correct domain resolution for L2 domain', async () => {
+    const { domain } = await DomainTestHelper.createTestDomain({
+      name: 'brad.crypto',
+      node:
+        '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+      ownerAddress: '0x0000000000000000000000000000000000000000',
+      blockchain: Blockchain.ETH,
+      networkId: 1337,
+      registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      resolution: {},
+      resolver: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+    });
+    const resolution = domain.getResolution(Blockchain.MATIC, 1337);
+    resolution.ownerAddress = '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8';
+    resolution.resolver = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
+    resolution.registry = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
+    resolution.resolution = {
+      'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+    };
+    domain.setResolution(resolution);
+    await domain.save();
+
+    const res = await supertest(api)
+      .get('/domains/brad.crypto')
+      .auth(testApiKey.apiKey, { type: 'bearer' })
+      .send();
+    expect(res.status).eq(200);
+    expect(res.body).containSubset({
+      meta: {
+        domain: 'brad.crypto',
+        owner: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+        resolver: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f',
+        registry: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f',
+        blockchain: 'MATIC',
+        networkId: 1337,
+      },
+      records: {
+        'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+      },
+    });
+  });
+
+  it('should return correct domain resolution for L2 domain on L1', async () => {
+    const { domain } = await DomainTestHelper.createTestDomain({
+      name: 'brad.crypto',
+      node:
+        '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+      ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+      blockchain: Blockchain.ETH,
+      networkId: 1337,
+      registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      resolution: {
+        'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+      },
+      resolver: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+    });
+    const resolution = domain.getResolution(Blockchain.MATIC, 1337);
+    resolution.ownerAddress = '0x0000000000000000000000000000000000000000';
+    resolution.resolver = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
+    resolution.registry = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
+    resolution.resolution = {};
+    domain.setResolution(resolution);
+    await domain.save();
+
+    const res = await supertest(api)
+      .get('/domains/brad.crypto')
+      .auth(testApiKey.apiKey, { type: 'bearer' })
+      .send();
+    expect(res.status).eq(200);
+    expect(res.body).containSubset({
+      meta: {
+        domain: 'brad.crypto',
+        owner: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+        resolver: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        blockchain: 'ETH',
+        networkId: 1337,
+      },
+      records: {
+        'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+      },
+    });
+  });
   describe('GET /domains', () => {
     it('should return error for unauthorized query', async () => {
       const res = await supertest(api)
@@ -261,26 +344,20 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
     });
     it('should return true for hasMore', async () => {
-      const testDomain = Domain.create({
+      const { domain: testDomain } = await DomainTestHelper.createTestDomain({
         name: 'test1.crypto',
         node:
           '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
-      await testDomain.save();
-      const testDomainTwo = Domain.create({
+      await DomainTestHelper.createTestDomain({
         name: 'test2.crypto',
         node:
           '0xb899b9e12897c7cea4e24fc4815055b9777ad145507c5e0e1a4edac00b43cf0a',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
-      await testDomainTwo.save();
 
       const res = await supertest(api)
         .get(
@@ -296,10 +373,10 @@ describe('DomainsController', () => {
               meta: {
                 domain: testDomain.name,
                 blockchain: 'ETH',
-                networkId: 1,
-                owner: testDomain.ownerAddress,
-                registry: testDomain.registry,
-                resolver: null,
+                networkId: 1337,
+                owner: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+                registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+                resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
               },
               records: {},
             },
@@ -314,16 +391,13 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
     });
     it('should return false for hasMore', async () => {
-      const testDomain = Domain.create({
+      const { domain: testDomain } = await DomainTestHelper.createTestDomain({
         name: 'test1.crypto',
         node:
           '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
-      await testDomain.save();
 
       const res = await supertest(api)
         .get(
@@ -339,10 +413,10 @@ describe('DomainsController', () => {
               meta: {
                 domain: testDomain.name,
                 blockchain: 'ETH',
-                networkId: 1,
-                owner: testDomain.ownerAddress,
-                registry: testDomain.registry,
-                resolver: null,
+                networkId: 1337,
+                owner: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+                registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+                resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
               },
               records: {},
             },
@@ -357,16 +431,16 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
     });
     it('should return list of test domain', async () => {
-      const testDomain = Domain.create({
+      const {
+        domain: testDomain,
+        resolution,
+      } = await DomainTestHelper.createTestDomain({
         name: 'test1.crypto',
         node:
           '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
-      await testDomain.save();
 
       const res = await supertest(api)
         .get('/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2')
@@ -379,11 +453,11 @@ describe('DomainsController', () => {
             attributes: {
               meta: {
                 domain: testDomain.name,
-                blockchain: 'ETH',
-                networkId: 1,
-                owner: testDomain.ownerAddress,
-                registry: testDomain.registry,
-                resolver: null,
+                blockchain: resolution.blockchain,
+                networkId: resolution.networkId,
+                owner: resolution.ownerAddress,
+                registry: resolution.registry,
+                resolver: resolution.resolver,
               },
               records: {},
             },
@@ -398,16 +472,16 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
     });
     it('should lowercase ownerAddress', async () => {
-      const testDomain = Domain.create({
+      const {
+        domain: testDomain,
+        resolution,
+      } = await DomainTestHelper.createTestDomain({
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
-      await testDomain.save();
 
       const res = await supertest(api)
         .get(
@@ -422,11 +496,11 @@ describe('DomainsController', () => {
             attributes: {
               meta: {
                 domain: testDomain.name,
-                blockchain: testDomain.blockchain,
-                networkId: testDomain.networkId,
-                owner: testDomain.ownerAddress,
-                registry: testDomain.registry,
-                resolver: null,
+                blockchain: resolution.blockchain,
+                networkId: resolution.networkId,
+                owner: resolution.ownerAddress,
+                registry: resolution.registry,
+                resolver: resolution.resolver,
               },
               records: {},
             },
@@ -441,95 +515,83 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
     });
     it('should return list of test domains', async () => {
-      const testDomainOne = Domain.create({
-        id: 100,
+      const {
+        domain: testDomainOne,
+        resolution: resolutionOne,
+      } = await DomainTestHelper.createTestDomain({
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
-      const testDomainTwo = Domain.create({
-        id: 101,
+      const {
+        domain: testDomainTwo,
+        resolution: resolutionTwo,
+      } = await DomainTestHelper.createTestDomain({
         name: 'test1.crypto',
         node:
           '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
-      await testDomainOne.save();
-      await testDomainTwo.save();
 
       const res = await supertest(api)
         .get('/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2')
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
-      expect(res.body).to.deep.equal({
-        data: [
-          {
-            id: testDomainOne.name,
-            attributes: {
-              meta: {
-                domain: testDomainOne.name,
-                blockchain: testDomainOne.blockchain,
-                networkId: testDomainOne.networkId,
-                owner: testDomainOne.ownerAddress,
-                registry: testDomainOne.registry,
-                resolver: null,
-              },
-              records: {},
+      expect(res.body.data).to.have.deep.members([
+        {
+          id: testDomainOne.name,
+          attributes: {
+            meta: {
+              domain: testDomainOne.name,
+              blockchain: resolutionOne.blockchain,
+              networkId: resolutionOne.networkId,
+              owner: resolutionOne.ownerAddress,
+              registry: resolutionOne.registry,
+              resolver: resolutionOne.resolver,
             },
+            records: {},
           },
-          {
-            id: testDomainTwo.name,
-            attributes: {
-              meta: {
-                domain: testDomainTwo.name,
-                blockchain: testDomainTwo.blockchain,
-                networkId: testDomainTwo.networkId,
-                owner: testDomainTwo.ownerAddress,
-                registry: testDomainTwo.registry,
-                resolver: null,
-              },
-              records: {},
-            },
-          },
-        ],
-        meta: {
-          hasMore: false,
-          page: 1,
-          perPage: 100,
         },
-      });
+        {
+          id: testDomainTwo.name,
+          attributes: {
+            meta: {
+              domain: testDomainTwo.name,
+              blockchain: resolutionTwo.blockchain,
+              networkId: resolutionTwo.networkId,
+              owner: resolutionTwo.ownerAddress,
+              registry: resolutionTwo.registry,
+              resolver: resolutionTwo.resolver,
+            },
+            records: {},
+          },
+        },
+      ]);
       expect(res.status).eq(200);
     });
     it('should return one domain perPage', async () => {
-      const testDomainOne = Domain.create({
-        id: 100,
+      const {
+        domain: testDomainOne,
+        resolution: resolutionOne,
+      } = await DomainTestHelper.createTestDomain({
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
-      const testDomainTwo = Domain.create({
-        id: 101,
+      await DomainTestHelper.createTestDomain({
+        blockchain: Blockchain.ZIL,
+        networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
         name: 'test1.zil',
         node:
           '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ZIL',
-        networkId: 1,
       });
-      await testDomainOne.save();
-      await testDomainTwo.save();
 
       const res = await supertest(api)
         .get(
@@ -544,18 +606,18 @@ describe('DomainsController', () => {
             attributes: {
               meta: {
                 domain: testDomainOne.name,
-                blockchain: testDomainOne.blockchain,
-                networkId: testDomainOne.networkId,
-                owner: testDomainOne.ownerAddress,
-                registry: testDomainOne.registry,
-                resolver: null,
+                blockchain: resolutionOne.blockchain,
+                networkId: resolutionOne.networkId,
+                owner: resolutionOne.ownerAddress,
+                registry: resolutionOne.registry,
+                resolver: resolutionOne.resolver,
               },
               records: {},
             },
           },
         ],
         meta: {
-          hasMore: true,
+          hasMore: false,
           page: 1,
           perPage: 1,
         },
@@ -563,16 +625,13 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
     });
     it('should return no domain from empty page', async () => {
-      const testDomainOne = Domain.create({
+      await DomainTestHelper.createTestDomain({
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1,
       });
-      await testDomainOne.save();
       const res = await supertest(api)
         .get(
           '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&page=2',
@@ -590,31 +649,29 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
     });
     it('should return list of test domain based on location', async () => {
-      const testDomainOne = Domain.create({
+      const {
+        domain: testDomainOne,
+        resolution: resolutionOne,
+      } = await DomainTestHelper.createTestDomain({
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        blockchain: 'ETH',
-        networkId: 1,
       });
-      const testDomainTwo = Domain.create({
+      await DomainTestHelper.createTestDomain({
+        blockchain: Blockchain.ZIL,
+        networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
         name: 'test1.zil',
         node:
           '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08bbeadb',
-        blockchain: 'ZIL',
-        networkId: 1,
       });
-
-      await testDomainOne.save();
-      await testDomainTwo.save();
 
       const res = await supertest(api)
         .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]=ETH',
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1337&blockchains[]=ETH',
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
@@ -625,11 +682,11 @@ describe('DomainsController', () => {
             attributes: {
               meta: {
                 domain: testDomainOne.name,
-                blockchain: testDomainOne.blockchain,
-                networkId: testDomainOne.networkId,
-                owner: testDomainOne.ownerAddress,
-                registry: testDomainOne.registry,
-                resolver: null,
+                blockchain: resolutionOne.blockchain,
+                networkId: resolutionOne.networkId,
+                owner: resolutionOne.ownerAddress,
+                registry: resolutionOne.registry,
+                resolver: resolutionOne.resolver,
               },
               records: {},
             },

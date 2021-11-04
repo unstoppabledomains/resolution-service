@@ -1,94 +1,104 @@
 import { ethers, Wallet, BigNumber } from 'ethers';
-import { EthereumProvider } from '../../workers/EthereumProvider';
+import {
+  EthereumProvider,
+  StaticJsonRpcProvider,
+} from '../../workers/EthereumProvider';
 import { env } from '../../env';
 import Sandbox from 'uns/sandbox';
 
 const FundingAmount: BigNumber = ethers.utils.parseUnits('100', 'ether');
 
-export class EthereumTestsHelper {
-  private static sandbox: any;
-  private static sandboxInitialized = false;
-  private static accounts: Record<string, Wallet> = {};
+export class EthereumNetworkHelper {
+  private sandbox: any;
+  private sandboxInitialized = false;
+  private accounts: Record<string, Wallet> = {};
+  private provider: StaticJsonRpcProvider;
 
-  static async fundAccounts(...accounts: Wallet[]): Promise<void> {
+  constructor(provider: StaticJsonRpcProvider) {
+    this.provider = provider;
+  }
+
+  public async fundAccounts(...accounts: Wallet[]): Promise<void> {
     for (const account of accounts) {
-      await EthereumTestsHelper.fundAddress(account.address, FundingAmount);
+      await this.fundAddress(account.address, FundingAmount);
     }
   }
 
-  static async createAccount(): Promise<Wallet> {
+  public async createAccount(): Promise<Wallet> {
     const account = Wallet.createRandom();
-    return account.connect(EthereumProvider);
+    return account.connect(this.provider);
   }
 
-  static async fundFaucet(): Promise<void> {
-    await EthereumTestsHelper.fundAccounts(EthereumTestsHelper.faucet());
+  public async fundFaucet(): Promise<void> {
+    await this.fundAccounts(this.faucet());
   }
 
-  static async fundAddress(
+  public async fundAddress(
     address: string,
     amount: BigNumber = FundingAmount,
   ): Promise<void> {
-    const signer = EthereumTestsHelper.faucet();
+    const signer = this.faucet();
     await signer.sendTransaction({
       to: address,
       value: amount,
     });
   }
 
-  static async mineBlocksForConfirmation(
+  public async mineBlocksForConfirmation(
     count: number = env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS,
   ): Promise<void> {
     for (let i = 0; i != count; i++) {
-      await EthereumTestsHelper.fundAddress(
+      await this.fundAddress(
         '0x000000000000000000000000000000000000dEaD',
         BigNumber.from(1),
       );
     }
   }
 
-  static async startNetwork(): Promise<void> {
-    if (!EthereumTestsHelper.sandboxInitialized) {
-      EthereumTestsHelper.sandboxInitialized = true;
-      const sandbox = await Sandbox.start();
+  public async startNetwork(options: any = {}): Promise<void> {
+    if (!this.sandboxInitialized) {
+      this.sandboxInitialized = true;
+      const sandbox = await Sandbox.start(options);
       const accounts: Record<string, any> = sandbox.accounts;
 
-      EthereumTestsHelper.sandbox = sandbox;
+      this.sandbox = sandbox;
       Object.keys(accounts).forEach((key: string) => {
-        EthereumTestsHelper.accounts[key] = new Wallet(
+        this.accounts[key] = new Wallet(
           accounts[key].privateKey,
-          EthereumProvider,
+          this.provider,
         );
       });
     }
   }
 
-  static async resetNetwork(): Promise<void> {
-    if (EthereumTestsHelper.sandboxInitialized) {
-      EthereumTestsHelper.sandbox.reset();
+  public async resetNetwork(): Promise<void> {
+    if (this.sandboxInitialized) {
+      this.sandbox.reset();
     }
   }
 
-  static async stopNetwork(): Promise<void> {
-    if (EthereumTestsHelper.sandboxInitialized) {
-      EthereumTestsHelper.sandboxInitialized = false;
-      await EthereumTestsHelper.sandbox.stop();
+  public async stopNetwork(): Promise<void> {
+    if (this.sandboxInitialized) {
+      this.sandboxInitialized = false;
+      await this.sandbox.stop();
     }
   }
 
-  static owner(): Wallet {
-    return EthereumTestsHelper.accounts.owner;
+  public owner(): Wallet {
+    return this.accounts.owner;
   }
 
-  static minter(): Wallet {
-    return EthereumTestsHelper.accounts.minter;
+  public minter(): Wallet {
+    return this.accounts.minter;
   }
 
-  static faucet(): Wallet {
-    return EthereumTestsHelper.accounts.faucet;
+  public faucet(): Wallet {
+    return this.accounts.faucet;
   }
 
-  static getAccount(label: string): Wallet {
-    return EthereumTestsHelper.accounts[label];
+  public getAccount(label: string): Wallet {
+    return this.accounts[label];
   }
 }
+
+export const EthereumHelper = new EthereumNetworkHelper(EthereumProvider);

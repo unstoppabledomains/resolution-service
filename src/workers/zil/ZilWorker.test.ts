@@ -14,12 +14,13 @@ import { env } from '../../env';
 import { isBech32 } from '@zilliqa-js/util/dist/validation';
 import { fromBech32Address } from '@zilliqa-js/crypto';
 import { ZnsTx } from './ZilProvider';
+import { Blockchain } from '../../types/common';
 
 let worker: ZilWorker;
 
 describe('ZilWorker', () => {
   beforeEach(async () => {
-    await WorkerStatus.saveWorkerStatus('ETH', 0, undefined, -1);
+    await WorkerStatus.saveWorkerStatus(Blockchain.ETH, 0, undefined, -1);
     worker = new ZilWorker();
   });
 
@@ -54,7 +55,9 @@ describe('ZilWorker', () => {
       expect(txfromDb?.atxuid).to.eq(transaction.atxuid);
     }
 
-    const workerStatus = await WorkerStatus.findOne({ location: 'ZIL' });
+    const workerStatus = await WorkerStatus.findOne({
+      location: Blockchain.ZIL,
+    });
     expect(workerStatus).to.exist;
     expect(workerStatus?.lastMirroredBlockNumber).to.eq(
       FirstTwoTransactions[0].blockHeight,
@@ -135,16 +138,21 @@ describe('ZilWorker', () => {
       expect(txFromDb?.atxuid).to.equal(fakeTransaction.atxuid);
       // domain should be stored with ether addresses
       const domainFromDb = await Domain.findOne({
-        name: fakeTransaction.events[1].params.label + '.zil',
+        where: { name: fakeTransaction.events[1].params.label + '.zil' },
+        relations: ['resolutions'],
       });
+      const dbResolution = domainFromDb?.getResolution(
+        worker.blockchain,
+        worker.networkId,
+      );
       expect(domainFromDb).to.exist;
-      expect(isBech32(domainFromDb!.ownerAddress!)).to.be.false;
-      expect(domainFromDb!.ownerAddress!).to.equal(
+      expect(isBech32(dbResolution!.ownerAddress!)).to.be.false;
+      expect(dbResolution!.ownerAddress!).to.equal(
         fromBech32Address(
           fakeTransaction.events[0].params.owner!,
         ).toLowerCase(),
       );
-      expect(domainFromDb?.resolver).to.be.null;
+      expect(dbResolution?.resolver).to.be.null;
     });
 
     it('should not update the db due to missing node in db', async () => {
@@ -191,11 +199,16 @@ describe('ZilWorker', () => {
       expect(txFromDb?.atxuid).to.equal(fakeTransaction.atxuid);
       // domain should be stored with ether addresses
       const domainFromDb = await Domain.findOne({
-        name: fakeTransaction.events[1].params.label + '.zil',
+        where: { name: fakeTransaction.events[1].params.label + '.zil' },
+        relations: ['resolutions'],
       });
+      const dbResolution = domainFromDb?.getResolution(
+        worker.blockchain,
+        worker.networkId,
+      );
       expect(domainFromDb).to.exist;
-      expect(domainFromDb?.ownerAddress).to.be.null;
-      expect(domainFromDb?.resolver).to.be.null;
+      expect(dbResolution?.ownerAddress).to.be.null;
+      expect(dbResolution?.resolver).to.be.null;
     });
   });
 
@@ -230,7 +243,8 @@ describe('ZilWorker', () => {
       expect(txFromDb?.atxuid).to.equal(fakeTransaction.atxuid);
       // domain should not be process or added to the db due to wrong label
       const domainFromDb = await Domain.findOne({
-        name: fakeTransaction.events[0].params.label + '.zil',
+        where: { name: fakeTransaction.events[0].params.label + '.zil' },
+        relations: ['resolutions'],
       });
       expect(domainFromDb).to.not.exist;
     });
@@ -261,7 +275,8 @@ describe('ZilWorker', () => {
       expect(txFromDb?.atxuid).to.equal(fakeTransaction.atxuid);
       // domain should not be process or added to the db due to wrong label
       const domainFromDb = await Domain.findOne({
-        name: fakeTransaction.events[0].params.label + '.zil',
+        where: { name: fakeTransaction.events[0].params.label + '.zil' },
+        relations: ['resolutions'],
       });
       expect(domainFromDb).to.not.exist;
     });
@@ -292,7 +307,8 @@ describe('ZilWorker', () => {
       expect(txFromDb?.atxuid).to.equal(fakeTransaction.atxuid);
       // domain should not be process or added to the db due to wrong label
       const domainFromDb = await Domain.findOne({
-        name: fakeTransaction.events[0].params.label + '.zil',
+        where: { name: fakeTransaction.events[0].params.label + '.zil' },
+        relations: ['resolutions'],
       });
       expect(domainFromDb).to.not.exist;
     });
@@ -345,7 +361,8 @@ describe('ZilWorker', () => {
       expect(txFromDb?.atxuid).to.equal(fakeTransaction.atxuid);
       // domain should not be process or added to the db due to wrong label
       const domainFromDb = await Domain.findOne({
-        name: fakeTransaction.events[0].params.label + '.zil',
+        where: { name: fakeTransaction.events[0].params.label + '.zil' },
+        relations: ['resolutions'],
       });
       expect(domainFromDb).to.not.exist;
 
@@ -357,7 +374,8 @@ describe('ZilWorker', () => {
       expect(secondTxFromDb?.atxuid).to.equal(secondFakeTransaction.atxuid);
 
       const secondDomainFromDb = await Domain.findOne({
-        name: secondFakeTransaction.events[0].params.label + '.zil',
+        where: { name: secondFakeTransaction.events[0].params.label + '.zil' },
+        relations: ['resolutions'],
       });
       expect(secondDomainFromDb).exist;
     });
@@ -411,16 +429,23 @@ describe('ZilWorker', () => {
     expect(txFromDb?.atxuid).eq(0);
     expect(txFromDb?.events.length).eq(2);
     expect(txFromDb?.blockNumber).eq(247856);
-    const domainFromDb = await Domain.findOne({ name: 'activating.zil' });
+    const domainFromDb = await Domain.findOne({
+      where: { name: 'activating.zil' },
+      relations: ['resolutions'],
+    });
+    const dbResolution = domainFromDb?.getResolution(
+      worker.blockchain,
+      worker.networkId,
+    );
     expect(domainFromDb).exist;
-    expect(domainFromDb?.ownerAddress).eq(
+    expect(dbResolution?.ownerAddress).eq(
       '0x0c7b9630f75423ca9efba2a386d0bc6a0292702e',
     );
-    expect(domainFromDb?.resolver).eq(null);
+    expect(dbResolution?.resolver).eq(null);
     expect(domainFromDb?.node).eq(
       '0xd81a54e6c75997b2bbd27a0c0d5afa898eae62dbfc3c178964bcceea0c009b3c',
     );
-    expect(domainFromDb?.blockchain).eq('ZIL');
-    expect(domainFromDb?.networkId).eq(333);
+    expect(dbResolution?.blockchain).eq('ZIL');
+    expect(dbResolution?.networkId).eq(333);
   });
 });

@@ -3,13 +3,14 @@ import { randomBytes } from 'crypto';
 import { env } from '../../env';
 import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import { EthereumProvider } from '../EthereumProvider';
-import { EthereumTestsHelper } from '../../utils/testing/EthereumTestsHelper';
+import { EthereumHelper } from '../../utils/testing/EthereumTestsHelper';
 import { EthUpdater } from './EthUpdater';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
 import { ETHContracts } from '../../contracts';
 import * as ethersUtils from '../../utils/ethersUtils';
+import { Blockchain } from '../../types/common';
 
 type NSConfig = {
   tld: string;
@@ -48,28 +49,28 @@ describe('EthUpdater', () => {
   let cns: NSConfig;
 
   before(async () => {
-    await EthereumTestsHelper.startNetwork();
-    await EthereumTestsHelper.resetNetwork();
-    owner = EthereumTestsHelper.owner().address;
+    await EthereumHelper.startNetwork();
+    await EthereumHelper.resetNetwork();
+    owner = EthereumHelper.owner().address;
     unsRegistry = ETHContracts.UNSRegistry.getContract().connect(
-      EthereumTestsHelper.owner(),
+      EthereumHelper.owner(),
     );
     cnsRegistry = ETHContracts.CNSRegistry.getContract().connect(
-      EthereumTestsHelper.owner(),
+      EthereumHelper.owner(),
     );
     resolver = ETHContracts.Resolver.getContract().connect(
-      EthereumTestsHelper.owner(),
+      EthereumHelper.owner(),
     );
     mintingManager = ETHContracts.MintingManager.getContract().connect(
-      EthereumTestsHelper.minter(),
+      EthereumHelper.minter(),
     );
     whitelistedMinter = ETHContracts.WhitelistedMinter.getContract().connect(
-      EthereumTestsHelper.minter(),
+      EthereumHelper.minter(),
     );
   });
 
   after(async () => {
-    await EthereumTestsHelper.stopNetwork();
+    await EthereumHelper.stopNetwork();
   });
 
   beforeEach(async () => {
@@ -79,7 +80,11 @@ describe('EthUpdater', () => {
       .value(block.number);
     uns = getNSConfig('blockchain');
     cns = getNSConfig('crypto');
-    await WorkerStatus.saveWorkerStatus('ETH', block.number, block.hash);
+    await WorkerStatus.saveWorkerStatus(
+      Blockchain.ETH,
+      block.number,
+      block.hash,
+    );
 
     await mintingManager.functions
       .mintSLD(owner, uns.tldHash, uns.label)
@@ -89,16 +94,18 @@ describe('EthUpdater', () => {
       .mintSLDToDefaultResolver(owner, cns.label, [], [])
       .then((receipt) => receipt.wait());
 
-    service = new EthUpdater();
+    service = new EthUpdater(Blockchain.ETH, env.APPLICATION.ETHEREUM);
   });
 
   it('should save worker stats', async () => {
     // test domain is created in beforeEach hook
-    await EthereumTestsHelper.mineBlocksForConfirmation();
+    await EthereumHelper.mineBlocksForConfirmation();
 
     await service.run();
 
-    const workerStatus = await WorkerStatus.findOne({ location: 'ETH' });
+    const workerStatus = await WorkerStatus.findOne({
+      location: Blockchain.ETH,
+    });
     const netBlockNumber = await ethersUtils.getLatestNetworkBlock();
     const expectedBlock = await EthereumProvider.getBlock(
       netBlockNumber - env.APPLICATION.ETHEREUM.CONFIRMATION_BLOCKS,
@@ -111,11 +118,14 @@ describe('EthUpdater', () => {
   describe('basic events', () => {
     it('processes a NewUri event', async () => {
       // test domain is created in beforeEach hook
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: uns.name });
+      const domain = await Domain.findOne({
+        where: { name: uns.name },
+        relations: ['resolutions'],
+      });
       expect(domain).to.not.be.undefined;
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
@@ -126,20 +136,29 @@ describe('EthUpdater', () => {
     });
 
     it('processes a cns Transfer event', async () => {
-      const recipient = await EthereumTestsHelper.createAccount();
+      const recipient = await EthereumHelper.createAccount();
       const recipientAddress = await recipient.getAddress();
 
       await cnsRegistry.functions
         .transferFrom(owner, recipientAddress, cns.tokenId)
         .then((receipt) => receipt.wait());
 
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: cns.name });
+      const domain = await Domain.findOne({
+        where: { name: cns.name },
+        relations: ['resolutions'],
+      });
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
       expect(domain).to.not.be.undefined;
-      expect(domain?.ownerAddress).to.be.equal(recipientAddress.toLowerCase());
+      expect(resolution?.ownerAddress).to.be.equal(
+        recipientAddress.toLowerCase(),
+      );
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         NewURI: 2,
@@ -149,20 +168,29 @@ describe('EthUpdater', () => {
     });
 
     it('processes a uns Transfer event', async () => {
-      const recipient = await EthereumTestsHelper.createAccount();
+      const recipient = await EthereumHelper.createAccount();
       const recipientAddress = await recipient.getAddress();
 
       await unsRegistry.functions
         .transferFrom(owner, recipientAddress, uns.tokenId)
         .then((receipt) => receipt.wait());
 
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: uns.name });
+      const domain = await Domain.findOne({
+        where: { name: uns.name },
+        relations: ['resolutions'],
+      });
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
       expect(domain).to.not.be.undefined;
-      expect(domain?.ownerAddress).to.be.equal(recipientAddress.toLowerCase());
+      expect(resolution?.ownerAddress).to.be.equal(
+        recipientAddress.toLowerCase(),
+      );
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         Approval: 1,
@@ -184,13 +212,23 @@ describe('EthUpdater', () => {
           cns.tokenId,
         )
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: cns.name });
+      const domain = await Domain.findOne({
+        where: { name: cns.name },
+        relations: ['resolutions'],
+      });
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
       expect(domain).to.containSubset({
         name: cns.name,
+      });
+
+      expect(resolution).to.containSubset({
         blockchain: 'ETH',
         networkId: 1337,
         resolver: resolver.address.toLowerCase(),
@@ -215,16 +253,26 @@ describe('EthUpdater', () => {
           uns.tokenId,
         )
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: uns.name });
+      const domain = await Domain.findOne({
+        where: { name: uns.name },
+        relations: ['resolutions'],
+      });
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
       expect(domain).to.containSubset({
         name: uns.name,
+      });
+      expect(resolution).to.containSubset({
         blockchain: 'ETH',
         networkId: 1337,
         resolver: unsRegistry.address.toLowerCase(),
+        registry: unsRegistry.address.toLowerCase(),
         ownerAddress: owner.toLowerCase(),
         resolution: {
           'crypto.BTC.address': 'qp3gu0flg7tehyv73ua5nznlw8s040nz3uqnyffrcn',
@@ -251,15 +299,24 @@ describe('EthUpdater', () => {
       await cnsRegistry.functions
         .burn(cns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
-      const domain = await Domain.findOne({ name: cns.name });
+      const domain = await Domain.findOne({
+        where: { name: cns.name },
+        relations: ['resolutions'],
+      });
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
       expect(domain).to.containSubset({
         name: cns.name,
+      });
+      expect(resolution).to.containSubset({
         resolution: {},
         resolver: null,
-        ownerAddress: null,
+        ownerAddress: Domain.NullAddress,
       });
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
@@ -282,15 +339,24 @@ describe('EthUpdater', () => {
       await unsRegistry.functions
         .burn(uns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
-      const domain = await Domain.findOne({ name: uns.name });
+      const domain = await Domain.findOne({
+        where: { name: uns.name },
+        relations: ['resolutions'],
+      });
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
       expect(domain).to.containSubset({
         name: uns.name,
+      });
+      expect(resolution).to.containSubset({
         resolution: {},
         resolver: null,
-        ownerAddress: null,
+        ownerAddress: Domain.NullAddress,
       });
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
@@ -304,13 +370,13 @@ describe('EthUpdater', () => {
     });
 
     it('processes an approve event', async () => {
-      const recipient = await EthereumTestsHelper.createAccount();
+      const recipient = await EthereumHelper.createAccount();
       const recipientAddress = await recipient.getAddress();
 
       await unsRegistry.functions
         .approve(recipientAddress, uns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
@@ -331,13 +397,17 @@ describe('EthUpdater', () => {
       await whitelistedMinter.functions
         .mintSLDToDefaultResolver(owner, expectedLabel, [], [])
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOneOrFail({ name: expectedDomainName });
+      const domain = await Domain.findOneOrFail({
+        where: { name: expectedDomainName },
+        relations: ['resolutions'],
+      });
       expect(domain.label).to.equal(expectedLabel);
-      expect(domain.registry).to.equal(cnsRegistry.address);
+      expect(domain.resolutions[0].registry).to.equal(cnsRegistry.address);
+      expect(domain.extension).to.equal(cns.tld);
     });
 
     it('should add new uns domain', async () => {
@@ -347,11 +417,14 @@ describe('EthUpdater', () => {
       await mintingManager.functions
         .mintSLD(owner, uns.tldHash, expectedLabel)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOneOrFail({ name: expectedDomainName });
+      const domain = await Domain.findOneOrFail({
+        where: { name: expectedDomainName },
+        relations: ['resolutions'],
+      });
       expect(domain.label).to.equal(expectedLabel);
     });
 
@@ -361,11 +434,14 @@ describe('EthUpdater', () => {
       await whitelistedMinter.functions
         .mintSLDToDefaultResolver(owner, expectedLabel, [], [])
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: expectedDomainName });
+      const domain = await Domain.findOne({
+        where: { name: expectedDomainName },
+        relations: ['resolutions'],
+      });
       expect(domain).to.be.undefined;
     });
 
@@ -375,11 +451,14 @@ describe('EthUpdater', () => {
       await mintingManager.functions
         .mintSLD(owner, uns.tldHash, expectedLabel)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: expectedDomainName });
+      const domain = await Domain.findOne({
+        where: { name: expectedDomainName },
+        relations: ['resolutions'],
+      });
       expect(domain).to.be.undefined;
     });
 
@@ -389,11 +468,14 @@ describe('EthUpdater', () => {
       await whitelistedMinter.functions
         .mintSLDToDefaultResolver(owner, expectedDomainName, [], [])
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: expectedDomainName });
+      const domain = await Domain.findOne({
+        where: { name: expectedDomainName },
+        relations: ['resolutions'],
+      });
       expect(domain).to.be.undefined;
     });
 
@@ -403,11 +485,14 @@ describe('EthUpdater', () => {
       await mintingManager.functions
         .mintSLD(owner, uns.tldHash, expectedDomainName)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOne({ name: expectedDomainName });
+      const domain = await Domain.findOne({
+        where: { name: expectedDomainName },
+        relations: ['resolutions'],
+      });
       expect(domain).to.be.undefined;
     });
   });
@@ -421,15 +506,16 @@ describe('EthUpdater', () => {
       await resolver.functions
         .reset(cns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name, {
-        blockchain: 'ETH',
-        networkId: 1337,
-      });
-      expect(domain.resolution).to.be.empty;
+      const domain = await Domain.findOrCreateByName(cns.name);
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
+      expect(resolution.resolution).to.be.empty;
     });
 
     it('should reset uns records if Sync event with zero updateId received', async () => {
@@ -440,19 +526,20 @@ describe('EthUpdater', () => {
       await unsRegistry.functions
         .reset(uns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(uns.name, {
-        blockchain: 'ETH',
-        networkId: 1337,
-      });
-      expect(domain.resolution).to.be.empty;
+      const domain = await Domain.findOrCreateByName(uns.name);
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
+      expect(resolution.resolution).to.be.empty;
     });
 
     it('should get all cns domain records when domain was sent via setOwner method', async () => {
-      const account = await EthereumTestsHelper.createAccount();
+      const account = await EthereumHelper.createAccount();
       await resolver.functions
         .reconfigure(
           ['crypto.ETH.address'],
@@ -463,21 +550,22 @@ describe('EthUpdater', () => {
       await cnsRegistry.functions
         .setOwner(account.address, cns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name, {
-        blockchain: 'ETH',
-        networkId: 1337,
-      });
-      expect(domain.resolution).to.deep.equal({
+      const domain = await Domain.findOrCreateByName(cns.name);
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
+      expect(resolution.resolution).to.deep.equal({
         'crypto.ETH.address': '0x829BD824B016326A401d083B33D092293333A830',
       });
     });
 
     it('should get all uns domain records when domain was sent via setOwner method', async () => {
-      const account = await EthereumTestsHelper.createAccount();
+      const account = await EthereumHelper.createAccount();
       await unsRegistry.functions
         .set(
           'crypto.ETH.address',
@@ -488,15 +576,16 @@ describe('EthUpdater', () => {
       await unsRegistry.functions
         .setOwner(account.address, uns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(uns.name, {
-        blockchain: 'ETH',
-        networkId: 1337,
-      });
-      expect(domain.resolution).to.deep.equal({
+      const domain = await Domain.findOrCreateByName(uns.name);
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
+      expect(resolution.resolution).to.deep.equal({
         'crypto.ETH.address': '0x829BD824B016326A401d083B33D092293333A830',
       });
     });
@@ -507,15 +596,16 @@ describe('EthUpdater', () => {
       await resolver.functions
         .set('custom-key', 'value', cns.tokenId)
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name, {
-        blockchain: 'ETH',
-        networkId: 1337,
-      });
-      expect(domain.resolution).to.deep.equal({ 'custom-key': 'value' });
+      const domain = await Domain.findOrCreateByName(cns.name);
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
+      expect(resolution.resolution).to.deep.equal({ 'custom-key': 'value' });
     });
 
     it('should add custom and default key on Sync event', async () => {
@@ -526,15 +616,16 @@ describe('EthUpdater', () => {
           cns.tokenId,
         )
         .then((receipt) => receipt.wait());
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name, {
-        blockchain: 'ETH',
-        networkId: 1337,
-      });
-      expect(domain.resolution).to.deep.equal({
+      const domain = await Domain.findOrCreateByName(cns.name);
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
+      expect(resolution.resolution).to.deep.equal({
         'crypto.ETH.address': '0x461781022A9C2De74f2171EB3c44F27320b13B8c',
         'custom-key': 'value',
       });
@@ -552,15 +643,19 @@ describe('EthUpdater', () => {
         )
         .then((receipt) => receipt.wait());
 
-      await EthereumTestsHelper.mineBlocksForConfirmation();
+      await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name, {
-        blockchain: 'ETH',
-        networkId: 1337,
+      const domain = await Domain.findOne({
+        where: { name: cns.name },
+        relations: ['resolutions'],
       });
-      expect(domain.resolution).to.deep.equal({
+      const resolution = domain?.getResolution(
+        service.blockchain,
+        service.networkId,
+      );
+      expect(resolution?.resolution).to.deep.equal({
         'crypto.ETH.address': '0x461781022A9C2De74f2171EB3c44F27320b13B8c',
         'custom-key': 'value',
       });

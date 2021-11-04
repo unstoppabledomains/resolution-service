@@ -1,16 +1,13 @@
 import { IsEnum, IsNumber, Min, IsOptional } from 'class-validator';
 import ValidateWith from '../services/ValidateWith';
 import { Column, Entity, Index, Repository, Unique } from 'typeorm';
-import { Attributes } from '../types/common';
+import { Attributes, Blockchain } from '../types/common';
 import Model from './Model';
-
-export const Blockchains = ['ETH', 'ZIL'] as const;
-export type Blockchain = typeof Blockchains[number];
 
 @Entity({ name: 'resolution_worker_status' })
 @Unique(['location'])
 export default class WorkerStatus extends Model {
-  @IsEnum(Blockchains)
+  @IsEnum(Blockchain)
   @Column('text')
   @Index()
   location: Blockchain;

@@ -7,3 +7,5 @@ build
 .nyc_output
 .env
 .sandbox
+.sandboxl2
+coverage

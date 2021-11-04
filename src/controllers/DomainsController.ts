@@ -24,10 +24,12 @@ import {
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
 import { In } from 'typeorm';
+import DomainsResolution from '../models/DomainsResolution';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
 import { Blockchain } from '../types/common';
 import { toNumber } from 'lodash';
 import NetworkConfig from 'uns/uns-config.json';
+import { getDomainResolution } from '../services/Resolution';
 
 class DomainMetadata {
   @IsString()
@@ -93,6 +95,14 @@ class DomainsListQuery {
   @Min(1)
   @Max(200)
   perPage = 100;
+
+  get hasDeafultBlockchains(): boolean {
+    return this.blockchains === Object.values(Blockchain);
+  }
+
+  get hasDeafultNetworks(): boolean {
+    return this.networkIds === Object.keys(NetworkConfig.networks);
+  }
 }
 
 class DomainAttributes {
@@ -136,18 +146,22 @@ export class DomainsController {
     @Param('domainName') domainName: string,
   ): Promise<DomainResponse> {
     domainName = domainName.toLowerCase();
-    const domain = await Domain.findOne({ name: domainName });
+    const domain = await Domain.findOne({
+      where: { name: domainName },
+      relations: ['resolutions'],
+    });
     if (domain) {
+      const resolution = getDomainResolution(domain);
       const response = new DomainResponse();
       response.meta = {
-        domain: domainName,
-        owner: domain.ownerAddress,
-        resolver: domain.resolver,
-        registry: domain.registry,
-        blockchain: domain.blockchain,
-        networkId: domain.networkId,
+        domain: domain.name,
+        blockchain: resolution.blockchain,
+        networkId: resolution.networkId,
+        owner: resolution.ownerAddress,
+        resolver: resolution.resolver,
+        registry: resolution.registry,
       };
-      response.records = domain.resolution;
+      response.records = resolution.resolution;
       return response;
     }
     return {
@@ -189,35 +203,45 @@ export class DomainsController {
     @QueryParams() query: DomainsListQuery,
   ): Promise<DomainsListResponse> {
     const ownersQuery = query.owners.map((owner) => owner.toLowerCase());
-    const domains = await Domain.find({
+    let resolutions = await DomainsResolution.find({
       where: {
         ownerAddress: ownersQuery ? In(ownersQuery) : undefined,
         blockchain: In(query.blockchains),
         networkId: In(query.networkIds.map(toNumber)),
       },
+      relations: ['domain'],
       take: query.perPage + 1,
       skip: (query.page - 1) * query.perPage,
     });
     let hasMore = false;
-    if (domains.length > query.perPage) {
+    if (resolutions.length > query.perPage) {
       hasMore = true;
-      domains.pop();
+      resolutions.pop();
     }
+    if (query.hasDeafultNetworks && query.hasDeafultBlockchains) {
+      const uniqueDomains = new Set();
+      resolutions = resolutions.filter((res) => {
+        const dname = res.domain.name;
+        return uniqueDomains.has(dname) ? false : uniqueDomains.add(dname);
+      });
+      resolutions = resolutions.map((res) => getDomainResolution(res.domain));
+    }
+
     const response = new DomainsListResponse();
     response.data = [];
-    for (const domain of domains) {
+    for (const resolution of resolutions) {
       response.data.push({
-        id: domain.name,
+        id: resolution.domain.name,
         attributes: {
           meta: {
-            blockchain: domain.blockchain,
-            networkId: domain.networkId,
-            owner: domain.ownerAddress,
-            resolver: domain.resolver,
-            registry: domain.registry,
-            domain: domain.name,
+            domain: resolution.domain.name,
+            blockchain: resolution.blockchain,
+            networkId: resolution.networkId,
+            owner: resolution.ownerAddress,
+            resolver: resolution.resolver,
+            registry: resolution.registry,
           },
-          records: domain.resolution,
+          records: resolution.resolution,
         },
       });
     }

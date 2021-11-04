@@ -7,26 +7,14 @@ import {
   OneToMany,
   Repository,
 } from 'typeorm';
-import {
-  IsIn,
-  IsNumber,
-  IsObject,
-  IsOptional,
-  IsString,
-  Matches,
-  NotEquals,
-} from 'class-validator';
+import { IsOptional, IsString, Matches } from 'class-validator';
 import ValidateWith from '../services/ValidateWith';
-import * as _ from 'lodash';
 import { Model } from '.';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
-import { Attributes, Blockchain } from '../types/common';
+import { Attributes } from '../types/common';
 import punycode from 'punycode';
-
-export type Location = {
-  networkId: number;
-  blockchain: keyof typeof Blockchain;
-};
+import DomainsResolution from './DomainsResolution';
+import { Blockchain } from '../types/common';
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
@@ -46,48 +34,24 @@ export default class Domain extends Model {
   @Column('text')
   node: string;
 
-  @Index()
-  @IsOptional()
-  @Matches(Domain.AddressRegex)
-  @Column('text', { nullable: true })
-  ownerAddress: string | null = null;
-
-  @IsOptional()
-  @Matches(Domain.AddressRegex)
-  @NotEquals(Domain.NullAddress)
-  @Column('text', { nullable: true })
-  resolver: string | null = null;
-
-  @IsOptional()
-  @Column('text', { nullable: true })
-  registry: string | null = null;
-
   @IsOptional()
   @Index()
-  @ManyToOne((type) => Domain, { nullable: true })
+  @ManyToOne(() => Domain, { nullable: true })
   @JoinColumn()
   parent: Promise<Domain | null>;
 
-  @IsOptional()
-  @IsObject()
-  @ValidateWith<Domain>('validResolution', {
-    message: 'resolution does not match Record<string, string> type',
-  })
-  @Column('jsonb', { default: {} })
-  resolution: Record<string, string> = {};
-
-  @OneToMany((type) => Domain, (domain) => domain.parent)
+  @OneToMany(() => Domain, (domain) => domain.parent)
   @JoinColumn({ name: 'parent_id' })
   children: Promise<Domain[]>;
 
-  @IsNumber()
-  @Column('int')
-  networkId: number;
-
-  @IsIn([Blockchain.ZIL, Blockchain.ETH, Blockchain.MATIC])
-  @IsString()
-  @Column('text')
-  blockchain: keyof typeof Blockchain;
+  @OneToMany(
+    () => DomainsResolution,
+    (domainResolution) => domainResolution.domain,
+    {
+      cascade: ['insert', 'update', 'remove'],
+    },
+  )
+  resolutions: DomainsResolution[];
 
   constructor(attributes?: Attributes<Domain>) {
     super();
@@ -96,20 +60,6 @@ export default class Domain extends Model {
 
   nameMatchesNode(): boolean {
     return this.correctNode() === this.node;
-  }
-
-  validResolution(): boolean {
-    for (const property in this.resolution) {
-      if (
-        !Object.prototype.hasOwnProperty.call(this.resolution, property) ||
-        false === _.isString(property) ||
-        false === _.isString(this.resolution[property])
-      ) {
-        return false;
-      }
-    }
-
-    return true;
   }
 
   get label(): string {
@@ -135,14 +85,24 @@ export default class Domain extends Model {
     node?: string,
     repository: Repository<Domain> = this.getRepository(),
   ): Promise<Domain | undefined> {
-    return node ? await repository.findOne({ node }) : undefined;
+    return node
+      ? await repository.findOne({
+          where: { node },
+          relations: ['resolutions'],
+        })
+      : undefined;
   }
 
   static async findOrBuildByNode(
     node: string,
     repository: Repository<Domain> = this.getRepository(),
   ): Promise<Domain> {
-    return (await repository.findOne({ node })) || new Domain({ node });
+    return (
+      (await repository.findOne({
+        where: { node },
+        relations: ['resolutions'],
+      })) || new Domain({ node })
+    );
   }
 
   private getSplittedName(): string[] {
@@ -153,10 +113,41 @@ export default class Domain extends Model {
     if (!this.name || this.name !== this.name.toLowerCase()) {
       return undefined;
     }
-    if (this.blockchain === Blockchain.ZIL) {
+    if (this.name.endsWith('zil')) {
       return znsNamehash(this.name);
     }
     return eip137Namehash(this.name);
+  }
+
+  public getResolution(
+    blockchain: Blockchain,
+    networkId: number,
+  ): DomainsResolution {
+    let resolution = this.resolutions?.filter(
+      (res) => res.blockchain === blockchain && res.networkId === networkId,
+    )[0];
+    if (resolution == undefined) {
+      resolution = new DomainsResolution({
+        blockchain,
+        networkId,
+      });
+    }
+    return resolution;
+  }
+
+  public setResolution(resolution: DomainsResolution): void {
+    const otherResolutions = this.resolutions?.filter(
+      (res) =>
+        !(
+          res.blockchain == resolution.blockchain &&
+          res.networkId == resolution.networkId
+        ),
+    );
+    if (otherResolutions) {
+      this.resolutions = [resolution, ...otherResolutions];
+    } else {
+      this.resolutions = [resolution];
+    }
   }
 
   static normalizeResolver(resolver: string | null | undefined): string | null {
@@ -169,24 +160,25 @@ export default class Domain extends Model {
 
   static async findOrCreateByName(
     name: string,
-    location: Location,
     repository: Repository<Domain> = this.getRepository(),
   ): Promise<Domain> {
     const domain = await repository.findOne({
-      name,
-      blockchain: location.blockchain,
-      networkId: location.networkId,
+      where: { name },
+      relations: ['resolutions'],
     });
     if (domain) {
       return domain;
     }
 
+    let node = eip137Namehash(name);
+    if (name.endsWith('zil')) {
+      node = znsNamehash(this.name);
+    }
+
     const newDomain = new Domain();
     newDomain.attributes({
       name: name,
-      node: eip137Namehash(name),
-      blockchain: location.blockchain,
-      networkId: location.networkId,
+      node: node,
     });
     await repository.save(newDomain);
     return newDomain;

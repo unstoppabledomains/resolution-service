@@ -2,7 +2,7 @@ import { env } from '../../env';
 import { Contract, Event, BigNumber, EventFilter, ethers } from 'ethers';
 import { Domain } from '../../models';
 import { Repository } from 'typeorm';
-import { ETHContracts } from '../../contracts';
+import { CryptoConfig } from '../../contracts';
 import supportedKeysJson from 'dot-crypto/src/supported-keys/supported-keys.json';
 import {
   InvalidValuesError,
@@ -10,12 +10,14 @@ import {
   Revert,
 } from './BlockchainErrors';
 import { CnsResolverError } from '../../errors/CnsResolverError';
+import DomainsResolution from '../../models/DomainsResolution';
 
 const RecordsPerPage = env.APPLICATION.ETHEREUM.RECORDS_PER_PAGE;
 
 export class CnsResolver {
-  private registry: Contract = ETHContracts.CNSRegistry.getContract();
-  private resolver: Contract = ETHContracts.Resolver.getContract();
+  private config: CryptoConfig;
+  private registry: Contract;
+  private resolver: Contract;
   private static DefaultKeysHashes = Object.keys(supportedKeysJson.keys).reduce(
     (a, v) => {
       a[BigNumber.from(ethers.utils.id(v)).toString()] = v;
@@ -24,8 +26,14 @@ export class CnsResolver {
     {} as Record<string, string>,
   );
 
+  constructor(config: CryptoConfig) {
+    this.config = config;
+    this.registry = config.CNSRegistry.getContract();
+    this.resolver = config.Resolver.getContract();
+  }
+
   private isNotLegacyResolver(resolver: string) {
-    return !ETHContracts.Resolver.legacyAddresses.find(
+    return !this.config.Resolver.legacyAddresses.find(
       (x) => x.toLowerCase() === resolver.toLowerCase(),
     );
   }
@@ -40,13 +48,14 @@ export class CnsResolver {
 
   private async getDomainResolution(
     domain: Domain,
+    resolution: DomainsResolution,
   ): Promise<Record<string, string>> {
-    if (!domain.resolver) {
+    if (!resolution.resolver) {
       return {};
     }
     try {
       return await this._getAllDomainRecords(
-        domain.resolver,
+        resolution.resolver,
         BigNumber.from(domain.node),
       );
     } catch (error: any) {
@@ -198,15 +207,16 @@ export class CnsResolver {
 
   async fetchResolver(
     domain: Domain,
+    resolution: DomainsResolution,
     domainRepository: Repository<Domain>,
   ): Promise<void> {
     const resolverAddress = await this.getResolverAddress(domain.node);
-    if (domain.resolver === resolverAddress) {
+    if (resolution.resolver === resolverAddress) {
       return;
     }
-    domain.resolver = resolverAddress;
-    domain.resolution = await this.getDomainResolution(domain);
-
+    resolution.resolver = resolverAddress;
+    resolution.resolution = await this.getDomainResolution(domain, resolution);
+    domain.setResolution(resolution);
     await domainRepository.save(domain);
   }
 }
