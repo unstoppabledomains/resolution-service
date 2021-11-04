@@ -9,6 +9,7 @@ import {
 import {
   ArrayNotEmpty,
   IsArray,
+  IsBoolean,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -112,8 +113,25 @@ class DomainAttributes {
   attributes: DomainResponse;
 }
 
+class DomainsListMeta {
+  @IsNotEmpty()
+  @IsInt()
+  @Min(1)
+  page = 1;
+
+  @IsNotEmpty()
+  @IsInt()
+  @Min(1)
+  @Max(200)
+  perPage = 100;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  hasMore = false;
+}
 class DomainsListResponse {
   data: DomainAttributes[];
+  meta: DomainsListMeta;
 }
 
 @OpenAPI({
@@ -192,10 +210,14 @@ export class DomainsController {
         networkId: In(query.networkIds.map(toNumber)),
       },
       relations: ['domain'],
-      take: query.perPage,
+      take: query.perPage + 1,
       skip: (query.page - 1) * query.perPage,
     });
-
+    let hasMore = false;
+    if (resolutions.length > query.perPage) {
+      hasMore = true;
+      resolutions.pop();
+    }
     if (query.hasDeafultNetworks && query.hasDeafultBlockchains) {
       const uniqueDomains = new Set();
       resolutions = resolutions.filter((res) => {
@@ -223,6 +245,11 @@ export class DomainsController {
         },
       });
     }
+    response.meta = {
+      perPage: query.perPage,
+      page: query.page,
+      hasMore,
+    };
     return response;
   }
 }
