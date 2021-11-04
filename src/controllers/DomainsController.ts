@@ -195,9 +195,14 @@ export class DomainsController {
         blockchain: In(query.blockchains),
         networkId: In(query.networkIds.map(toNumber)),
       },
-      take: query.perPage,
+      take: query.perPage + 1,
       skip: (query.page - 1) * query.perPage,
     });
+    let hasMore = false;
+    if (domains.length > query.perPage) {
+      hasMore = true;
+      domains.pop();
+    }
     const response = new DomainsListResponse();
     response.data = [];
     for (const domain of domains) {
@@ -219,7 +224,7 @@ export class DomainsController {
     response.meta = {
       perPage: query.perPage,
       page: query.page,
-      hasMore: domains.length === query.perPage,
+      hasMore,
     };
     return response;
   }

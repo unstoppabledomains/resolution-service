@@ -260,6 +260,102 @@ describe('DomainsController', () => {
       });
       expect(res.status).eq(200);
     });
+    it('should return true for hasMore', async () => {
+      const testDomain = Domain.create({
+        name: 'test1.crypto',
+        node:
+          '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
+        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        blockchain: 'ETH',
+        networkId: 1,
+      });
+      await testDomain.save();
+      const testDomainTwo = Domain.create({
+        name: 'test2.crypto',
+        node:
+          '0xb899b9e12897c7cea4e24fc4815055b9777ad145507c5e0e1a4edac00b43cf0a',
+        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        blockchain: 'ETH',
+        networkId: 1,
+      });
+      await testDomainTwo.save();
+
+      const res = await supertest(api)
+        .get(
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&perPage=1',
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.body).to.deep.equal({
+        data: [
+          {
+            id: testDomain.name,
+            attributes: {
+              meta: {
+                domain: testDomain.name,
+                blockchain: 'ETH',
+                networkId: 1,
+                owner: testDomain.ownerAddress,
+                registry: testDomain.registry,
+                resolver: null,
+              },
+              records: {},
+            },
+          },
+        ],
+        meta: {
+          hasMore: true,
+          page: 1,
+          perPage: 1,
+        },
+      });
+      expect(res.status).eq(200);
+    });
+    it('should return false for hasMore', async () => {
+      const testDomain = Domain.create({
+        name: 'test1.crypto',
+        node:
+          '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
+        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        blockchain: 'ETH',
+        networkId: 1,
+      });
+      await testDomain.save();
+
+      const res = await supertest(api)
+        .get(
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&perPage=1',
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.body).to.deep.equal({
+        data: [
+          {
+            id: testDomain.name,
+            attributes: {
+              meta: {
+                domain: testDomain.name,
+                blockchain: 'ETH',
+                networkId: 1,
+                owner: testDomain.ownerAddress,
+                registry: testDomain.registry,
+                resolver: null,
+              },
+              records: {},
+            },
+          },
+        ],
+        meta: {
+          hasMore: false,
+          page: 1,
+          perPage: 1,
+        },
+      });
+      expect(res.status).eq(200);
+    });
     it('should return list of test domain', async () => {
       const testDomain = Domain.create({
         name: 'test1.crypto',
