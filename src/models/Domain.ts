@@ -58,7 +58,7 @@ export default class Domain extends Model {
   }
 
   protected async beforeValidate(): Promise<void> {
-    if (this.parent == null) {
+    if (!this.parent) {
       this.parent = (await Domain.findOne({ name: this.extension })) || null;
     }
   }
@@ -93,7 +93,7 @@ export default class Domain extends Model {
     return node
       ? await repository.findOne({
           where: { node },
-          relations: ['resolutions'],
+          relations: ['resolutions', 'parent'],
         })
       : undefined;
   }
@@ -105,7 +105,7 @@ export default class Domain extends Model {
     return (
       (await repository.findOne({
         where: { node },
-        relations: ['resolutions'],
+        relations: ['resolutions', 'parent'],
       })) || new Domain({ node })
     );
   }
@@ -169,7 +169,7 @@ export default class Domain extends Model {
   ): Promise<Domain> {
     const domain = await repository.findOne({
       where: { name },
-      relations: ['resolutions'],
+      relations: ['resolutions', 'parent'],
     });
     if (domain) {
       return domain;
