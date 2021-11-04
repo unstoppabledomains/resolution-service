@@ -28,7 +28,7 @@ import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
 import { Blockchain } from '../types/common';
 import { toNumber } from 'lodash';
 import NetworkConfig from 'uns/uns-config.json';
-import { getDomainResolution } from '../services/L2Resolution';
+import { getDomainResolution } from '../services/Resolution';
 
 class DomainMetadata {
   @IsString()
@@ -94,6 +94,14 @@ class DomainsListQuery {
   @Min(1)
   @Max(200)
   perPage = 100;
+
+  get hasDeafultBlockchains(): boolean {
+    return this.blockchains === Object.values(Blockchain);
+  }
+
+  get hasDeafultNetworks(): boolean {
+    return this.networkIds === Object.keys(NetworkConfig.networks);
+  }
 }
 
 class DomainAttributes {
@@ -177,7 +185,7 @@ export class DomainsController {
     @QueryParams() query: DomainsListQuery,
   ): Promise<DomainsListResponse> {
     const ownersQuery = query.owners.map((owner) => owner.toLowerCase());
-    const resolutions = await DomainsResolution.find({
+    let resolutions = await DomainsResolution.find({
       where: {
         ownerAddress: ownersQuery ? In(ownersQuery) : undefined,
         blockchain: In(query.blockchains),
@@ -187,6 +195,16 @@ export class DomainsController {
       take: query.perPage,
       skip: (query.page - 1) * query.perPage,
     });
+
+    if (query.hasDeafultNetworks && query.hasDeafultBlockchains) {
+      const uniqueDomains = new Set();
+      resolutions = resolutions.filter((res) => {
+        const dname = res.domain.name;
+        return uniqueDomains.has(dname) ? false : uniqueDomains.add(dname);
+      });
+      resolutions = resolutions.map((res) => getDomainResolution(res.domain));
+    }
+
     const response = new DomainsListResponse();
     response.data = [];
     for (const resolution of resolutions) {

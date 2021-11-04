@@ -19,7 +19,7 @@ import {
 } from '../utils/socialPicture';
 import punycode from 'punycode';
 import btoa from 'btoa';
-import { getDomainResolution } from '../services/L2Resolution';
+import { getDomainResolution } from '../services/Resolution';
 
 const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
 const CUSTOM_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/custom` as const;

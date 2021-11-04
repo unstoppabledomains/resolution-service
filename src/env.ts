@@ -90,19 +90,20 @@ export const env = {
     } as EthUpdaterConfig,
     POLYGON: {
       CNS_REGISTRY_EVENTS_STARTING_BLOCK: Number(
-        process.env.POLYGON_CNS_REGISTRY_EVENTS_STARTING_BLOCK || 0,
+        process.env.POLYGON_CNS_REGISTRY_EVENTS_STARTING_BLOCK || 19345077,
       ),
       UNS_REGISTRY_EVENTS_STARTING_BLOCK: Number(
-        process.env.POLYGON_UNS_REGISTRY_EVENTS_STARTING_BLOCK || 0,
+        process.env.POLYGON_UNS_REGISTRY_EVENTS_STARTING_BLOCK || 19345077,
       ),
       JSON_RPC_API_URL: process.env.POLYGON_JSON_RPC_API_URL,
-      NETWORK_ID: Number(process.env.POLYGON_NETWORK_ID || 1),
+      NETWORK_ID: Number(process.env.POLYGON_NETWORK_ID || 137),
       CONFIRMATION_BLOCKS: Number(
         process.env.POLYGON_CONFIRMATION_BLOCKS || 20,
       ),
       BLOCK_FETCH_LIMIT: Number(process.env.POLYGON_BLOCK_FETCH_LIMIT || 500),
       CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK: Number(
-        process.env.POLYGON_CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK || 0,
+        process.env.POLYGON_CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK ||
+          19345077,
       ),
       RECORDS_PER_PAGE: Number(process.env.POLYGON_RECORDS_PER_PAGE || 100),
       FETCH_INTERVAL: Number(process.env.POLYGON_FETCH_INTERVAL || 5000),
