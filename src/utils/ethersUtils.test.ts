@@ -1,13 +1,13 @@
 import { expect } from 'chai';
-import { env } from '../../env';
-import { Blockchain } from '../../types/common';
-import { queryNewURIEvent } from '../ethersUtils';
-import { EthereumHelper } from '../testing/EthereumTestsHelper';
+import { env } from '../env';
+import { Blockchain } from '../types/common';
+import { queryNewURIEvent } from './ethersUtils';
+import { EthereumHelper } from './testing/EthereumTestsHelper';
 import {
   getNSConfig,
   LayerTestFixture,
   NSConfig,
-} from '../testing/LayerFixturesHelper';
+} from './testing/LayerFixturesHelper';
 
 describe('Ethers Util functions', () => {
   const L1Fixture: LayerTestFixture = new LayerTestFixture();
