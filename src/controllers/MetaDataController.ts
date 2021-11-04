@@ -7,7 +7,7 @@ import AnimalDomainHelper, {
   OpenSeaMetadataAttribute,
 } from '../utils/AnimalDomainHelper/AnimalDomainHelper';
 import { DefaultImageData } from '../utils/generalImage';
-import { Blockchain, MetadataImageFontSize } from '../types/common';
+import { MetadataImageFontSize } from '../types/common';
 import { pathThatSvg } from 'path-that-svg';
 import { IsArray, IsObject, IsOptional, IsString } from 'class-validator';
 import { env } from '../env';
@@ -18,9 +18,8 @@ import {
   createSocialPictureImage,
 } from '../utils/socialPicture';
 import punycode from 'punycode';
-import DomainsResolution from '../models/DomainsResolution';
-import { IsZilDomain } from '../utils/domainLocationUtils';
 import btoa from 'btoa';
+import { getDomainResolution } from '../services/Resolution';
 
 const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
 const CUSTOM_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/custom` as const;
@@ -107,19 +106,6 @@ export class MetaDataController {
     };
   }
 
-  private getDomainResolution(domain: Domain): DomainsResolution {
-    if (IsZilDomain(domain.name)) {
-      return domain.getResolution(
-        Blockchain.ZIL,
-        env.APPLICATION.ZILLIQA.NETWORK_ID,
-      );
-    }
-    return domain.getResolution(
-      Blockchain.ETH,
-      env.APPLICATION.ETHEREUM.NETWORK_ID,
-    );
-  }
-
   @Get('/metadata/:domainOrToken')
   @ResponseSchema(OpenSeaMetadata)
   async getMetaData(
@@ -130,7 +116,7 @@ export class MetaDataController {
     if (!domain) {
       return this.defaultMetaResponse(domainOrToken);
     }
-    const resolution = this.getDomainResolution(domain);
+    const resolution = getDomainResolution(domain);
 
     const { pictureOrUrl, nftStandard } = await getSocialPictureUrl(
       resolution.resolution['social.picture.value'],
@@ -207,9 +193,7 @@ export class MetaDataController {
     const domain = await Domain.findByNode(token);
 
     const name = domain ? domain.name : domainOrToken;
-    const resolution = domain
-      ? this.getDomainResolution(domain).resolution
-      : {};
+    const resolution = domain ? getDomainResolution(domain).resolution : {};
 
     if (!name.includes('.')) {
       return { image_data: '' };
@@ -230,9 +214,7 @@ export class MetaDataController {
     const domain = await Domain.findByNode(token);
 
     const name = domain ? domain.name : domainOrToken;
-    const resolution = domain
-      ? this.getDomainResolution(domain).resolution
-      : {};
+    const resolution = domain ? getDomainResolution(domain).resolution : {};
 
     if (!name.includes('.')) {
       return '';

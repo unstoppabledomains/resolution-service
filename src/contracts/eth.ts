@@ -9,7 +9,11 @@ import domainZoneControllerJson from 'uns/artifacts/DomainZoneController.json';
 import resolverJson from 'uns/artifacts/Resolver.json';
 import proxyReaderJson from 'uns/artifacts/ProxyReader.json';
 import NetworkConfig from 'uns/uns-config.json';
-import { EthereumProvider } from '../workers/EthereumProvider';
+import {
+  EthereumProvider,
+  MaticProvider,
+  StaticJsonRpcProvider,
+} from '../workers/EthereumProvider';
 import { env } from '../env';
 
 const abiMap = {
@@ -37,6 +41,7 @@ export type CryptoConfig = Record<
 
 export const getEthConfig = (
   networkId: string,
+  provider: StaticJsonRpcProvider,
   networks: { [key: string]: { contracts: any } } = NetworkConfig.networks,
 ): CryptoConfig => {
   const cryptoConfig = {} as CryptoConfig;
@@ -57,7 +62,7 @@ export const getEthConfig = (
             (cache[data.addresss] = new Contract(
               data.address,
               abiMap[key],
-              EthereumProvider,
+              provider,
             ))
           );
         },
@@ -67,4 +72,11 @@ export const getEthConfig = (
   return cryptoConfig;
 };
 
-export default getEthConfig(env.APPLICATION.ETHEREUM.NETWORK_ID.toString());
+export const ETHContracts = getEthConfig(
+  env.APPLICATION.ETHEREUM.NETWORK_ID.toString(),
+  EthereumProvider,
+);
+export const MATICContracts = getEthConfig(
+  env.APPLICATION.POLYGON.NETWORK_ID.toString(),
+  MaticProvider,
+);

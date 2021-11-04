@@ -21,6 +21,9 @@ env:
   BUGSNAG_API_KEY: ${{ secrets.BUGSNAG_API_KEY }}
   NEW_RELIC_APP_NAME: ${{ secrets.NEW_RELIC_APP_NAME }}
   NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+  POLYGON_JSON_RPC_API_URL: ${{ secrets.POLYGON_JSON_RPC_API_URL}}
+  POLYGON_NETWORK_ID: 137
+  POLYGON_UNS_REGISTRY_EVENTS_STARTING_BLOCK: 19345077
 
 jobs:
   build_and_push_docker_image:
@@ -94,7 +97,7 @@ jobs:
     if: contains(github.event.inputs.deployables, 'workers')
     env:
       SERVICE_NAME: workers
-      RESOLUTION_RUNNING_MODE: ETH_WORKER,ZIL_WORKER
+      RESOLUTION_RUNNING_MODE: ETH_WORKER,ZIL_WORKER,MATIC_WORKER
 
     steps:
       - name: Set up gcloud SDK

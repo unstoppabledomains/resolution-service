@@ -6,7 +6,7 @@ import ZnsTransaction, {
   ConfiguredEvent,
 } from '../../models/ZnsTransaction';
 import { znsChildhash } from '../../utils/namehash';
-import { logger } from '../../logger';
+import { WorkerLogger } from '../../logger';
 import { isBech32 } from '@zilliqa-js/util/dist/validation';
 import { fromBech32Address } from '@zilliqa-js/crypto';
 import { ZnsTransactionEvent } from '../../models/ZnsTransaction';
@@ -16,6 +16,8 @@ import { env } from '../../env';
 type ZilWorkerOptions = {
   perPage?: number;
 };
+
+const logger = WorkerLogger(Blockchain.ZIL);
 
 export default class ZilWorker {
   private provider: ZnsProvider;
@@ -29,7 +31,7 @@ export default class ZilWorker {
   }
 
   private async getLastAtxuid() {
-    const lastAtxuid = await WorkerStatus.latestAtxuidForWorker('ZIL');
+    const lastAtxuid = await WorkerStatus.latestAtxuidForWorker(Blockchain.ZIL);
     return lastAtxuid === undefined ? -1 : lastAtxuid;
   }
 
@@ -40,7 +42,7 @@ export default class ZilWorker {
   ): Promise<void> {
     const repository = manager.getRepository(WorkerStatus);
     return WorkerStatus.saveWorkerStatus(
-      'ZIL',
+      Blockchain.ZIL,
       latestBlock,
       undefined,
       latestAtxuid,

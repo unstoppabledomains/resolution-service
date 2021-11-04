@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { getEthConfig, CryptoConfig } from './eth';
 import NetworkConfig from 'uns/uns-config.json';
+import { EthereumProvider } from '../workers/EthereumProvider';
 
 describe('eth', () => {
   const contractKeys: (keyof typeof NetworkConfig.networks['1']['contracts'])[] = [
@@ -33,30 +34,30 @@ describe('eth', () => {
   }
 
   it('should return empty config for other networks', async () => {
-    const config = getEthConfig('13327');
+    const config = getEthConfig('13327', EthereumProvider);
     expect(config).to.be.an('object').that.is.empty;
   });
 
   it('should return eth config for mainnet', () => {
     const networkId = '1';
-    const config = getEthConfig(networkId);
+    const config = getEthConfig(networkId, EthereumProvider);
     compareNetworkConfig(config, networkId);
   });
 
   it('should return eth config for testnet', () => {
     const networkId = '4';
-    const config = getEthConfig(networkId);
+    const config = getEthConfig(networkId, EthereumProvider);
     compareNetworkConfig(config, networkId);
   });
 
   it('should return eth config for sandbox', () => {
     const networkId = '1337';
-    const config = getEthConfig(networkId);
+    const config = getEthConfig(networkId, EthereumProvider);
     compareNetworkConfig(config, networkId);
   });
 
   it('should return empty config for other networks', async () => {
-    const config = getEthConfig('99');
+    const config = getEthConfig('99', EthereumProvider);
     expect(config).to.be.an('object').that.is.empty;
   });
 });

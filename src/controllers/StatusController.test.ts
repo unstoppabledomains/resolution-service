@@ -5,8 +5,10 @@ import nock from 'nock';
 import { WorkerStatus } from '../models';
 import * as sinon from 'sinon';
 import * as ProviderModule from '../workers/EthereumProvider';
+import { Blockchain } from '../types/common';
 
-const mockJsonRpcProviderUrl = 'http://test.jsonrpc.provider:8545';
+const mockEthJsonRpcProviderUrl = 'http://test.jsonrpc.provider:8545';
+const mockMaticJsonRpcProviderUrl = 'http://test.jsonrpc.provider:8546';
 
 describe('StatusController', () => {
   const sinonSandbox = sinon.createSandbox();
@@ -15,7 +17,16 @@ describe('StatusController', () => {
     sinonSandbox // Nock behaves really weirdly when mocking localhost, so we mock the provider to not use localhost at all
       .stub(ProviderModule, 'EthereumProvider')
       .value(
-        new ProviderModule.StaticJsonRpcProvider(mockJsonRpcProviderUrl, {
+        new ProviderModule.StaticJsonRpcProvider(mockEthJsonRpcProviderUrl, {
+          name: '',
+          chainId: 99,
+        }),
+      );
+
+    sinonSandbox // Nock behaves really weirdly when mocking localhost, so we mock the provider to not use localhost at all
+      .stub(ProviderModule, 'MaticProvider')
+      .value(
+        new ProviderModule.StaticJsonRpcProvider(mockMaticJsonRpcProviderUrl, {
           name: '',
           chainId: 99,
         }),
@@ -36,6 +47,13 @@ describe('StatusController', () => {
           networkId: 1337,
           isUpToDate: false,
         },
+        MATIC: {
+          acceptableDelayInBlocks: 100,
+          latestMirroredBlock: 12145,
+          latestNetworkBlock: 12375,
+          networkId: 1337,
+          isUpToDate: false,
+        },
         ZIL: {
           acceptableDelayInBlocks: 200,
           latestMirroredBlock: 171102,
@@ -52,14 +70,23 @@ describe('StatusController', () => {
     const jsonRpcInterceptor = createEthereumInterceptor(
       expectedStatus.blockchain.ETH.latestNetworkBlock,
     );
+    const maticRpcInterceptor = createMaticInterceptor(
+      expectedStatus.blockchain.MATIC.latestNetworkBlock,
+    );
     await WorkerStatus.saveWorkerStatus(
-      'ETH',
+      Blockchain.ETH,
       expectedStatus.blockchain.ETH.latestMirroredBlock,
       undefined,
       undefined,
     );
     await WorkerStatus.saveWorkerStatus(
-      'ZIL',
+      Blockchain.MATIC,
+      expectedStatus.blockchain.MATIC.latestMirroredBlock,
+      undefined,
+      undefined,
+    );
+    await WorkerStatus.saveWorkerStatus(
+      Blockchain.ZIL,
       expectedStatus.blockchain.ZIL.latestMirroredBlock,
       undefined,
       undefined,
@@ -69,6 +96,7 @@ describe('StatusController', () => {
 
     viewBlockInterceptor.done();
     jsonRpcInterceptor.done();
+    maticRpcInterceptor.done();
 
     expect(res.body).containSubset(expectedStatus);
     expect(res.status).eq(200);
@@ -79,14 +107,21 @@ describe('StatusController', () => {
     const latestMirroredBlock = 100;
     const viewBlockInterceptor = createViewBlockInterceptor(latestNetworkBlock);
     const jsonRpcInterceptor = createEthereumInterceptor(latestNetworkBlock);
+    const maticRpcInterceptor = createMaticInterceptor(latestNetworkBlock);
     await WorkerStatus.saveWorkerStatus(
-      'ETH',
+      Blockchain.ETH,
       latestMirroredBlock,
       undefined,
       undefined,
     );
     await WorkerStatus.saveWorkerStatus(
-      'ZIL',
+      Blockchain.MATIC,
+      latestMirroredBlock,
+      undefined,
+      undefined,
+    );
+    await WorkerStatus.saveWorkerStatus(
+      Blockchain.ZIL,
       latestMirroredBlock,
       undefined,
       undefined,
@@ -94,8 +129,10 @@ describe('StatusController', () => {
     const res = await supertest(api).get('/status').send();
     viewBlockInterceptor.done();
     jsonRpcInterceptor.done();
+    maticRpcInterceptor.done();
     expect(res.status).eq(200);
     expect(res.body.blockchain.ETH.isUpToDate).to.be.false;
+    expect(res.body.blockchain.MATIC.isUpToDate).to.be.false;
     expect(res.body.blockchain.ZIL.isUpToDate).to.be.false;
   });
 
@@ -104,14 +141,21 @@ describe('StatusController', () => {
     const latestMirroredBlock = 123;
     const viewBlockInterceptor = createViewBlockInterceptor(latestNetworkBlock);
     const jsonRpcInterceptor = createEthereumInterceptor(latestNetworkBlock);
+    const maticRpcInterceptor = createMaticInterceptor(latestNetworkBlock);
     await WorkerStatus.saveWorkerStatus(
-      'ETH',
+      Blockchain.ETH,
       latestMirroredBlock,
       undefined,
       undefined,
     );
     await WorkerStatus.saveWorkerStatus(
-      'ZIL',
+      Blockchain.MATIC,
+      latestMirroredBlock,
+      undefined,
+      undefined,
+    );
+    await WorkerStatus.saveWorkerStatus(
+      Blockchain.ZIL,
       latestMirroredBlock,
       undefined,
       undefined,
@@ -119,8 +163,10 @@ describe('StatusController', () => {
     const res = await supertest(api).get('/status').send();
     viewBlockInterceptor.done();
     jsonRpcInterceptor.done();
+    maticRpcInterceptor.done();
     expect(res.status).eq(200);
     expect(res.body.blockchain.ETH.isUpToDate).to.be.true;
+    expect(res.body.blockchain.MATIC.isUpToDate).to.be.true;
     expect(res.body.blockchain.ZIL.isUpToDate).to.be.true;
   });
 
@@ -129,14 +175,21 @@ describe('StatusController', () => {
     const latestMirroredBlock = 120;
     const viewBlockInterceptor = createViewBlockInterceptor(latestNetworkBlock);
     const jsonRpcInterceptor = createEthereumInterceptor(latestNetworkBlock);
+    const maticRpcInterceptor = createMaticInterceptor(latestNetworkBlock);
     await WorkerStatus.saveWorkerStatus(
-      'ETH',
+      Blockchain.ETH,
       latestMirroredBlock - 100,
       undefined,
       undefined,
     );
     await WorkerStatus.saveWorkerStatus(
-      'ZIL',
+      Blockchain.MATIC,
+      latestMirroredBlock,
+      undefined,
+      undefined,
+    );
+    await WorkerStatus.saveWorkerStatus(
+      Blockchain.ZIL,
       latestMirroredBlock,
       undefined,
       undefined,
@@ -144,8 +197,10 @@ describe('StatusController', () => {
     const res = await supertest(api).get('/status').send();
     viewBlockInterceptor.done();
     jsonRpcInterceptor.done();
+    maticRpcInterceptor.done();
     expect(res.status).eq(200);
     expect(res.body.blockchain.ETH.isUpToDate).to.be.false;
+    expect(res.body.blockchain.MATIC.isUpToDate).to.be.true;
     expect(res.body.blockchain.ZIL.isUpToDate).to.be.true;
   });
 
@@ -154,14 +209,21 @@ describe('StatusController', () => {
     const latestMirroredBlock = 220;
     const viewBlockInterceptor = createViewBlockInterceptor(latestNetworkBlock);
     const jsonRpcInterceptor = createEthereumInterceptor(latestNetworkBlock);
+    const maticRpcInterceptor = createMaticInterceptor(latestNetworkBlock);
     await WorkerStatus.saveWorkerStatus(
-      'ETH',
+      Blockchain.ETH,
       latestMirroredBlock,
       undefined,
       undefined,
     );
     await WorkerStatus.saveWorkerStatus(
-      'ZIL',
+      Blockchain.MATIC,
+      latestMirroredBlock,
+      undefined,
+      undefined,
+    );
+    await WorkerStatus.saveWorkerStatus(
+      Blockchain.ZIL,
       latestMirroredBlock - 200,
       undefined,
       undefined,
@@ -169,9 +231,45 @@ describe('StatusController', () => {
     const res = await supertest(api).get('/status').send();
     viewBlockInterceptor.done();
     jsonRpcInterceptor.done();
+    maticRpcInterceptor.done();
     expect(res.status).eq(200);
     expect(res.body.blockchain.ETH.isUpToDate).to.be.true;
+    expect(res.body.blockchain.MATIC.isUpToDate).to.be.true;
     expect(res.body.blockchain.ZIL.isUpToDate).to.be.false;
+  });
+
+  it("should return isUpToDate = false if MATIC mirror isn't up to date", async () => {
+    const latestNetworkBlock = 300;
+    const latestMirroredBlock = 220;
+    const viewBlockInterceptor = createViewBlockInterceptor(latestNetworkBlock);
+    const jsonRpcInterceptor = createEthereumInterceptor(latestNetworkBlock);
+    const maticRpcInterceptor = createMaticInterceptor(latestNetworkBlock);
+    await WorkerStatus.saveWorkerStatus(
+      Blockchain.ETH,
+      latestMirroredBlock,
+      undefined,
+      undefined,
+    );
+    await WorkerStatus.saveWorkerStatus(
+      Blockchain.MATIC,
+      latestMirroredBlock - 100,
+      undefined,
+      undefined,
+    );
+    await WorkerStatus.saveWorkerStatus(
+      Blockchain.ZIL,
+      latestMirroredBlock,
+      undefined,
+      undefined,
+    );
+    const res = await supertest(api).get('/status').send();
+    viewBlockInterceptor.done();
+    jsonRpcInterceptor.done();
+    maticRpcInterceptor.done();
+    expect(res.status).eq(200);
+    expect(res.body.blockchain.ETH.isUpToDate).to.be.true;
+    expect(res.body.blockchain.MATIC.isUpToDate).to.be.false;
+    expect(res.body.blockchain.ZIL.isUpToDate).to.be.true;
   });
 
   it('should return ok for /liveness_check and /readiness_check endpoints', async () => {
@@ -193,7 +291,18 @@ function createViewBlockInterceptor(networkBlockNumber: number) {
 }
 
 function createEthereumInterceptor(networkBlockNumber: number) {
-  return nock(mockJsonRpcProviderUrl)
+  return nock(mockEthJsonRpcProviderUrl)
+    .post('/', {
+      jsonrpc: '2.0',
+      method: 'eth_getBlockByNumber',
+      params: ['latest', false],
+      id: /^\d+$/,
+    })
+    .reply(200, () => generateEthRpcResponse(networkBlockNumber));
+}
+
+function createMaticInterceptor(networkBlockNumber: number) {
+  return nock(mockMaticJsonRpcProviderUrl)
     .post('/', {
       jsonrpc: '2.0',
       method: 'eth_getBlockByNumber',

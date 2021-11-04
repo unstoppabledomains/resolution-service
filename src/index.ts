@@ -8,6 +8,7 @@ const runningMode = env.APPLICATION.RUNNING_MODE;
 import connect from './database/connect';
 import { startWorker as startEthWorker } from './workers/eth/EthUpdater';
 import startZilUpdater from './workers/ZilUpdater';
+import { Blockchain } from './types/common';
 
 connect().then(async () => {
   /**
@@ -29,8 +30,13 @@ connect().then(async () => {
   // }
 
   if (runningMode.includes('ETH_WORKER')) {
-    startEthWorker();
+    startEthWorker(Blockchain.ETH, env.APPLICATION.ETHEREUM);
     logger.info('ETH worker is enabled and running');
+  }
+
+  if (runningMode.includes('MATIC_WORKER')) {
+    startEthWorker(Blockchain.MATIC, env.APPLICATION.POLYGON);
+    logger.info('MATIC worker is enabled and running');
   }
 
   if (runningMode.includes('ZIL_WORKER')) {

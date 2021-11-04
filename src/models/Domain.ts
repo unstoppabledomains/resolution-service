@@ -138,8 +138,10 @@ export default class Domain extends Model {
   public setResolution(resolution: DomainsResolution): void {
     const otherResolutions = this.resolutions?.filter(
       (res) =>
-        res.blockchain != resolution.blockchain &&
-        res.networkId != resolution.networkId,
+        !(
+          res.blockchain == resolution.blockchain &&
+          res.networkId == resolution.networkId
+        ),
     );
     if (otherResolutions) {
       this.resolutions = [resolution, ...otherResolutions];

@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { logger } from '../logger';
-import { env } from '../env';
+import { env, EthUpdaterConfig } from '../env';
 
 export class StaticJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   async getNetwork(): Promise<ethers.providers.Network> {
@@ -16,10 +16,14 @@ export class StaticJsonRpcProvider extends ethers.providers.JsonRpcProvider {
   }
 }
 
-export const EthereumProvider = new StaticJsonRpcProvider(
-  env.APPLICATION.ETHEREUM.JSON_RPC_API_URL,
-  {
+export const EthereumProvider = GetProviderForConfig(env.APPLICATION.ETHEREUM);
+export const MaticProvider = GetProviderForConfig(env.APPLICATION.POLYGON);
+
+export function GetProviderForConfig(
+  config: EthUpdaterConfig,
+): StaticJsonRpcProvider {
+  return new StaticJsonRpcProvider(config.JSON_RPC_API_URL, {
     name: '',
-    chainId: Number(env.APPLICATION.ETHEREUM.NETWORK_ID),
-  },
-);
+    chainId: Number(config.NETWORK_ID),
+  });
+}
