@@ -100,7 +100,7 @@ jobs:
     if: contains(github.event.inputs.deployables, 'workers')
     env:
       SERVICE_NAME: workers
-      RESOLUTION_RUNNING_MODE: ETH_WORKER,ZIL_WORKER
+      RESOLUTION_RUNNING_MODE: ETH_WORKER,ZIL_WORKER,MATIC_WORKER
 
     steps:
       - name: Set up gcloud SDK
