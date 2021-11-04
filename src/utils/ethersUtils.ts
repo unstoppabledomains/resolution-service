@@ -1,13 +1,19 @@
-import { EthereumProvider } from '../workers/EthereumProvider';
+import {
+  EthereumProvider,
+  StaticJsonRpcProvider,
+  GetProviderForConfig,
+} from '../workers/EthereumProvider';
 import { getEthConfig } from '../contracts/eth';
 import { env } from '../env';
 import WorkerStatus from '../models/WorkerStatus';
 import { Blockchain } from '../types/common';
 import { Event } from 'ethers';
 
-export async function getLatestNetworkBlock(): Promise<number> {
+export async function getLatestNetworkBlock(
+  provider: StaticJsonRpcProvider = EthereumProvider,
+): Promise<number> {
   // avoid using `provider.getBlockNumber` because it caches block numbers
-  return (await EthereumProvider.getBlock('latest')).number;
+  return (await provider.getBlock('latest')).number;
 }
 
 export async function queryNewURIEvent(
@@ -18,6 +24,7 @@ export async function queryNewURIEvent(
     matic: {
       contract: getEthConfig(
         env.APPLICATION.POLYGON.NETWORK_ID.toString(),
+        GetProviderForConfig(env.APPLICATION.POLYGON),
       ).UNSRegistry.getContract(),
       latestMirroredBlock: await WorkerStatus.latestMirroredBlockForWorker(
         Blockchain.MATIC,
@@ -26,6 +33,7 @@ export async function queryNewURIEvent(
     eth: {
       contract: getEthConfig(
         env.APPLICATION.ETHEREUM.NETWORK_ID.toString(),
+        GetProviderForConfig(env.APPLICATION.ETHEREUM),
       ).UNSRegistry.getContract(),
       latestMirroredBlock: await WorkerStatus.latestMirroredBlockForWorker(
         Blockchain.ETH,
