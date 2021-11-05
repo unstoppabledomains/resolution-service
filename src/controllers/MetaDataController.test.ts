@@ -31,6 +31,7 @@ describe('MetaDataController', () => {
   });
 
   after(async () => {
+    await L1Fixture.networkHelper.stopNetwork();
     await L2Fixture.networkHelper.stopNetwork();
   });
 
