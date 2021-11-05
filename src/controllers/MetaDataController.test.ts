@@ -15,10 +15,12 @@ import { env } from '../env';
 import Domain from '../models/Domain';
 
 describe('MetaDataController', () => {
+  const L1Fixture: LayerTestFixture = new LayerTestFixture();
   const L2Fixture: LayerTestFixture = new LayerTestFixture();
 
   before(async () => {
     await EthereumHelper.stopNetwork();
+    await L1Fixture.setup(Blockchain.ETH, env.APPLICATION.ETHEREUM, {});
     await L2Fixture.setup(Blockchain.MATIC, env.APPLICATION.POLYGON, {
       network: {
         url: 'http://localhost:7546',
