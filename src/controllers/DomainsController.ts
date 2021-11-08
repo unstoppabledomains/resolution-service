@@ -22,13 +22,15 @@ import {
 } from 'class-validator';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
-import { In } from 'typeorm';
+import { In, Raw } from 'typeorm';
 import DomainsResolution from '../models/DomainsResolution';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
 import { Blockchain } from '../types/common';
 import { toNumber } from 'lodash';
 import NetworkConfig from 'uns/uns-config.json';
 import { getDomainResolution } from '../services/Resolution';
+import ValidateWith from '../services/ValidateWith';
+import { Attributes } from '../types/common';
 
 class DomainMetadata {
   @IsString()
@@ -84,6 +86,16 @@ class DomainsListQuery {
   @IsIn(Object.values(Blockchain), { each: true })
   blockchains: string[] = Object.values(Blockchain);
 
+  @IsArray()
+  @IsOptional()
+  @ValidateWith<DomainsListQuery>('validTlds')
+  tlds: string[] | undefined = undefined;
+
+  @IsOptional()
+  sortBy:
+    | Record<keyof Attributes<Domain>, 'ASC' | 'DESC'>
+    | undefined = undefined;
+
   @IsNotEmpty()
   @IsInt()
   @Min(1)
@@ -96,11 +108,34 @@ class DomainsListQuery {
   perPage = 100;
 
   get hasDeafultBlockchains(): boolean {
-    return this.blockchains === Object.values(Blockchain);
+    return Object.values(Blockchain).reduce(
+      (val: boolean, elem) => val && this.blockchains.includes(elem),
+      true,
+    );
   }
 
   get hasDeafultNetworks(): boolean {
-    return this.networkIds === Object.keys(NetworkConfig.networks);
+    return Object.keys(NetworkConfig.networks).reduce(
+      (val: boolean, elem) => val && this.networkIds.includes(elem),
+      true,
+    );
+  }
+
+  async validTlds(): Promise<boolean> {
+    if (this.tlds === undefined) {
+      return true;
+    }
+    let val = true;
+    for (const tld of this.tlds) {
+      const parent = (
+        await Domain.findOne({
+          where: { name: tld },
+          relations: ['parent'],
+        })
+      )?.parent;
+      val = val && (parent === undefined || parent === null);
+    }
+    return val;
   }
 }
 
@@ -185,24 +220,49 @@ export class DomainsController {
     @QueryParams() query: DomainsListQuery,
   ): Promise<DomainsListResponse> {
     const ownersQuery = query.owners.map((owner) => owner.toLowerCase());
+
+    const where: any = {};
+    if (ownersQuery) {
+      where.ownerAddress = In(ownersQuery);
+    }
+    if (!query.hasDeafultBlockchains) {
+      where.blockchain = In(query.blockchains);
+    }
+    if (!query.hasDeafultNetworks) {
+      where.networkId = In(query.networkIds.map(toNumber));
+    }
+    if (query.tlds) {
+      // Use raw query becaues typeorm doesn't seem to handle multiple nested relations (e.g. resolution.domain.parent.name)
+      where.domain = Raw(
+        (alias) => `"DomainsResolution__domain__parent"."name" in (:...tlds)`,
+        { tlds: query.tlds },
+      );
+    }
+
     let resolutions = await DomainsResolution.find({
-      where: {
-        ownerAddress: ownersQuery ? In(ownersQuery) : undefined,
-        blockchain: In(query.blockchains),
-        networkId: In(query.networkIds.map(toNumber)),
-      },
-      relations: ['domain'],
-      take: query.perPage,
+      where,
+      order: query.sortBy || { domain: 'ASC' },
+      relations: ['domain', 'domain.parent'],
+      take: query.perPage + 1,
       skip: (query.page - 1) * query.perPage,
     });
 
     if (query.hasDeafultNetworks && query.hasDeafultBlockchains) {
-      const uniqueDomains = new Set();
+      const uniqueDomains = new Set<string>();
       resolutions = resolutions.filter((res) => {
         const dname = res.domain.name;
         return uniqueDomains.has(dname) ? false : uniqueDomains.add(dname);
       });
-      resolutions = resolutions.map((res) => getDomainResolution(res.domain));
+      // Pull domains from DB because typeorm doesn't fill cyclic relations (e.g. domain->resolution->domain)
+      const domains = await Domain.find({
+        where: { name: In(Array.from(uniqueDomains)) },
+        relations: ['resolutions'],
+      });
+      resolutions = domains.map((d) => {
+        const res = getDomainResolution(d);
+        res.domain = d;
+        return res;
+      });
     }
 
     const response = new DomainsListResponse();
