@@ -22,7 +22,7 @@ import {
 } from 'class-validator';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
-import { In } from 'typeorm';
+import { In, MoreThan } from 'typeorm';
 import DomainsResolution from '../models/DomainsResolution';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
 import { Blockchain } from '../types/common';
@@ -85,9 +85,7 @@ class DomainsListQuery {
   blockchains: string[] = Object.values(Blockchain);
 
   @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  page = 1;
+  startingAfter = 0;
 
   @IsNotEmpty()
   @IsInt()
@@ -114,6 +112,12 @@ class DomainAttributes {
 
 class DomainsListResponse {
   data: DomainAttributes[];
+  meta: {
+    nextStartingAfter: string;
+    perPage: number;
+    order: string;
+    hasMore: boolean;
+  };
 }
 
 @OpenAPI({
@@ -188,12 +192,15 @@ export class DomainsController {
     let resolutions = await DomainsResolution.find({
       where: {
         ownerAddress: ownersQuery ? In(ownersQuery) : undefined,
-        blockchain: In(query.blockchains),
-        networkId: In(query.networkIds.map(toNumber)),
+        // blockchain: In(query.blockchains),             // todo Lets remove these filters
+        // networkId: In(query.networkIds.map(toNumber)), // todo Lets remove these filters
+        id: MoreThan(query.startingAfter), // if order in DESC - use LessThan() operator instead. If query.startingAfter = null - don't add this condition.
       },
       relations: ['domain'],
-      take: query.perPage,
-      skip: (query.page - 1) * query.perPage,
+      take: query.perPage * 3 + 1, // To include potential duplicates with resolutions from different networks and to fill hasMore field
+      order: {
+        id: 'ASC',
+      },
     });
 
     if (query.hasDeafultNetworks && query.hasDeafultBlockchains) {
@@ -205,8 +212,19 @@ export class DomainsController {
       resolutions = resolutions.map((res) => getDomainResolution(res.domain));
     }
 
+    const hasMore = resolutions.length > query.perPage;
+    // Take first N domains from resolutions array (query.perPage) and put them into DomainsListResponse
+    resolutions = resolutions.slice(0, query.perPage);
+
     const response = new DomainsListResponse();
     response.data = [];
+    response.meta = {
+      perPage: query.perPage,
+      nextStartingAfter: String(resolutions[resolutions.length - 1].id),
+      order: 'id ASC',
+      hasMore,
+    };
+
     for (const resolution of resolutions) {
       response.data.push({
         id: resolution.domain.name,
