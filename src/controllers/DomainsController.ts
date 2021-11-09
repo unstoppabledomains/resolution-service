@@ -190,6 +190,7 @@ export class DomainsController {
   ): Promise<DomainsListResponse> {
     const ownersQuery = query.owners.map((owner) => owner.toLowerCase());
     let resolutions = await DomainsResolution.find({
+      // todo This should be Domains.find instead of DomainsResolution.find
       where: {
         ownerAddress: ownersQuery ? In(ownersQuery) : undefined,
         // blockchain: In(query.blockchains),             // todo Lets remove these filters
@@ -203,14 +204,14 @@ export class DomainsController {
       },
     });
 
-    if (query.hasDeafultNetworks && query.hasDeafultBlockchains) {
-      const uniqueDomains = new Set();
-      resolutions = resolutions.filter((res) => {
-        const dname = res.domain.name;
-        return uniqueDomains.has(dname) ? false : uniqueDomains.add(dname);
-      });
-      resolutions = resolutions.map((res) => getDomainResolution(res.domain));
-    }
+    // if (query.hasDeafultNetworks && query.hasDeafultBlockchains) {
+    const uniqueDomains = new Set();
+    resolutions = resolutions.filter((res) => {
+      const dname = res.domain.name;
+      return uniqueDomains.has(dname) ? false : uniqueDomains.add(dname);
+    });
+    resolutions = resolutions.map((res) => getDomainResolution(res.domain));
+    // }
 
     const hasMore = resolutions.length > query.perPage;
     // Take first N domains from resolutions array (query.perPage) and put them into DomainsListResponse
