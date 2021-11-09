@@ -68,6 +68,11 @@ class DomainResponse {
 }
 
 class DomainsListQuery {
+  static SortFieldsMap: Record<string, string> = {
+    id: 'domain.id',
+    name: 'domain.name',
+  };
+
   @IsArray()
   @ArrayNotEmpty()
   @IsString({ each: true })
@@ -75,26 +80,18 @@ class DomainsListQuery {
   owners: string[];
 
   @IsArray()
-  @ArrayNotEmpty()
-  @IsNotEmpty({ each: true })
-  @IsIn(Object.keys(NetworkConfig.networks), { each: true })
-  networkIds: string[] = Object.keys(NetworkConfig.networks);
-
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsNotEmpty({ each: true })
-  @IsIn(Object.values(Blockchain), { each: true })
-  blockchains: string[] = Object.values(Blockchain);
-
-  @IsArray()
   @IsOptional()
-  @ValidateWith<DomainsListQuery>('validTlds')
+  @ValidateWith<DomainsListQuery>('validTlds', {
+    message: 'Invalid tld list provided',
+  })
   tlds: string[] | undefined = undefined;
 
   @IsOptional()
-  sortBy:
-    | Record<keyof Attributes<Domain>, 'ASC' | 'DESC'>
-    | undefined = undefined;
+  @IsIn(Object.keys(DomainsListQuery.SortFieldsMap))
+  sortBy = 'id';
+
+  @IsOptional()
+  sortDirection: 'ASC' | 'DESC' = 'ASC';
 
   @IsNotEmpty()
   @IsInt()
@@ -107,18 +104,11 @@ class DomainsListQuery {
   @Max(200)
   perPage = 100;
 
-  get hasDeafultBlockchains(): boolean {
-    return Object.values(Blockchain).reduce(
-      (val: boolean, elem) => val && this.blockchains.includes(elem),
-      true,
-    );
-  }
-
-  get hasDeafultNetworks(): boolean {
-    return Object.keys(NetworkConfig.networks).reduce(
-      (val: boolean, elem) => val && this.networkIds.includes(elem),
-      true,
-    );
+  get sort() {
+    return {
+      column: DomainsListQuery.SortFieldsMap[this.sortBy],
+      direction: this.sortDirection,
+    };
   }
 
   async validTlds(): Promise<boolean> {
@@ -221,58 +211,38 @@ export class DomainsController {
   ): Promise<DomainsListResponse> {
     const ownersQuery = query.owners.map((owner) => owner.toLowerCase());
 
-    const where: any = {};
-    if (ownersQuery) {
-      where.ownerAddress = In(ownersQuery);
-    }
-    if (!query.hasDeafultBlockchains) {
-      where.blockchain = In(query.blockchains);
-    }
-    if (!query.hasDeafultNetworks) {
-      where.networkId = In(query.networkIds.map(toNumber));
-    }
+    // Use raw query becaues typeorm doesn't seem to handle multiple nested relations (e.g. resolution.domain.parent.name)
+    const where = [];
     if (query.tlds) {
-      // Use raw query becaues typeorm doesn't seem to handle multiple nested relations (e.g. resolution.domain.parent.name)
-      where.domain = Raw(
-        (alias) => `"DomainsResolution__domain__parent"."name" in (:...tlds)`,
-        { tlds: query.tlds },
-      );
+      where.push({
+        query: `"parent"."name" in (:...tlds)`,
+        parameters: { tlds: query.tlds },
+      });
     }
 
-    let resolutions = await DomainsResolution.find({
-      where,
-      order: query.sortBy || { domain: 'ASC' },
-      relations: ['domain', 'domain.parent'],
-      take: query.perPage + 1,
-      skip: (query.page - 1) * query.perPage,
+    const qb = Domain.createQueryBuilder('domain');
+    qb.leftJoinAndSelect('domain.resolutions', 'resolution');
+    qb.leftJoinAndSelect('domain.parent', 'parent');
+    qb.where(`"resolution"."owner_address" in (:...owners)`, {
+      owners: ownersQuery,
     });
-
-    if (query.hasDeafultNetworks && query.hasDeafultBlockchains) {
-      const uniqueDomains = new Set<string>();
-      resolutions = resolutions.filter((res) => {
-        const dname = res.domain.name;
-        return uniqueDomains.has(dname) ? false : uniqueDomains.add(dname);
-      });
-      // Pull domains from DB because typeorm doesn't fill cyclic relations (e.g. domain->resolution->domain)
-      const domains = await Domain.find({
-        where: { name: In(Array.from(uniqueDomains)) },
-        relations: ['resolutions'],
-      });
-      resolutions = domains.map((d) => {
-        const res = getDomainResolution(d);
-        res.domain = d;
-        return res;
-      });
+    for (const q of where) {
+      qb.andWhere(q.query, q.parameters);
     }
+    qb.orderBy(query.sort.column, query.sort.direction);
+    qb.take(query.perPage + 1);
+    qb.skip((query.page - 1) * query.perPage);
+    const domains = await qb.getMany();
 
     const response = new DomainsListResponse();
     response.data = [];
-    for (const resolution of resolutions) {
+    for (const domain of domains) {
+      const resolution = getDomainResolution(domain);
       response.data.push({
-        id: resolution.domain.name,
+        id: domain.name,
         attributes: {
           meta: {
-            domain: resolution.domain.name,
+            domain: domain.name,
             blockchain: resolution.blockchain,
             networkId: resolution.networkId,
             owner: resolution.ownerAddress,

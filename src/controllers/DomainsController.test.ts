@@ -1,7 +1,7 @@
 import supertest from 'supertest';
 import { api } from '../api';
 import { expect } from 'chai';
-import { ApiKey } from '../models';
+import { ApiKey, Domain, DomainsResolution } from '../models';
 import { DomainTestHelper } from '../utils/testing/DomainTestHelper';
 import { znsNamehash, eip137Namehash } from '../utils/namehash';
 import { env } from '../env';
@@ -67,8 +67,7 @@ describe('DomainsController', () => {
     it('should return correct domain resolution for domain in lowercase', async () => {
       await DomainTestHelper.createTestDomain({
         name: 'testdomainforcase.crypto',
-        node:
-          '0x08c2e9d2a30aa81623fcc758848d5556696868222fbc80a15ca46ec2fe2cba4f',
+        node: '0x08c2e9d2a30aa81623fcc758848d5556696868222fbc80a15ca46ec2fe2cba4f',
         ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
         blockchain: Blockchain.ETH,
         networkId: 1337,
@@ -166,8 +165,7 @@ describe('DomainsController', () => {
         ownerAddress: '0xcea21f5a6afc11b3a4ef82e986d63b8b050b6910',
         resolver: '0x34bbdee3404138430c76c2d1b2d4a2d223a896df',
         registry: '0x9611c53be6d1b32058b2747bdececed7e1216793',
-        node:
-          '0x8052ef7b6b4eee4bc0d7014f0e216db6270bf0055bcd3582368601f2de5e60f0',
+        node: '0x8052ef7b6b4eee4bc0d7014f0e216db6270bf0055bcd3582368601f2de5e60f0',
         resolution: {},
       });
       const res = await supertest(api)
@@ -192,8 +190,7 @@ describe('DomainsController', () => {
       await DomainTestHelper.createTestDomain({
         name: 'brad.crypto',
         ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
-        node:
-          '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+        node: '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         resolution: {
           'gundb.username.value':
@@ -242,8 +239,7 @@ describe('DomainsController', () => {
   it('should return correct domain resolution for L2 domain', async () => {
     const { domain } = await DomainTestHelper.createTestDomain({
       name: 'brad.crypto',
-      node:
-        '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+      node: '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
       ownerAddress: '0x0000000000000000000000000000000000000000',
       blockchain: Blockchain.ETH,
       networkId: 1337,
@@ -284,8 +280,7 @@ describe('DomainsController', () => {
   it('should return correct domain resolution for L2 domain on L1', async () => {
     const { domain } = await DomainTestHelper.createTestDomain({
       name: 'brad.crypto',
-      node:
-        '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+      node: '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
       ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
       blockchain: Blockchain.ETH,
       networkId: 1337,
@@ -344,16 +339,13 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
     });
     it('should return list of test domain', async () => {
-      const {
-        domain: testDomain,
-        resolution,
-      } = await DomainTestHelper.createTestDomain({
-        name: 'test1.crypto',
-        node:
-          '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-      });
+      const { domain: testDomain, resolution } =
+        await DomainTestHelper.createTestDomain({
+          name: 'test1.crypto',
+          node: '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
+          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        });
 
       const res = await supertest(api)
         .get('/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2')
@@ -380,16 +372,13 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
     });
     it('should lowercase ownerAddress', async () => {
-      const {
-        domain: testDomain,
-        resolution,
-      } = await DomainTestHelper.createTestDomain({
-        name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-      });
+      const { domain: testDomain, resolution } =
+        await DomainTestHelper.createTestDomain({
+          name: 'test.crypto',
+          node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        });
 
       const res = await supertest(api)
         .get(
@@ -418,26 +407,20 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
     });
     it('should return list of test domains', async () => {
-      const {
-        domain: testDomainOne,
-        resolution: resolutionOne,
-      } = await DomainTestHelper.createTestDomain({
-        name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-      });
-      const {
-        domain: testDomainTwo,
-        resolution: resolutionTwo,
-      } = await DomainTestHelper.createTestDomain({
-        name: 'test1.crypto',
-        node:
-          '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-      });
+      const { domain: testDomainOne, resolution: resolutionOne } =
+        await DomainTestHelper.createTestDomain({
+          name: 'test.crypto',
+          node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        });
+      const { domain: testDomainTwo, resolution: resolutionTwo } =
+        await DomainTestHelper.createTestDomain({
+          name: 'test1.crypto',
+          node: '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
+          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        });
 
       const res = await supertest(api)
         .get('/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2')
@@ -476,22 +459,18 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
     });
     it('should return one domain perPage', async () => {
-      const {
-        domain: testDomainOne,
-        resolution: resolutionOne,
-      } = await DomainTestHelper.createTestDomain({
-        name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-      });
+      const { domain: testDomainOne, resolution: resolutionOne } =
+        await DomainTestHelper.createTestDomain({
+          name: 'test.crypto',
+          node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        });
       await DomainTestHelper.createTestDomain({
         blockchain: Blockchain.ZIL,
         networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
         name: 'test1.zil',
-        node:
-          '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
+        node: '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
       });
@@ -525,8 +504,7 @@ describe('DomainsController', () => {
     it('should return no domain from empty page', async () => {
       await DomainTestHelper.createTestDomain({
         name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
       });
@@ -538,53 +516,6 @@ describe('DomainsController', () => {
         .send();
       expect(res.body).to.deep.equal({
         data: [],
-      });
-      expect(res.status).eq(200);
-    });
-    it('should return list of test domain based on location', async () => {
-      const {
-        domain: testDomainOne,
-        resolution: resolutionOne,
-      } = await DomainTestHelper.createTestDomain({
-        name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-      });
-      await DomainTestHelper.createTestDomain({
-        blockchain: Blockchain.ZIL,
-        networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
-        name: 'test1.zil',
-        node:
-          '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08bbeadb',
-      });
-
-      const res = await supertest(api)
-        .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1337&blockchains[]=ETH',
-        )
-        .auth(testApiKey.apiKey, { type: 'bearer' })
-        .send();
-      expect(res.body).to.deep.equal({
-        data: [
-          {
-            id: testDomainOne.name,
-            attributes: {
-              meta: {
-                domain: testDomainOne.name,
-                blockchain: resolutionOne.blockchain,
-                networkId: resolutionOne.networkId,
-                owner: resolutionOne.ownerAddress,
-                registry: resolutionOne.registry,
-                resolver: resolutionOne.resolver,
-              },
-              records: {},
-            },
-          },
-        ],
       });
       expect(res.status).eq(200);
     });
@@ -615,38 +546,6 @@ describe('DomainsController', () => {
       expect(res.body).containSubset({
         message:
           'Given parameter owners is invalid. Value ("0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2") cannot be parsed into JSON.',
-      });
-      expect(res.status).eq(400);
-    });
-    it('should return error on invalid networkIds', async () => {
-      const res = await supertest(api)
-        .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds=we',
-        )
-        .auth(testApiKey.apiKey, { type: 'bearer' })
-        .send();
-      expect(res.body).containSubset({
-        message:
-          'Given parameter networkIds is invalid. Value ("we") cannot be parsed into JSON.',
-      });
-      expect(res.status).eq(400);
-    });
-    it('should return error on invalid blockchains', async () => {
-      const res = await supertest(api)
-        .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&blockchains[]=we',
-        )
-        .auth(testApiKey.apiKey, { type: 'bearer' })
-        .send();
-      expect(res.body).containSubset({
-        errors: [
-          {
-            constraints: {
-              isIn:
-                'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
-            },
-          },
-        ],
       });
       expect(res.status).eq(400);
     });
@@ -748,127 +647,249 @@ describe('DomainsController', () => {
     });
   });
 
-  it('should return the correct validation error for incorrect networkId param', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=we&blockchains[]=ETH',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'networkIds',
-          constraints: {
-            isIn:
-              'each value in networkIds must be one of the following values: 1, 4, 137, 1337, 80001',
+  describe('sorting', () => {
+    let testDomains: { domain: Domain; resolutions: DomainsResolution[] }[] =
+      [];
+    // Test domains list:
+    // 0: .crypto domain on L1
+    // 1: .crypto domain on L2
+    // 2: .wallet domain on L1
+    // 3: .wallet domain on L2
+    // 4: .zil domain on ZNS
+    // All domains have same owner and resolution
+    beforeEach(async () => {
+      testDomains = [];
+      testDomains.push(
+        await DomainTestHelper.createTestDomainL2(
+          {
+            name: 'testa.crypto',
+            node: '0xc1ff26b9cedbcf2f0408961898aae4ba65e9acd08543eebf7676482c8a23dba8',
           },
-        },
-      ],
-    });
-  });
+          {
+            registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+            ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          },
+          {
+            registry: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f',
+            ownerAddress: Domain.NullAddress,
+          },
+        ),
+      );
 
-  it('should return the correct validation error for empty networkIds param', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]&blockchains[]=ETH',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'networkIds',
-          constraints: {
-            isIn:
-              'each value in networkIds must be one of the following values: 1, 4, 137, 1337, 80001',
-            isNotEmpty: 'each value in networkIds should not be empty',
+      testDomains.push(
+        await DomainTestHelper.createTestDomainL2(
+          {
+            name: 'testb.crypto',
+            node: '0xe952ce3758282cce878760001be22370f4842793139518e119ae04ae24004206',
           },
-        },
-      ],
+          {
+            registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+            ownerAddress: Domain.NullAddress,
+          },
+          {
+            registry: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f',
+            ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          },
+        ),
+      );
+
+      testDomains.push(
+        await DomainTestHelper.createTestDomainL2(
+          {
+            name: 'testa.wallet',
+            node: '0x04d4bba9f230ea6c78c1e6b37d268106ac90e0bdcd2dd8322895c0fca5800729',
+          },
+          {
+            registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+            ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          },
+          {
+            registry: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f',
+            ownerAddress: Domain.NullAddress,
+          },
+        ),
+      );
+
+      testDomains.push(
+        await DomainTestHelper.createTestDomainL2(
+          {
+            name: 'testb.wallet',
+            node: '0xfa8911cd87a6dac8310914c86952e6d451c92e03663cd1190032816a9d59edf3',
+          },
+          {
+            registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+            ownerAddress: Domain.NullAddress,
+          },
+          {
+            registry: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f',
+            ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          },
+        ),
+      );
+
+      const { domain: zilDomain, resolution: zilResolution } =
+        await DomainTestHelper.createTestDomain({
+          blockchain: Blockchain.ZIL,
+          networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
+          name: 'test1.zil',
+          node: '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
+          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08bbeadb',
+        });
+      testDomains.push({ domain: zilDomain, resolutions: [zilResolution] });
     });
-  });
-  it('should return the correct validation error for empty blockchain param', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'blockchains',
-          constraints: {
-            isIn:
-              'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
-            isNotEmpty: 'each value in blockchains should not be empty',
-          },
-        },
-      ],
+
+    it('should sort by domain name ascending', async () => {
+      const expectedData = testDomains
+        .map((dom) => {
+          // simple filter to get expected data
+          const resolution =
+            dom.resolutions[0].ownerAddress ===
+            '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2'
+              ? dom.resolutions[0]
+              : dom.resolutions[1];
+          return {
+            id: dom.domain.name,
+            attributes: {
+              meta: {
+                domain: dom.domain.name,
+                blockchain: resolution.blockchain,
+                networkId: resolution.networkId,
+                owner: resolution.ownerAddress,
+                registry: resolution.registry,
+                resolver: resolution.resolver,
+              },
+              records: {},
+            },
+          };
+        })
+        .sort((a, b) => a.id.localeCompare(b.id));
+
+      const res = await supertest(api)
+        .get(
+          `/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&sortBy=name`,
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+
+      expect(res.status).eq(200);
+      expect(res.body.data).to.exist;
+      expect(res.body.data).to.deep.equal(expectedData);
     });
-  });
-  it('should return the correct validation error for invalid blockchain param', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]=BAD',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'blockchains',
-          constraints: {
-            isIn:
-              'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
-          },
-        },
-      ],
+
+    it('should sort by domain name descending', async () => {
+      const expectedData = testDomains
+        .map((dom) => {
+          // simple filter to get expected data
+          const resolution =
+            dom.resolutions[0].ownerAddress ===
+            '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2'
+              ? dom.resolutions[0]
+              : dom.resolutions[1];
+          return {
+            id: dom.domain.name,
+            attributes: {
+              meta: {
+                domain: dom.domain.name,
+                blockchain: resolution.blockchain,
+                networkId: resolution.networkId,
+                owner: resolution.ownerAddress,
+                registry: resolution.registry,
+                resolver: resolution.resolver,
+              },
+              records: {},
+            },
+          };
+        })
+        .sort((a, b) => -a.id.localeCompare(b.id));
+
+      const res = await supertest(api)
+        .get(
+          `/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&sortBy=name&sortDirection=DESC`,
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+
+      expect(res.status).eq(200);
+      expect(res.body.data).to.exist;
+      expect(res.body.data).to.deep.equal(expectedData);
     });
-  });
-  it('should return the correct validation error for invalid blockchain param #2', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]=ETH,BAD',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'blockchains',
-          constraints: {
-            isIn:
-              'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
-          },
-        },
-      ],
+    it('should sort by domain id ascending by default', async () => {
+      const expectedData = testDomains
+        .map((dom) => {
+          // simple filter to get expected data
+          const resolution =
+            dom.resolutions[0].ownerAddress ===
+            '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2'
+              ? dom.resolutions[0]
+              : dom.resolutions[1];
+          return {
+            tempSort: dom.domain.id || 0,
+            id: dom.domain.name,
+            attributes: {
+              meta: {
+                domain: dom.domain.name,
+                blockchain: resolution.blockchain,
+                networkId: resolution.networkId,
+                owner: resolution.ownerAddress,
+                registry: resolution.registry,
+                resolver: resolution.resolver,
+              },
+              records: {},
+            },
+          };
+        })
+        .sort((a, b) => a.tempSort - b.tempSort)
+        .map(({ tempSort, ...keep }) => keep);
+
+      const res = await supertest(api)
+        .get(`/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2`)
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+
+      expect(res.status).eq(200);
+      expect(res.body.data).to.exist;
+      expect(res.body.data).to.deep.equal(expectedData);
+    });
+
+    it('should sort by domain id descending', async () => {
+      const expectedData = testDomains
+        .map((dom) => {
+          // simple filter to get expected data
+          const resolution =
+            dom.resolutions[0].ownerAddress ===
+            '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2'
+              ? dom.resolutions[0]
+              : dom.resolutions[1];
+          return {
+            tempSort: dom.domain.id || 0,
+            id: dom.domain.name,
+            attributes: {
+              meta: {
+                domain: dom.domain.name,
+                blockchain: resolution.blockchain,
+                networkId: resolution.networkId,
+                owner: resolution.ownerAddress,
+                registry: resolution.registry,
+                resolver: resolution.resolver,
+              },
+              records: {},
+            },
+          };
+        })
+        .sort((a, b) => b.tempSort - a.tempSort)
+        .map(({ tempSort, ...keep }) => keep);
+
+      const res = await supertest(api)
+        .get(
+          `/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&sortBy=id&sortDirection=DESC`,
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+
+      expect(res.status).eq(200);
+      expect(res.body.data).to.exist;
+      expect(res.body.data).to.deep.equal(expectedData);
     });
   });
 });
