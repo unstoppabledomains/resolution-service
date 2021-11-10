@@ -68,14 +68,14 @@ export class DomainsListQuery {
 
   @IsArray()
   @IsOptional()
+  @IsString({ each: true })
   @ValidateWith<DomainsListQuery>('validTlds', {
     message: 'Invalid TLD list provided',
   })
   tlds: string[] | undefined = undefined;
 
   @IsOptional()
-  @IsIn(Object.keys(DomainsListQuery.SortFieldsMap))
-  sortBy = 'id';
+  sortBy: 'id' | 'name' = 'id';
 
   @IsOptional()
   sortDirection: 'ASC' | 'DESC' = 'ASC';
