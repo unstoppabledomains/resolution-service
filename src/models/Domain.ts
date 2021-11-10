@@ -37,12 +37,11 @@ export default class Domain extends Model {
   @IsOptional()
   @Index()
   @ManyToOne(() => Domain, { nullable: true })
-  @JoinColumn()
-  parent: Promise<Domain | null>;
+  @JoinColumn({ name: 'parent_id' })
+  parent: Domain | null;
 
   @OneToMany(() => Domain, (domain) => domain.parent)
-  @JoinColumn({ name: 'parent_id' })
-  children: Promise<Domain[]>;
+  children: Domain[];
 
   @OneToMany(
     () => DomainsResolution,
@@ -56,6 +55,12 @@ export default class Domain extends Model {
   constructor(attributes?: Attributes<Domain>) {
     super();
     this.attributes<Domain>(attributes);
+  }
+
+  protected async beforeValidate(): Promise<void> {
+    if (!this.parent) {
+      this.parent = (await Domain.findOne({ name: this.extension })) || null;
+    }
   }
 
   nameMatchesNode(): boolean {
@@ -88,7 +93,7 @@ export default class Domain extends Model {
     return node
       ? await repository.findOne({
           where: { node },
-          relations: ['resolutions'],
+          relations: ['resolutions', 'parent'],
         })
       : undefined;
   }
@@ -100,7 +105,7 @@ export default class Domain extends Model {
     return (
       (await repository.findOne({
         where: { node },
-        relations: ['resolutions'],
+        relations: ['resolutions', 'parent'],
       })) || new Domain({ node })
     );
   }
@@ -164,7 +169,7 @@ export default class Domain extends Model {
   ): Promise<Domain> {
     const domain = await repository.findOne({
       where: { name },
-      relations: ['resolutions'],
+      relations: ['resolutions', 'parent'],
     });
     if (domain) {
       return domain;
