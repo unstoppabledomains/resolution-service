@@ -105,7 +105,7 @@ export class DomainsController {
       qb.andWhere(q.query, q.parameters);
     }
     qb.orderBy(query.sort.column, query.sort.direction);
-    qb.take(query.perPage + 1);
+    qb.take(query.perPage);
     qb.skip((query.page - 1) * query.perPage);
     const domains = await qb.getMany();
 
