@@ -716,7 +716,7 @@ describe('DomainsController', () => {
 
     const res = await supertest(api)
       .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&tlds[]=crypto,zil',
+        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&tlds=crypto&tlds=zil',
       )
       .auth(testApiKey.apiKey, { type: 'bearer' })
       .send();
@@ -763,7 +763,7 @@ describe('DomainsController', () => {
   it('should return error for incorrect tlds', async () => {
     const res = await supertest(api)
       .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&tlds[]=crypto,test',
+        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&tlds=crypto&tlds=test',
       )
       .auth(testApiKey.apiKey, { type: 'bearer' })
       .send();
