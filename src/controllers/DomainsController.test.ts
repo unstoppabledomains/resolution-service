@@ -8,7 +8,7 @@ import { env } from '../env';
 import { getConnection } from 'typeorm';
 import { Blockchain } from '../types/common';
 import { ETHContracts } from '../contracts';
-import { BigNumber } from 'ethers';
+import { DomainAttributes } from './models/Domains';
 
 describe('DomainsController', () => {
   let testApiKey: ApiKey;
@@ -647,7 +647,145 @@ describe('DomainsController', () => {
     });
   });
 
-  describe('sorting', () => {
+  it('filters domains list by tld', async () => {
+    const { domain: testDomainOne, resolution: resolutionOne } =
+      await DomainTestHelper.createTestDomain({
+        name: 'test.crypto',
+        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      });
+    await DomainTestHelper.createTestDomain({
+      blockchain: Blockchain.ZIL,
+      networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
+      name: 'test1.zil',
+      node: '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
+      ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+      registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+    });
+
+    const res = await supertest(api)
+      .get(
+        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&tlds[]=crypto',
+      )
+      .auth(testApiKey.apiKey, { type: 'bearer' })
+      .send();
+    expect(res.body).to.deep.equal({
+      data: [
+        {
+          id: testDomainOne.name,
+          attributes: {
+            meta: {
+              domain: testDomainOne.name,
+              blockchain: resolutionOne.blockchain,
+              networkId: resolutionOne.networkId,
+              owner: resolutionOne.ownerAddress,
+              registry: resolutionOne.registry,
+              resolver: resolutionOne.resolver,
+            },
+            records: {},
+          },
+        },
+      ],
+      meta: {
+        hasMore: false,
+        page: 1,
+        perPage: 100,
+      },
+    });
+    expect(res.status).eq(200);
+  });
+
+  it('filters domains list by multiple tlds', async () => {
+    const { domain: testDomainOne, resolution: resolutionOne } =
+      await DomainTestHelper.createTestDomain({
+        name: 'test.crypto',
+        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      });
+    const { domain: testDomainTwo, resolution: resolutionTwo } =
+      await DomainTestHelper.createTestDomain({
+        blockchain: Blockchain.ZIL,
+        networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
+        name: 'test1.zil',
+        node: '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
+        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      });
+
+    const res = await supertest(api)
+      .get(
+        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&tlds[]=crypto,zil',
+      )
+      .auth(testApiKey.apiKey, { type: 'bearer' })
+      .send();
+    expect(res.body).to.deep.equal({
+      data: [
+        {
+          id: testDomainOne.name,
+          attributes: {
+            meta: {
+              domain: testDomainOne.name,
+              blockchain: resolutionOne.blockchain,
+              networkId: resolutionOne.networkId,
+              owner: resolutionOne.ownerAddress,
+              registry: resolutionOne.registry,
+              resolver: resolutionOne.resolver,
+            },
+            records: {},
+          },
+        },
+        {
+          id: testDomainTwo.name,
+          attributes: {
+            meta: {
+              domain: testDomainTwo.name,
+              blockchain: resolutionTwo.blockchain,
+              networkId: resolutionTwo.networkId,
+              owner: resolutionTwo.ownerAddress,
+              registry: resolutionTwo.registry,
+              resolver: resolutionTwo.resolver,
+            },
+            records: {},
+          },
+        },
+      ],
+      meta: {
+        hasMore: false,
+        page: 1,
+        perPage: 100,
+      },
+    });
+    expect(res.status).eq(200);
+  });
+
+  it('should return error for incorrect tlds', async () => {
+    const res = await supertest(api)
+      .get(
+        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&tlds[]=crypto,test',
+      )
+      .auth(testApiKey.apiKey, { type: 'bearer' })
+      .send();
+
+    expect(res.status).eq(400);
+    expect(res.body.code).to.exist;
+    expect(res.body.message).to.exist;
+    expect(res.body).to.containSubset({
+      code: 'BadRequestError',
+      message: "Invalid queries, check 'errors' property for more info.",
+      errors: [
+        {
+          property: 'tlds',
+          constraints: {
+            'validate tlds with validTlds': 'Invalid TLD list provided',
+          },
+        },
+      ],
+    });
+  });
+
+  describe('domains list sorting', () => {
     let testDomains: { domain: Domain; resolutions: DomainsResolution[] }[] =
       [];
     // Test domains list:
@@ -739,7 +877,12 @@ describe('DomainsController', () => {
       testDomains.push({ domain: zilDomain, resolutions: [zilResolution] });
     });
 
-    it('should sort by domain name ascending', async () => {
+    function getSortedTestDomains(
+      sortFunc: (
+        a: { domain: Domain; resolution: DomainsResolution },
+        b: { domain: Domain; resolution: DomainsResolution },
+      ) => number,
+    ): DomainAttributes[] {
       const expectedData = testDomains
         .map((dom) => {
           // simple filter to get expected data
@@ -761,9 +904,21 @@ describe('DomainsController', () => {
               },
               records: {},
             },
+            sortingFields: {
+              domain: dom.domain,
+              resolution,
+            },
           };
         })
-        .sort((a, b) => a.id.localeCompare(b.id));
+        .sort((a, b) => sortFunc(a.sortingFields, b.sortingFields))
+        .map(({ sortingFields, ...keep }) => keep);
+      return expectedData;
+    }
+
+    it('should sort by domain name ascending', async () => {
+      const expectedData = getSortedTestDomains((a, b) =>
+        a.domain.name.localeCompare(b.domain.name),
+      );
 
       const res = await supertest(api)
         .get(
@@ -778,30 +933,9 @@ describe('DomainsController', () => {
     });
 
     it('should sort by domain name descending', async () => {
-      const expectedData = testDomains
-        .map((dom) => {
-          // simple filter to get expected data
-          const resolution =
-            dom.resolutions[0].ownerAddress ===
-            '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2'
-              ? dom.resolutions[0]
-              : dom.resolutions[1];
-          return {
-            id: dom.domain.name,
-            attributes: {
-              meta: {
-                domain: dom.domain.name,
-                blockchain: resolution.blockchain,
-                networkId: resolution.networkId,
-                owner: resolution.ownerAddress,
-                registry: resolution.registry,
-                resolver: resolution.resolver,
-              },
-              records: {},
-            },
-          };
-        })
-        .sort((a, b) => -a.id.localeCompare(b.id));
+      const expectedData = getSortedTestDomains(
+        (a, b) => -a.domain.name.localeCompare(b.domain.name),
+      );
 
       const res = await supertest(api)
         .get(
@@ -815,32 +949,9 @@ describe('DomainsController', () => {
       expect(res.body.data).to.deep.equal(expectedData);
     });
     it('should sort by domain id ascending by default', async () => {
-      const expectedData = testDomains
-        .map((dom) => {
-          // simple filter to get expected data
-          const resolution =
-            dom.resolutions[0].ownerAddress ===
-            '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2'
-              ? dom.resolutions[0]
-              : dom.resolutions[1];
-          return {
-            tempSort: dom.domain.id || 0,
-            id: dom.domain.name,
-            attributes: {
-              meta: {
-                domain: dom.domain.name,
-                blockchain: resolution.blockchain,
-                networkId: resolution.networkId,
-                owner: resolution.ownerAddress,
-                registry: resolution.registry,
-                resolver: resolution.resolver,
-              },
-              records: {},
-            },
-          };
-        })
-        .sort((a, b) => a.tempSort - b.tempSort)
-        .map(({ tempSort, ...keep }) => keep);
+      const expectedData = getSortedTestDomains(
+        (a, b) => (a.domain.id || 0) - (b.domain.id || 0),
+      );
 
       const res = await supertest(api)
         .get(`/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2`)
@@ -853,32 +964,9 @@ describe('DomainsController', () => {
     });
 
     it('should sort by domain id descending', async () => {
-      const expectedData = testDomains
-        .map((dom) => {
-          // simple filter to get expected data
-          const resolution =
-            dom.resolutions[0].ownerAddress ===
-            '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2'
-              ? dom.resolutions[0]
-              : dom.resolutions[1];
-          return {
-            tempSort: dom.domain.id || 0,
-            id: dom.domain.name,
-            attributes: {
-              meta: {
-                domain: dom.domain.name,
-                blockchain: resolution.blockchain,
-                networkId: resolution.networkId,
-                owner: resolution.ownerAddress,
-                registry: resolution.registry,
-                resolver: resolution.resolver,
-              },
-              records: {},
-            },
-          };
-        })
-        .sort((a, b) => b.tempSort - a.tempSort)
-        .map(({ tempSort, ...keep }) => keep);
+      const expectedData = getSortedTestDomains(
+        (a, b) => (b.domain.id || 0) - (a.domain.id || 0),
+      );
 
       const res = await supertest(api)
         .get(

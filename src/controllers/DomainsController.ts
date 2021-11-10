@@ -6,140 +6,15 @@ import {
   QueryParams,
   UseBefore,
 } from 'routing-controllers';
-import {
-  ArrayNotEmpty,
-  IsArray,
-  IsInt,
-  IsNotEmpty,
-  IsObject,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-  IsNumber,
-  ValidateNested,
-  IsIn,
-} from 'class-validator';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
-import { In, Raw } from 'typeorm';
-import DomainsResolution from '../models/DomainsResolution';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
-import { Blockchain } from '../types/common';
-import { toNumber } from 'lodash';
-import NetworkConfig from 'uns/uns-config.json';
 import { getDomainResolution } from '../services/Resolution';
-import ValidateWith from '../services/ValidateWith';
-import { Attributes } from '../types/common';
-
-class DomainMetadata {
-  @IsString()
-  domain: string;
-
-  @IsOptional()
-  @IsString()
-  owner: string | null = null;
-
-  @IsOptional()
-  @IsString()
-  resolver: string | null = null;
-
-  @IsOptional()
-  @IsString()
-  @IsIn(Object.values(Blockchain), { each: true })
-  blockchain: keyof typeof Blockchain | null = null;
-
-  @IsOptional()
-  @IsNumber()
-  @IsIn(Object.keys(NetworkConfig.networks).map(toNumber))
-  networkId: number | null = null;
-
-  @IsOptional()
-  @IsString()
-  registry: string | null = null;
-}
-
-class DomainResponse {
-  @ValidateNested()
-  meta: DomainMetadata;
-
-  @IsObject()
-  records: Record<string, string> = {};
-}
-
-class DomainsListQuery {
-  static SortFieldsMap: Record<string, string> = {
-    id: 'domain.id',
-    name: 'domain.name',
-  };
-
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsString({ each: true })
-  @IsNotEmpty({ each: true })
-  owners: string[];
-
-  @IsArray()
-  @IsOptional()
-  @ValidateWith<DomainsListQuery>('validTlds', {
-    message: 'Invalid tld list provided',
-  })
-  tlds: string[] | undefined = undefined;
-
-  @IsOptional()
-  @IsIn(Object.keys(DomainsListQuery.SortFieldsMap))
-  sortBy = 'id';
-
-  @IsOptional()
-  sortDirection: 'ASC' | 'DESC' = 'ASC';
-
-  @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  page = 1;
-
-  @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  @Max(200)
-  perPage = 100;
-
-  get sort() {
-    return {
-      column: DomainsListQuery.SortFieldsMap[this.sortBy],
-      direction: this.sortDirection,
-    };
-  }
-
-  async validTlds(): Promise<boolean> {
-    if (this.tlds === undefined) {
-      return true;
-    }
-    let val = true;
-    for (const tld of this.tlds) {
-      const parent = (
-        await Domain.findOne({
-          where: { name: tld },
-          relations: ['parent'],
-        })
-      )?.parent;
-      val = val && (parent === undefined || parent === null);
-    }
-    return val;
-  }
-}
-
-class DomainAttributes {
-  @IsString()
-  id: string;
-
-  @ValidateNested()
-  attributes: DomainResponse;
-}
-
-class DomainsListResponse {
-  data: DomainAttributes[];
-}
+import {
+  DomainResponse,
+  DomainsListQuery,
+  DomainsListResponse,
+} from './models/Domains';
 
 @OpenAPI({
   security: [{ apiKeyAuth: [] }],
