@@ -1,65 +1,17 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-type DomainData = {
-  id: number;
-  node: string;
-  name: string;
-  parent: number | null;
-};
-
 export class FillDomainParents1635872404591 implements MigrationInterface {
   name = 'FillDomainParents1635872404591';
 
-  private async getDomainsData(
-    queryRunner: QueryRunner,
-  ): Promise<DomainData[]> {
-    const data = await queryRunner.query('SELECT * FROM "domains"');
-    const resolutions: DomainData[] = [];
-    if (data !== undefined && Array.isArray(data) && data.length > 0) {
-      for (const item of data) {
-        resolutions.push({
-          id: item['id'],
-          name: item['name'],
-          node: item['node'],
-          parent: null,
-        });
-      }
-    }
-    return resolutions;
-  }
-
-  private findDomainExtensions(domains: DomainData[]): DomainData[] {
-    const extensions: string[] = [];
-    for (const domain of domains) {
-      const extension = domain.name.split('.').pop() || '';
-      if (!extensions.includes(extension)) {
-        extensions.push(extension);
-      }
-    }
-    return domains.filter((val) => extensions.includes(val.name));
-  }
-
   public async up(queryRunner: QueryRunner): Promise<void> {
-    const domains = await this.getDomainsData(queryRunner);
-    const extensions = this.findDomainExtensions(domains);
-    for (const domain of domains) {
-      if (!extensions.includes(domain)) {
-        const extension = domain.name.split('.').pop() || '';
-        domain.parent =
-          extensions.find((val) => val.name == extension)?.id || null;
-      }
-    }
-
-    let query = `INSERT INTO "domains" ("id", "name", "node", "parent_id") VALUES `;
-    const queryItems = [];
-    for (const item of domains) {
-      queryItems.push(
-        `(${item.id}, '${item.name}', '${item.node}', ${item.parent})`,
-      );
-    }
-    query += queryItems.join(',');
-    query += ` ON CONFLICT (id) DO UPDATE SET "parent_id"=EXCLUDED."parent_id";`;
-    await queryRunner.query(query);
+    await queryRunner.query(
+      `insert into "domains" ("id", "name", "node", "parent_id")
+        select "child"."id" as "id", "child"."name" as "name", "child"."node" as "node", "parent"."id" as "parent_id" 
+        from "domains" "child" 
+          inner join "domains" "parent" 
+          on reverse(split_part(reverse("child"."name"), '.', 1)) = "parent"."name" and "child"."name" like '%.%'
+       on conflict (id) do update set "parent_id"=EXCLUDED."parent_id";`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
