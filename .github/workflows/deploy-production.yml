@@ -98,6 +98,7 @@ jobs:
     env:
       SERVICE_NAME: workers
       RESOLUTION_RUNNING_MODE: ETH_WORKER,ZIL_WORKER,MATIC_WORKER
+      POLYGON_BLOCK_FETCH_LIMIT: 100
 
     steps:
       - name: Set up gcloud SDK
