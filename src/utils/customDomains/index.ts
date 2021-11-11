@@ -1,4 +1,5 @@
 export const binanceCustomImages: Record<string, string> = {
+  'binance-test-123.nft': 'custom/binance/binance-test-123.jpg',
   'king.nft': 'custom/binance/king.jpg',
   'david.nft': 'custom/binance/david.jpg',
   'james.nft': 'custom/binance/james.jpg',
