@@ -7,15 +7,18 @@ describe('Domain', () => {
     it('should successfully create entity', async () => {
       const domain = Domain.create({
         name: 'test.crypto',
-        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
       });
       const domainTwo = Domain.create({
         name: 'test1.zil',
-        node: '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
+        node:
+          '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
       });
       const domainThree = Domain.create({
         name: 'test1.x',
-        node: '0xd40233894d702a593754963512f52ff891dbe215dd06195717dace1212a03fa7',
+        node:
+          '0xd40233894d702a593754963512f52ff891dbe215dd06195717dace1212a03fa7',
       });
       await domain.save();
       await domainTwo.save();
@@ -28,7 +31,8 @@ describe('Domain', () => {
     it('should fail nameMatchesNode validation', async () => {
       const domain = Domain.create({
         name: 'test1.crypto',
-        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
       });
       await expect(domain.save()).to.be.rejectedWith(
         '- property name has failed the following constraints: validate name with nameMatchesNode',
@@ -40,7 +44,8 @@ describe('Domain', () => {
     it('should return label', async () => {
       const domain = Domain.create({
         name: 'test.crypto',
-        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
       });
       expect(domain.label).to.equal('test');
     });
@@ -50,7 +55,8 @@ describe('Domain', () => {
     it('should return extension', async () => {
       const domain = Domain.create({
         name: 'test.crypto',
-        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
       });
       expect(domain.extension).to.equal('crypto');
     });
@@ -60,7 +66,8 @@ describe('Domain', () => {
     it('should find by node', async () => {
       const domainMetaData = {
         name: 'test.crypto',
-        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
       };
       const domain = Domain.create(domainMetaData);
       await domain.save();
@@ -99,7 +106,8 @@ describe('Domain', () => {
     it('should create a domain', async () => {
       const expectedDomain = {
         name: 'test.crypto',
-        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
       };
       await Domain.findOrCreateByName(expectedDomain.name);
       const foundDomain = await Domain.findOne({ name: expectedDomain.name });
@@ -110,7 +118,8 @@ describe('Domain', () => {
     it('should find a domain', async () => {
       const expectedDomain = {
         name: 'test.crypto',
-        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
       };
       const domain = Domain.create(expectedDomain);
       await domain.save();
@@ -125,7 +134,8 @@ describe('Domain', () => {
     it('should find an existed domain', async () => {
       const domainMetaData = {
         name: 'test.crypto',
-        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
       };
       await Domain.create(domainMetaData).save();
       const fromDb = await Domain.findOrBuildByNode(
@@ -139,7 +149,8 @@ describe('Domain', () => {
         '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303107',
       );
       expect(domainFromDb).to.containSubset({
-        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303107',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303107',
       });
     });
   });
@@ -148,7 +159,8 @@ describe('Domain', () => {
     it('should fill domain parent', async () => {
       const domainMetaData = {
         name: 'test.crypto',
-        node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
       };
       await Domain.create(domainMetaData).save();
       const fromDb = await Domain.findByNode(
