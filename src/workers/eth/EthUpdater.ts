@@ -474,10 +474,6 @@ export class EthUpdater {
     }
 
     await domain?.getResolution(this.blockchain, this.networkId)?.remove();
-    if (domain?.resolutions.length || 0 <= 1) {
-      // If the domain has no more resolutions - remove it
-      await domain?.remove();
-    }
     await this.processEvents(convertedEvents, manager, false);
   }
 
