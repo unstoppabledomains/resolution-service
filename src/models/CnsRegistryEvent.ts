@@ -173,10 +173,12 @@ export default class CnsRegistryEvent extends Model {
 
   static async cleanUpEvents(
     block: number,
+    blockchain: Blockchain,
+    networkId: number,
     repository: Repository<CnsRegistryEvent> = this.getRepository(),
   ): Promise<{ deleted: number; affected: Set<string> }> {
     const eventsToDelete = await repository.find({
-      where: { blockNumber: MoreThan(block) },
+      where: { blockNumber: MoreThan(block), blockchain, networkId },
     });
     const affectedTokenIds = new Set<string>();
     for (const event of eventsToDelete) {

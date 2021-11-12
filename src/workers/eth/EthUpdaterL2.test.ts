@@ -1,7 +1,7 @@
 import { BigNumber, Contract } from 'ethers';
 import { randomBytes } from 'crypto';
 import { env, EthUpdaterConfig } from '../../env';
-import { Domain, WorkerStatus } from '../../models';
+import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
 import {
   GetProviderForConfig,
   StaticJsonRpcProvider,
@@ -12,11 +12,13 @@ import {
 } from '../../utils/testing/EthereumTestsHelper';
 import { EthUpdater } from './EthUpdater';
 import * as sinon from 'sinon';
-import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
 import { getEthConfig } from '../../contracts';
 import * as ethersUtils from '../../utils/ethersUtils';
 import { Blockchain } from '../../types/common';
+import { getLatestNetworkBlock } from '../../utils/ethersUtils';
+import { Block } from '@ethersproject/abstract-provider';
+import { expect } from 'chai';
 
 type NSConfig = {
   tld: string;
@@ -259,6 +261,161 @@ describe('EthUpdater l2 worker', () => {
     );
     expect(resolutionL2.resolution).to.deep.equal({
       'crypto.ETH.address': '0x829BD824B016326A401d083B33D092293333A830',
+    });
+  });
+
+  describe('Handling L2 reorgs', () => {
+    type DomainBlockInfo = {
+      blockNumber: number;
+      blockHash: string;
+      txId: string;
+      domain: NSConfig;
+    };
+
+    async function mintDomain(
+      fixture: LayerTestFixture,
+      domain: NSConfig,
+    ): Promise<DomainBlockInfo> {
+      const tx = await fixture.mintingManager.functions
+        .mintSLD(owner, domain.tldHash, domain.label)
+        .then((receipt) => {
+          return receipt.wait();
+        });
+      return {
+        blockNumber: tx.blockNumber,
+        blockHash: tx.blockHash,
+        txId: tx.transactionHash,
+        domain,
+      };
+    }
+
+    let oldBlock: Block;
+    let domain1: NSConfig;
+    let domain2: NSConfig;
+    let domain3: NSConfig;
+    let domain4: NSConfig;
+    let domainAt10: DomainBlockInfo;
+    let domainAt20: DomainBlockInfo;
+    let recipient: string;
+
+    beforeEach(async () => {
+      domain1 = getNSConfig('blockchain');
+      domain2 = getNSConfig('blockchain');
+      domain3 = getNSConfig('blockchain');
+      domain4 = getNSConfig('blockchain');
+      recipient = L2Fixture.networkHelper.getAccount('9').address;
+
+      // L1
+      await L1Fixture.networkHelper.startNetwork();
+      await L1Fixture.networkHelper.resetNetwork();
+
+      await L1Fixture.networkHelper.mineBlocksForConfirmation(10);
+      await mintDomain(L1Fixture, domain1);
+
+      await L1Fixture.networkHelper.mineBlocksForConfirmation(10);
+      await mintDomain(L1Fixture, domain2);
+
+      await L1Fixture.networkHelper.mineBlocksForConfirmation(20);
+
+      // L2
+      await L2Fixture.networkHelper.startNetwork();
+      await L2Fixture.networkHelper.resetNetwork();
+
+      await L2Fixture.networkHelper.mineBlocksForConfirmation(10);
+      domainAt10 = await mintDomain(L2Fixture, domain1);
+
+      await L2Fixture.networkHelper.mineBlocksForConfirmation(10);
+      domainAt20 = await mintDomain(L2Fixture, domain2);
+
+      await L2Fixture.networkHelper.mineBlocksForConfirmation(20);
+
+      oldBlock = await L2Fixture.provider.getBlock(
+        (await getLatestNetworkBlock(L2Fixture.provider)) -
+          L2Fixture.config.CONFIRMATION_BLOCKS,
+      );
+
+      await L1Fixture.service.run();
+      await L2Fixture.service.run();
+    });
+
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    it('should fix a reorg on L2', async () => {
+      await WorkerStatus.saveWorkerStatus(
+        Blockchain.MATIC,
+        oldBlock.number + 20,
+        '0xdead',
+      );
+      const eventAt40 = new CnsRegistryEvent({
+        contractAddress: L2Fixture.unsRegistry.address,
+        type: 'Transfer',
+        blockNumber: oldBlock.number,
+        blockHash: '0xdead2',
+        blockchain: L2Fixture.network,
+        networkId: L2Fixture.config.NETWORK_ID,
+        returnValues: { tokenId: domainAt20.domain.tokenId.toHexString() },
+      });
+      await eventAt40.save();
+      const changedDomain = await Domain.findByNode(
+        domainAt20.domain.tokenId.toHexString(),
+      );
+      if (changedDomain) {
+        changedDomain.resolutions[0].ownerAddress =
+          '0x000000000000000000000000000000000000dead';
+        await changedDomain.save();
+      }
+
+      const expectedTx = await L2Fixture.unsRegistry.functions
+        .transferFrom(owner, recipient, domainAt20.domain.tokenId)
+        .then((receipt) => {
+          return receipt.wait();
+        });
+      await L2Fixture.networkHelper.mineBlocksForConfirmation(20);
+      const newBlock = await L2Fixture.provider.getBlock(
+        (await getLatestNetworkBlock(L2Fixture.provider)) -
+          L2Fixture.config.CONFIRMATION_BLOCKS,
+      );
+
+      const deleteSpy = sinon.spy(CnsRegistryEvent, 'cleanUpEvents');
+
+      await L2Fixture.service.run();
+
+      expect(deleteSpy).to.be.calledOnceWith(
+        domainAt20.blockNumber,
+        L2Fixture.network,
+        L2Fixture.config.NETWORK_ID,
+        sinon.match.any,
+      ); // delete all events starting from the last matching
+
+      const workerStatus = await WorkerStatus.findOne({
+        location: L2Fixture.network,
+      });
+      expect(workerStatus).to.exist;
+      expect(workerStatus?.lastMirroredBlockNumber).to.eq(newBlock.number);
+      expect(workerStatus?.lastMirroredBlockHash).to.eq(newBlock.hash);
+
+      const actualEvents = await CnsRegistryEvent.find({
+        blockNumber: expectedTx.blockNumber,
+        blockchain: L2Fixture.network,
+        networkId: L2Fixture.config.NETWORK_ID,
+      });
+      expect(actualEvents).to.not.be.empty;
+      for (const event of actualEvents) {
+        expect(event.blockHash).to.equal(expectedTx.blockHash);
+      }
+
+      const actualDomain = await Domain.findByNode(
+        domainAt20.domain.tokenId.toHexString(),
+      );
+      const resolution = actualDomain?.getResolution(
+        L2Fixture.network,
+        L2Fixture.config.NETWORK_ID,
+      );
+      expect(resolution?.ownerAddress?.toLowerCase()).to.eq(
+        recipient.toLowerCase(),
+      );
     });
   });
 });
