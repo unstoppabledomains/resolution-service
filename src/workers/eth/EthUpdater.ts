@@ -326,6 +326,7 @@ export class EthUpdater {
         returnValues: values,
         blockchain: this.blockchain,
         networkId: this.networkId,
+        node: event.args?.[0],
       }),
     );
   }
@@ -452,7 +453,11 @@ export class EthUpdater {
 
     this.logger.debug(`Rebuilding domain ${domain?.name} from db events`);
     const domainEvents = await CnsRegistryEvent.find({
-      where: { node: tokenId },
+      where: {
+        node: tokenId,
+        blockchain: this.blockchain,
+        networkId: this.networkId,
+      },
       order: { blockNumber: 'ASC', logIndex: 'ASC' },
     });
     const convertedEvents: Event[] = [];
@@ -468,7 +473,12 @@ export class EthUpdater {
       tmpEvent.args.tokenId = BigNumber.from(tokenId);
       convertedEvents.push(tmpEvent as Event);
     }
-    await domain?.remove();
+
+    await domain?.getResolution(this.blockchain, this.networkId)?.remove();
+    if (domain?.resolutions.length || 0 <= 1) {
+      // If the domain has no more resolutions - remove it
+      await domain?.remove();
+    }
     await this.processEvents(convertedEvents, manager, false);
   }
 
@@ -483,6 +493,8 @@ export class EthUpdater {
     await getConnection().transaction(async (manager) => {
       const cleanUp = await CnsRegistryEvent.cleanUpEvents(
         reorgStartingBlock.blockNumber,
+        this.blockchain,
+        this.networkId,
         manager.getRepository(CnsRegistryEvent),
       );
 
