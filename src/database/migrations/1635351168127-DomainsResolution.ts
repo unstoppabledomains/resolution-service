@@ -1,60 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-type DomainResolutionData = {
-  id: number;
-  owner: string;
-  resolver: string;
-  resolution: string;
-  registry: string;
-  blockchain: string;
-  networkId: number;
-};
-
 export class DomainsResolution1635351168127 implements MigrationInterface {
   name = 'DomainsResolution1635351168127';
-
-  private async getDomainsData(
-    queryRunner: QueryRunner,
-  ): Promise<DomainResolutionData[]> {
-    const data = await queryRunner.query('SELECT * FROM "domains"');
-    const resolutions = [];
-    if (data !== undefined && Array.isArray(data) && data.length > 0) {
-      for (const item of data) {
-        resolutions.push({
-          id: item['id'],
-          owner: item['owner_address'],
-          resolver: item['resolver'],
-          resolution: item['resolution'],
-          registry: item['registry'],
-          blockchain: item['blockchain'],
-          networkId: item['network_id'],
-        });
-      }
-    }
-    return resolutions;
-  }
-  private async getDomainsResolutionData(
-    queryRunner: QueryRunner,
-  ): Promise<DomainResolutionData[]> {
-    const data = await queryRunner.query('SELECT * FROM "domains_resolution"');
-    const resolutions = [];
-    if (data !== undefined && Array.isArray(data) && data.length > 0) {
-      for (const item of data) {
-        if (item['blockchain'] !== 'MATIC') {
-          resolutions.push({
-            id: item['domain_id'],
-            owner: item['owner_address'],
-            resolver: item['resolver'],
-            resolution: item['resolution'],
-            registry: item['registry'],
-            blockchain: item['blockchain'],
-            networkId: item['network_id'],
-          });
-        }
-      }
-    }
-    return resolutions;
-  }
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP INDEX "IDX_40e276698e30d5a8ad2edd96b4"`);
@@ -65,17 +12,10 @@ export class DomainsResolution1635351168127 implements MigrationInterface {
       `CREATE INDEX "IDX_bd2fbeb876cb9c1784da6edf93" ON "domains_resolution" ("domain_id", "blockchain", "network_id", "owner_address") `,
     );
 
-    const domainsData = await this.getDomainsData(queryRunner);
-    const query = `INSERT INTO "domains_resolution" ("owner_address", "registry", "resolver", "blockchain", "network_id", "resolution", "domain_id") VALUES `;
-    const queryItems = [];
-    for (const item of domainsData) {
-      queryItems.push(
-        `('${item.owner}','${item.registry}','${item.resolver}','${
-          item.blockchain
-        }',${item.networkId},'${JSON.stringify(item.resolution)}',${item.id})`,
-      );
-    }
-    await queryRunner.query(query + queryItems.join(','));
+    await queryRunner.query(
+      `INSERT INTO "domains_resolution" ("owner_address", "registry", "resolver", "blockchain", "network_id", "resolution", "domain_id")
+       SELECT "owner_address", "registry", "resolver", "blockchain", "network_id", "resolution", "domains"."id" as "domain_id" FROM "domains"`,
+    );
 
     await queryRunner.query(
       `ALTER TABLE "domains" DROP COLUMN "owner_address"`,
@@ -107,21 +47,11 @@ export class DomainsResolution1635351168127 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "domains" ADD "resolver" text`);
     await queryRunner.query(`ALTER TABLE "domains" ADD "owner_address" text`);
 
-    const domainsData = await this.getDomainsResolutionData(queryRunner);
-    let query = `INSERT INTO "domains" ("id", "name", "node", "owner_address", "registry", "resolver", "blockchain", "network_id", "resolution") VALUES `;
-    const queryItems = [];
-    for (const item of domainsData) {
-      queryItems.push(
-        `(${item.id}, '', '', '${item.owner}','${item.registry}','${
-          item.resolver
-        }','${item.blockchain}','${item.networkId}','${JSON.stringify(
-          item.resolution,
-        )}')`,
-      );
-    }
-    query += queryItems.join(',');
-    query += ` ON CONFLICT (id) DO UPDATE SET "owner_address"=EXCLUDED."owner_address", "registry"=EXCLUDED."registry", "resolver"=EXCLUDED."resolver", "blockchain"=EXCLUDED."blockchain", "network_id"=EXCLUDED."network_id", "resolution"=EXCLUDED."resolution";`;
-    await queryRunner.query(query);
+    await queryRunner.query(
+      `INSERT INTO "domains" ("id", "owner_address", "registry", "resolver", "blockchain", "network_id", "resolution")
+        SELECT "domain_id", "owner_address", "registry", "resolver", "blockchain", "network_id", "resolution", FROM "domains_resolution"
+        ON CONFLICT (id) DO UPDATE SET "owner_address"=EXCLUDED."owner_address", "registry"=EXCLUDED."registry", "resolver"=EXCLUDED."resolver", "blockchain"=EXCLUDED."blockchain", "network_id"=EXCLUDED."network_id", "resolution"=EXCLUDED."resolution"`,
+    );
 
     await queryRunner.query(`DROP INDEX "IDX_bd2fbeb876cb9c1784da6edf93"`);
     await queryRunner.query(`DROP TABLE "domains_resolution"`);
