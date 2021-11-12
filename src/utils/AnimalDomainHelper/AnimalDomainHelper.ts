@@ -112,7 +112,10 @@ export default class AnimalDomainHelper {
 
   private extractPrefixAndAnimal(
     domainName: string,
-  ): { prefix: string; animal: string } {
+  ): {
+    prefix: string;
+    animal: string;
+  } {
     let prefix = '';
     let animal = '';
     if (domainName && domainName.includes('.')) {
