@@ -89,9 +89,6 @@ class DomainsListQuery {
 }
 
 class DomainAttributes {
-  @IsInt()
-  id: number;
-
   @ValidateNested()
   attributes: DomainResponse;
 }
@@ -203,10 +200,6 @@ export class DomainsController {
       .orderBy('domain.id', 'ASC')
       .take(query.perPage * 3 + 1)
       .getMany();
-    const uniqueDomains = new Set();
-    domains = domains.filter((d) => {
-      return uniqueDomains.has(d.name) ? false : uniqueDomains.add(d.name);
-    });
     const hasMore = domains.length > query.perPage;
     domains = domains.slice(0, query.perPage);
     const resolutions = domains.map((domain) => ({
@@ -218,7 +211,6 @@ export class DomainsController {
     response.data = [];
     for (const resolution of resolutions) {
       response.data.push({
-        id: resolution.domain.id || 0,
         attributes: {
           meta: {
             domain: resolution.domain.name,
