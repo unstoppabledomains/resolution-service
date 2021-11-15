@@ -8,7 +8,6 @@ import { env } from '../env';
 import { getConnection } from 'typeorm';
 import { Blockchain } from '../types/common';
 import { ETHContracts } from '../contracts';
-import { BigNumber } from 'ethers';
 
 describe('DomainsController', () => {
   let testApiKey: ApiKey;
@@ -295,7 +294,7 @@ describe('DomainsController', () => {
       },
       resolver: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
     });
-    const resolution = domain.getResolution(Blockchain.MATIC, 1337);
+    const resolution = await domain.getResolution(Blockchain.MATIC, 1337);
     resolution.ownerAddress = '0x0000000000000000000000000000000000000000';
     resolution.resolver = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
     resolution.registry = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
@@ -368,7 +367,7 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
-            id: testDomain.name,
+            id: testDomain.id,
             attributes: {
               meta: {
                 domain: testDomain.name,
@@ -384,7 +383,8 @@ describe('DomainsController', () => {
         ],
         meta: {
           hasMore: true,
-          page: 1,
+          nextStartingAfter: testDomain.id,
+          order: 'id ASC',
           perPage: 1,
         },
       });
@@ -408,7 +408,7 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
-            id: testDomain.name,
+            id: testDomain.id,
             attributes: {
               meta: {
                 domain: testDomain.name,
@@ -424,7 +424,8 @@ describe('DomainsController', () => {
         ],
         meta: {
           hasMore: false,
-          page: 1,
+          nextStartingAfter: testDomain.id,
+          order: 'id ASC',
           perPage: 1,
         },
       });
@@ -449,7 +450,7 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
-            id: testDomain.name,
+            id: testDomain.id,
             attributes: {
               meta: {
                 domain: testDomain.name,
@@ -465,8 +466,9 @@ describe('DomainsController', () => {
         ],
         meta: {
           hasMore: false,
-          page: 1,
           perPage: 100,
+          nextStartingAfter: testDomain.id,
+          order: 'id ASC',
         },
       });
       expect(res.status).eq(200);
@@ -492,7 +494,7 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
-            id: testDomain.name,
+            id: testDomain.id,
             attributes: {
               meta: {
                 domain: testDomain.name,
@@ -508,8 +510,9 @@ describe('DomainsController', () => {
         ],
         meta: {
           hasMore: false,
-          page: 1,
+          order: 'id ASC',
           perPage: 100,
+          nextStartingAfter: testDomain.id,
         },
       });
       expect(res.status).eq(200);
@@ -542,7 +545,7 @@ describe('DomainsController', () => {
         .send();
       expect(res.body.data).to.have.deep.members([
         {
-          id: testDomainOne.name,
+          id: testDomainOne.id,
           attributes: {
             meta: {
               domain: testDomainOne.name,
@@ -556,7 +559,7 @@ describe('DomainsController', () => {
           },
         },
         {
-          id: testDomainTwo.name,
+          id: testDomainTwo.id,
           attributes: {
             meta: {
               domain: testDomainTwo.name,
@@ -602,7 +605,7 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
-            id: testDomainOne.name,
+            id: testDomainOne.id,
             attributes: {
               meta: {
                 domain: testDomainOne.name,
@@ -617,15 +620,16 @@ describe('DomainsController', () => {
           },
         ],
         meta: {
-          hasMore: false,
-          page: 1,
+          hasMore: true,
+          order: 'id ASC',
           perPage: 1,
+          nextStartingAfter: testDomainOne.id,
         },
       });
       expect(res.status).eq(200);
     });
-    it('should return no domain from empty page', async () => {
-      await DomainTestHelper.createTestDomain({
+    it('should return no domain from empty startingAfter', async () => {
+      const { domain } = await DomainTestHelper.createTestDomain({
         name: 'test.crypto',
         node:
           '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
@@ -634,7 +638,9 @@ describe('DomainsController', () => {
       });
       const res = await supertest(api)
         .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&page=2',
+          `/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&startingAfter=${
+            (domain.id || 0) + 1
+          }`,
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
@@ -642,64 +648,14 @@ describe('DomainsController', () => {
         data: [],
         meta: {
           hasMore: false,
-          page: 2,
+          nextStartingAfter: 0,
           perPage: 100,
+          order: 'id ASC',
         },
       });
       expect(res.status).eq(200);
     });
-    it('should return list of test domain based on location', async () => {
-      const {
-        domain: testDomainOne,
-        resolution: resolutionOne,
-      } = await DomainTestHelper.createTestDomain({
-        name: 'test.crypto',
-        node:
-          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-      });
-      await DomainTestHelper.createTestDomain({
-        blockchain: Blockchain.ZIL,
-        networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
-        name: 'test1.zil',
-        node:
-          '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08bbeadb',
-      });
 
-      const res = await supertest(api)
-        .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1337&blockchains[]=ETH',
-        )
-        .auth(testApiKey.apiKey, { type: 'bearer' })
-        .send();
-      expect(res.body).to.deep.equal({
-        data: [
-          {
-            id: testDomainOne.name,
-            attributes: {
-              meta: {
-                domain: testDomainOne.name,
-                blockchain: resolutionOne.blockchain,
-                networkId: resolutionOne.networkId,
-                owner: resolutionOne.ownerAddress,
-                registry: resolutionOne.registry,
-                resolver: resolutionOne.resolver,
-              },
-              records: {},
-            },
-          },
-        ],
-        meta: {
-          hasMore: false,
-          page: 1,
-          perPage: 100,
-        },
-      });
-      expect(res.status).eq(200);
-    });
     it('should return error on missing owners param', async () => {
       const res = await supertest(api)
         .get('/domains?awef[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2')
@@ -730,23 +686,10 @@ describe('DomainsController', () => {
       });
       expect(res.status).eq(400);
     });
-    it('should return error on invalid networkIds', async () => {
+    it('should return error on invalid startingAfter value', async () => {
       const res = await supertest(api)
         .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds=we',
-        )
-        .auth(testApiKey.apiKey, { type: 'bearer' })
-        .send();
-      expect(res.body).containSubset({
-        message:
-          'Given parameter networkIds is invalid. Value ("we") cannot be parsed into JSON.',
-      });
-      expect(res.status).eq(400);
-    });
-    it('should return error on invalid blockchains', async () => {
-      const res = await supertest(api)
-        .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&blockchains[]=we',
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&startingAfter=-1',
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
@@ -754,44 +697,7 @@ describe('DomainsController', () => {
         errors: [
           {
             constraints: {
-              isIn:
-                'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
-            },
-          },
-        ],
-      });
-      expect(res.status).eq(400);
-    });
-    it('should return error on invalid page value', async () => {
-      const res = await supertest(api)
-        .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&page=0',
-        )
-        .auth(testApiKey.apiKey, { type: 'bearer' })
-        .send();
-      expect(res.body).containSubset({
-        errors: [
-          {
-            constraints: {
-              min: 'page must not be less than 1',
-            },
-          },
-        ],
-      });
-      expect(res.status).eq(400);
-    });
-    it('should return error on invalid perPage', async () => {
-      const res = await supertest(api)
-        .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&perPage=0',
-        )
-        .auth(testApiKey.apiKey, { type: 'bearer' })
-        .send();
-      expect(res.body).containSubset({
-        errors: [
-          {
-            constraints: {
-              min: 'perPage must not be less than 1',
+              min: 'startingAfter must not be less than 0',
             },
           },
         ],
@@ -854,130 +760,6 @@ describe('DomainsController', () => {
           property: 'perPage',
           constraints: {
             min: 'perPage must not be less than 1',
-          },
-        },
-      ],
-    });
-  });
-
-  it('should return the correct validation error for incorrect networkId param', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=we&blockchains[]=ETH',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'networkIds',
-          constraints: {
-            isIn:
-              'each value in networkIds must be one of the following values: 1, 4, 137, 1337, 80001',
-          },
-        },
-      ],
-    });
-  });
-
-  it('should return the correct validation error for empty networkIds param', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]&blockchains[]=ETH',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'networkIds',
-          constraints: {
-            isIn:
-              'each value in networkIds must be one of the following values: 1, 4, 137, 1337, 80001',
-            isNotEmpty: 'each value in networkIds should not be empty',
-          },
-        },
-      ],
-    });
-  });
-  it('should return the correct validation error for empty blockchain param', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'blockchains',
-          constraints: {
-            isIn:
-              'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
-            isNotEmpty: 'each value in blockchains should not be empty',
-          },
-        },
-      ],
-    });
-  });
-  it('should return the correct validation error for invalid blockchain param', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]=BAD',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'blockchains',
-          constraints: {
-            isIn:
-              'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
-          },
-        },
-      ],
-    });
-  });
-  it('should return the correct validation error for invalid blockchain param #2', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]=ETH,BAD',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'blockchains',
-          constraints: {
-            isIn:
-              'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
           },
         },
       ],

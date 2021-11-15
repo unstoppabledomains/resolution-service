@@ -89,8 +89,8 @@ class DomainsListQuery {
 }
 
 class DomainAttributes {
-  @IsString()
-  id: string;
+  @IsInt()
+  id: number;
 
   @ValidateNested()
   attributes: DomainResponse;
@@ -193,7 +193,7 @@ export class DomainsController {
     const ownersQuery = query.owners.map((owner) => owner.toLowerCase());
 
     let domains = await Domain.createQueryBuilder('domain')
-      .leftJoin('domain.resolutions', 'resolution')
+      .leftJoinAndSelect('domain.resolutions', 'resolution')
       .where('resolution.ownerAddress IN (:...ownerAddress)', {
         ownerAddress: ownersQuery ? ownersQuery : undefined,
       })
@@ -209,13 +209,16 @@ export class DomainsController {
     });
     const hasMore = domains.length > query.perPage;
     domains = domains.slice(0, query.perPage);
-    const resolutions = domains.map((domain) => getDomainResolution(domain));
+    const resolutions = domains.map((domain) => ({
+      ...getDomainResolution(domain),
+      domain,
+    }));
 
     const response = new DomainsListResponse();
     response.data = [];
     for (const resolution of resolutions) {
       response.data.push({
-        id: resolution.domain.name,
+        id: resolution.domain.id || 0,
         attributes: {
           meta: {
             domain: resolution.domain.name,
