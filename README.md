@@ -49,11 +49,12 @@ variety of platforms and in the cloud.
 
 ```
 NODE_ENV=production
-RESOLUTION_POSTGRES_HOST=example.com:5432   # DB host
-RESOLUTION_POSTGRES_USERNAME=example        # DB user configured in postgres
-RESOLUTION_POSTGRES_PASSWORD=password       # DB password configured in postgres
-ETHEREUM_JSON_RPC_API_URL=https://infura.io # Address of a JSON RPC provider. This can be a public API (e.g. infura), or a local ethereum node with JSON RPC enabled
-VIEWBLOCK_API_KEY=apikey                    # key for Viewblock API, required for getting data from Zilliqa blockchain
+RESOLUTION_POSTGRES_HOST=example.com:5432     # DB host
+RESOLUTION_POSTGRES_USERNAME=example          # DB user configured in postgres
+RESOLUTION_POSTGRES_PASSWORD=password         # DB password configured in postgres
+ETHEREUM_JSON_RPC_API_URL=https://alchemy.com # Address of a JSON RPC provider. This can be a public API (e.g. Alchemy), or a local ethereum node with JSON RPC enabled
+POLYGON_JSON_RPC_API_URL=https://alchemy.com  # Address of a JSON RPC provider. This can be a public API (e.g. Alchemy), or a local ethereum node with JSON RPC enabled
+VIEWBLOCK_API_KEY=apikey                      # key for Viewblock API, required for getting data from Zilliqa blockchain
 ```
 
 This is the minimum required set of configurations for the service. Additional
@@ -68,20 +69,11 @@ configuration options are listed in
 5. Launch the service\
    `docker run -d --env-file service.env -p 3000:3000 --network="host" resolution-service`
 
-> ℹ️ By default, the service will use a snapshot of a synchronized database to
-> seed domain data. If you want to synchronize blockchain data from scratch, add
-> `RUNNING_MODE=API,ETH_WORKER,ZIL_WORKER,MIGRATIONS` to the `service.env` file.
-
 ## Running the service
 
 Once the service is started, it will perform initial synchronization with the
 blockchain networks. It may take more than 24 hours for a full synchronization.
-To speed up the process, a snapshot of the database is provided by Unstoppable
-domains:
-[PostgreSQL dump](https://github.com/unstoppabledomains/resolution-service/blob/master/resolution_service.dump).
-The snapshot is loaded by default using the `LOAD_SNAPSHOT` running mode (see
-[Running modes](README.md#running-modes)). During the initial synchronization
-the API may not work reliably. The status of synchronization can be checked
+During the initial synchronization the API may not work reliably. The status of synchronization can be checked
 using the `/status` endpoint. After the synchronization is complete, the service
 API endpoints can be accessed normally. Note that the service is stateless, so
 the container doesn't need any persistent storage. All data is stored in the
@@ -92,7 +84,7 @@ database.
 | Option                                      | Default value                                        | required           | Description                                                                                                                                                                                                                                                                                                                 |
 | ------------------------------------------- | ---------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | RESOLUTION_API_PORT                         | 3000                                                 | :x:                | The port for the HTTP API.                                                                                                                                                                                                                                                                                                  |
-| RESOLUTION_RUNNING_MODE                     | API,ETH_WORKER, ZIL_WORKER,MIGRATIONS, LOAD_SNAPSHOT | :x:                | Comma-separated list of running modes of the resolution service (see [Running modes](README.md#running-modes)).                                                                                                                                                                                                             |
+| RESOLUTION_RUNNING_MODE                     | API,ETH_WORKER,ZIL_WORKER,MIGRATIONS                 | :x:                | Comma-separated list of running modes of the resolution service (see [Running modes](README.md#running-modes)).                                                                                                                                                                                                             |
 | RESOLUTION_POSTGRES_HOST                    | localhost                                            | :heavy_check_mark: | Host for the postgres DB. Note that to connect to a postgres instance running on the same server as the container, `host.docker.internal` should be used instead of `localhost` on Windows and MacOS (see https://docs.docker.com/docker-for-windows/networking/#use-cases-and-workarounds).                                |
 | RESOLUTION_POSTGRES_USERNAME                | postgres                                             | :heavy_check_mark: | Username that is used to connect to postgres.                                                                                                                                                                                                                                                                               |
 | RESOLUTION_POSTGRES_PASSWORD                | secret                                               | :heavy_check_mark: | Password that is used to connect to postgres.                                                                                                                                                                                                                                                                               |
@@ -104,8 +96,10 @@ database.
 | ETHEREUM_FETCH_INTERVAL                     | 5000                                                 | :x:                | Specifies the interval to fetch data from the CNS registry in milliseconds.                                                                                                                                                                                                                                                 |
 | CNS_REGISTRY_EVENTS_STARTING_BLOCK          | 9080000                                              | :x:                | Starting block that is used to look for events in the CNS registry. This helps to avoid parsing old blockchain data, before the contract was even deployed.                                                                                                                                                                 |
 | CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK | 9080000                                              | :x:                | Starting block that is used to look for events in the CNS registry.                                                                                                                                                                                                                                                         |
-| ETHEREUM_JSON_RPC_API_URL                   | -                                                    | :heavy_check_mark: | Address of a JSON RPC provider. This can be a public API (e.g. infura), or a local ethereum node with JSON RPC enabled.                                                                                                                                                                                                     |
+| ETHEREUM_JSON_RPC_API_URL                   | -                                                    | :heavy_check_mark: | Address of a JSON RPC provider. This can be a public API (e.g. Alchemy), or a local ethereum node with JSON RPC enabled.                                                                                                                                                                                                    |
 | ETHEREUM_NETWORK_ID                         | 1                                                    | :x:                | ID of the Ethereum network that is used by the service.                                                                                                                                                                                                                                                                     |
+| POLYGON_JSON_RPC_API_URL                    | -                                                    | :heavy_check_mark: | Address of a Polygon JSON RPC provider. This can be a public API (e.g. Alchemy), or a local ethereum node with JSON RPC enabled.                                                                                                                                                                                            |
+| POLYGON_NETWORK_ID                          | 137                                                  | :x:                | ID of the Polygon network that is used by the service.                                                                                                                                                                                                                                                                      |
 | ZNS_NETWORK                                 | mainnet                                              | :x:                | Name of the Zilliqa network will be used by ZNS worker (mainnet or testnet).                                                                                                                                                                                                                                                |
 | VIEWBLOCK_API_KEY                           | -                                                    | :heavy_check_mark: | API key for [viewblock](https://viewblock.io/api), required by ZNS worker.                                                                                                                                                                                                                                                  |
 | ZNS_FETCH_INTERVAL                          | 5000                                                 | :x:                | Specifies the interval to fetch data from the ZNS registry in milliseconds.                                                                                                                                                                                                                                                 |
@@ -115,6 +109,7 @@ database.
 | TYPEORM_LOGGING_COLORIZE                    | true                                                 | :x:                | Colorize typeorm logs.                                                                                                                                                                                                                                                                                                      |
 | ZNS_ACCEPTABLE_DELAY_IN_BLOCKS              | 100                                                  | :x:                | How much blocks Zilliqa mirror can lag behind until it's considered as unacceptable and need to be fixed. /status endpoint will return `health: true/false` field depends on number of blocks behind compared with this number.                                                                                             |
 | ETHEREUM_ACCEPTABLE_DELAY_IN_BLOCKS         | 100                                                  | :x:                | How much blocks Ethereum mirror can lag behind until it's considered as unacceptable and need to be fixed. /status endpoint will return `health: true/false` field depends on number of blocks behind compared with this number.                                                                                            |
+| POLYGON_ACCEPTABLE_DELAY_IN_BLOCKS          | 100                                                  | :x:                | How much blocks Polygon mirror can lag behind until it's considered as unacceptable and need to be fixed. /status endpoint will return `health: true/false` field depends on number of blocks behind compared with this number.                                                                                             |
 
 ### Running modes
 
@@ -128,7 +123,6 @@ RESOLUTION_RUNNING_MODE environment variable. Available running modes:
 - **ZIL_WORKER** - Runs the ZIL worker to sync data from the Zilliqa ZNS
   registry
 - **MIGRATIONS** - Runs the migration scripts if necessary.
-- **LOAD_SNAPSHOT** - Loads the snapshot data from `/resolution_service.dump`
 
 For example, to run only the `API` with the `ETH_WORKER`, the following
 environment configuration can be used:
@@ -166,22 +160,6 @@ The full api reference
 
 ## Development notes
 
-### Database schema changes
-
-To change database schema (adding new migrations) you have to create a new
-database dump with new database schema. In order to do this please follow the
-next steps:
-
-1. Run `yarn db:snapshot:load` command to restore database from the dump
-   (`resolution_service.dump`). If command fails - re-create local database and
-   try again.
-2. Create new migrations: `yarn db:migration:sync` or `yarn db:migration:new`
-   **IMPORTANT: make sure that you don't remove any data in the new migrations -
-   avoid `DROP`, `TRUNCATE`, `DELETE` SQL commands.**
-3. Apply new migrations to the database filled with dump data.
-4. Create a new dump using `yarn db:snapshot:create`
-5. Check snapshot using: `yarn db:snapshot:check`
-
 ### Development pre-requirements
 
 The dev. environment has generally the same pre-requirements as running the
@@ -191,7 +169,7 @@ password - secret).
 
 Additional pre-requirements that are necessary for development:
 
-- Node.JS 14.16.1\
+- Node.JS 14.16.1
   Can be installed using [NVM](https://github.com/nvm-sh/nvm)
 - [yarn](https://yarnpkg.com/lang/en/docs/install)
 
