@@ -160,15 +160,17 @@ export default class CnsRegistryEvent extends Model {
       .where('blockchain = :blockchain', { blockchain })
       .andWhere('network_id = :networkId', { networkId })
       .groupBy('block_number, block_hash')
-      .orderBy('block_number', 'ASC')
+      .orderBy('block_number', 'DESC')
       .limit(count)
       .getRawMany();
-    return res.map((value) => {
-      return {
-        blockNumber: value?.block_number as number,
-        blockHash: value?.block_hash as string,
-      };
-    });
+    return res
+      .map((value) => {
+        return {
+          blockNumber: value?.block_number as number,
+          blockHash: value?.block_hash as string,
+        };
+      })
+      .reverse();
   }
 
   static async cleanUpEvents(

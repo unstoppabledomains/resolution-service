@@ -479,13 +479,16 @@ export class EthUpdater {
 
   private async handleReorg(): Promise<number> {
     const reorgStartingBlock = await this.findLastMatchingBlock();
-    await WorkerStatus.saveWorkerStatus(
-      this.blockchain,
-      reorgStartingBlock.blockNumber,
-      reorgStartingBlock.blockHash,
-    );
 
     await getConnection().transaction(async (manager) => {
+      await WorkerStatus.saveWorkerStatus(
+        this.blockchain,
+        reorgStartingBlock.blockNumber,
+        reorgStartingBlock.blockHash,
+        undefined,
+        manager.getRepository(WorkerStatus),
+      );
+
       const cleanUp = await CnsRegistryEvent.cleanUpEvents(
         reorgStartingBlock.blockNumber,
         this.blockchain,
