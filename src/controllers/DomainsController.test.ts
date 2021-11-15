@@ -1,7 +1,7 @@
 import supertest from 'supertest';
 import { api } from '../api';
 import { expect } from 'chai';
-import { ApiKey } from '../models';
+import { ApiKey, DomainsResolution } from '../models';
 import { DomainTestHelper } from '../utils/testing/DomainTestHelper';
 import { znsNamehash, eip137Namehash } from '../utils/namehash';
 import { env } from '../env';
@@ -367,7 +367,6 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
-            id: testDomain.id,
             attributes: {
               meta: {
                 domain: testDomain.name,
@@ -408,7 +407,6 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
-            id: testDomain.id,
             attributes: {
               meta: {
                 domain: testDomain.name,
@@ -450,7 +448,6 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
-            id: testDomain.id,
             attributes: {
               meta: {
                 domain: testDomain.name,
@@ -494,7 +491,6 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
-            id: testDomain.id,
             attributes: {
               meta: {
                 domain: testDomain.name,
@@ -545,7 +541,6 @@ describe('DomainsController', () => {
         .send();
       expect(res.body.data).to.have.deep.members([
         {
-          id: testDomainOne.id,
           attributes: {
             meta: {
               domain: testDomainOne.name,
@@ -559,7 +554,6 @@ describe('DomainsController', () => {
           },
         },
         {
-          id: testDomainTwo.id,
           attributes: {
             meta: {
               domain: testDomainTwo.name,
@@ -605,7 +599,6 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
-            id: testDomainOne.id,
             attributes: {
               meta: {
                 domain: testDomainOne.name,
@@ -624,6 +617,59 @@ describe('DomainsController', () => {
           order: 'id ASC',
           perPage: 1,
           nextStartingAfter: testDomainOne.id,
+        },
+      });
+      expect(res.status).eq(200);
+    });
+    it('should return MATIC resolution for domain with multiple resolutions', async () => {
+      const { domain } = await DomainTestHelper.createTestDomain({
+        name: 'test.crypto',
+        node:
+          '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      });
+      const resolution = new DomainsResolution({
+        blockchain: Blockchain.MATIC,
+        networkId: env.APPLICATION.POLYGON.NETWORK_ID,
+        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        resolution: {
+          'crypto.ETH.address': '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        },
+        resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      });
+      await resolution.save();
+      domain.resolutions = [...domain.resolutions, resolution];
+      await domain.save();
+      const res = await supertest(api)
+        .get(`/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2`)
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.body).to.deep.equal({
+        data: [
+          {
+            attributes: {
+              meta: {
+                domain: domain.name,
+                blockchain: 'MATIC',
+                networkId: 1337,
+                owner: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+                registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+                resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
+              },
+              records: {
+                'crypto.ETH.address':
+                  '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+              },
+            },
+          },
+        ],
+        meta: {
+          hasMore: false,
+          nextStartingAfter: domain.id,
+          perPage: 100,
+          order: 'id ASC',
         },
       });
       expect(res.status).eq(200);
