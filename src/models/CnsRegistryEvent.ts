@@ -38,18 +38,17 @@ type EventType = typeof EventTypes[any];
 @Entity({ name: 'cns_registry_events' })
 @Index(['blockNumber', 'blockchain', 'networkId', 'logIndex'], { unique: true })
 export default class CnsRegistryEvent extends Model {
-  static EventTypes = EventTypes;
-  static DomainOperationTypes = DomainOperationTypes;
-
   @Column('text')
   contractAddress: string;
 
   @IsEnum(EventTypes)
   @Column({ type: 'text' })
+  @Index()
   type: EventType;
 
   @IsString()
   @Column({ type: 'text' })
+  @Index()
   blockchain: keyof typeof Blockchain;
 
   @IsNumber()

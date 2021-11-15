@@ -21,7 +21,7 @@ import {
   IsIn,
 } from 'class-validator';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
-import { Domain } from '../models';
+import { CnsRegistryEvent, Domain } from '../models';
 import { In } from 'typeorm';
 import DomainsResolution from '../models/DomainsResolution';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
@@ -29,6 +29,8 @@ import { Blockchain } from '../types/common';
 import { toNumber } from 'lodash';
 import NetworkConfig from 'uns/uns-config.json';
 import { getDomainResolution } from '../services/Resolution';
+import ValidateWith from '../services/ValidateWith';
+import { eip137Namehash } from '../utils/namehash';
 
 class DomainMetadata {
   @IsString()
@@ -114,6 +116,44 @@ class DomainAttributes {
 
 class DomainsListResponse {
   data: DomainAttributes[];
+}
+
+const ensOnZil = new RegExp('[.]zil$');
+class UnsDomainQuery {
+  @IsString()
+  @IsNotEmpty()
+  @ValidateWith<UnsDomainQuery>('isNotZilDomain')
+  domainName: string;
+
+  isNotZilDomain(): boolean {
+    return ensOnZil && !ensOnZil.test(this.domainName);
+  }
+}
+
+class DomainLatestTransfer {
+  @IsString()
+  @IsNotEmpty()
+  from: string;
+
+  @IsString()
+  @IsNotEmpty()
+  to: string;
+
+  @IsInt()
+  @IsNotEmpty()
+  networkId: number;
+
+  @IsInt()
+  @IsNotEmpty()
+  blockNumber: number;
+}
+
+class DomainLatestTransfersResponse {
+  @ValidateNested()
+  blockchains: {
+    ETH: DomainLatestTransfer | null;
+    MATIC: DomainLatestTransfer | null;
+  };
 }
 
 @OpenAPI({
@@ -224,5 +264,44 @@ export class DomainsController {
       });
     }
     return response;
+  }
+
+  @Get('/domains/:domainName/transfers/latest')
+  async getDomainsLastTransfer(
+    @QueryParams() query: UnsDomainQuery,
+  ): Promise<DomainLatestTransfersResponse> {
+    const namehash = eip137Namehash(query.domainName);
+    const maxBlockNumberEvents = CnsRegistryEvent.createQueryBuilder('event');
+    maxBlockNumberEvents.addSelect('MAX(event.blockNumber)', 'blockNumber');
+    maxBlockNumberEvents.addSelect('event.blockchain');
+    maxBlockNumberEvents.addSelect('event.node');
+    maxBlockNumberEvents.where(
+      `event.node = :namehash AND event.type = :eventType`,
+      {
+        namehash,
+        eventType: 'Transfer',
+      },
+    );
+    maxBlockNumberEvents.groupBy('event.blockchain, event.node');
+    const latestTransferEvents = await maxBlockNumberEvents.getMany();
+
+    const latestEthTransfer = await CnsRegistryEvent.getLastTransferEvent(
+      namehash,
+      'ETH',
+    );
+    const latestMaticTransfer = await CnsRegistryEvent.getLastTransferEvent(
+      namehash,
+      'MATIC',
+    );
+    const response = new DomainLatestTransfersResponse();
+    // todo potentialy move to single query using group statement. Use the same approach
+    // todo select app_id, max(attr_id) as max_attr_id from foo group by app_id;
+
+    if (latestEthTransfer) {
+      // todo
+    }
+    if (latestMaticTransfer) {
+      // todo
+    }
   }
 }
