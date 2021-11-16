@@ -99,7 +99,6 @@ class DomainAttributes {
 
 class DomainsListMeta {
   @IsNotEmpty()
-  @IsInt()
   @Min(0)
   nextStartingAfter = 0;
 
