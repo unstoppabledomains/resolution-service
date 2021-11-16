@@ -89,6 +89,10 @@ class DomainsListQuery {
 }
 
 class DomainAttributes {
+  @IsNotEmpty()
+  @IsString()
+  id: string;
+
   @ValidateNested()
   attributes: DomainResponse;
 }
@@ -211,6 +215,7 @@ export class DomainsController {
     response.data = [];
     for (const resolution of resolutions) {
       response.data.push({
+        id: resolution.domain.name,
         attributes: {
           meta: {
             domain: resolution.domain.name,

@@ -367,6 +367,7 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
+            id: testDomain.name,
             attributes: {
               meta: {
                 domain: testDomain.name,
@@ -407,6 +408,7 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
+            id: testDomain.name,
             attributes: {
               meta: {
                 domain: testDomain.name,
@@ -448,6 +450,7 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
+            id: testDomain.name,
             attributes: {
               meta: {
                 domain: testDomain.name,
@@ -491,6 +494,7 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
+            id: testDomain.name,
             attributes: {
               meta: {
                 domain: testDomain.name,
@@ -541,6 +545,7 @@ describe('DomainsController', () => {
         .send();
       expect(res.body.data).to.have.deep.members([
         {
+          id: testDomainOne.name,
           attributes: {
             meta: {
               domain: testDomainOne.name,
@@ -554,6 +559,7 @@ describe('DomainsController', () => {
           },
         },
         {
+          id: testDomainTwo.name,
           attributes: {
             meta: {
               domain: testDomainTwo.name,
@@ -599,6 +605,7 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
+            id: testDomainOne.name,
             attributes: {
               meta: {
                 domain: testDomainOne.name,
@@ -649,6 +656,7 @@ describe('DomainsController', () => {
       expect(res.body).to.deep.equal({
         data: [
           {
+            id: domain.name,
             attributes: {
               meta: {
                 domain: domain.name,
