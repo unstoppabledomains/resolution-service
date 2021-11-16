@@ -9,7 +9,6 @@ import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
 import { ETHContracts } from '../../contracts';
 import { Block } from '@ethersproject/abstract-provider';
-import DomainsResolution from '../../models/DomainsResolution';
 import { env } from '../../env';
 import { Blockchain } from '../../types/common';
 import { getLatestNetworkBlock } from '../../utils/ethersUtils';
