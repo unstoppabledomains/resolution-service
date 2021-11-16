@@ -8,7 +8,7 @@ import { env } from '../env';
 import { getConnection } from 'typeorm';
 import { Blockchain } from '../types/common';
 import { ETHContracts } from '../contracts';
-import { BigNumber } from 'ethers';
+import { describe } from 'mocha';
 
 describe('DomainsController', () => {
   let testApiKey: ApiKey;
@@ -18,6 +18,90 @@ describe('DomainsController', () => {
   });
 
   describe('GET /domain/:domainName', () => {
+    it('should return correct domain resolution for L2 domain on L1', async () => {
+      const { domain } = await DomainTestHelper.createTestDomain({
+        name: 'brad.crypto',
+        node:
+          '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+        ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+        blockchain: Blockchain.ETH,
+        networkId: 1337,
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        resolution: {
+          'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+        },
+        resolver: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      });
+      const resolution = domain.getResolution(Blockchain.MATIC, 1337);
+      resolution.ownerAddress = '0x0000000000000000000000000000000000000000';
+      resolution.resolver = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
+      resolution.registry = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
+      resolution.resolution = {};
+      domain.setResolution(resolution);
+      await domain.save();
+
+      const res = await supertest(api)
+        .get('/domains/brad.crypto')
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.status).eq(200);
+      expect(res.body).containSubset({
+        meta: {
+          domain: 'brad.crypto',
+          owner: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+          resolver: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+          blockchain: 'ETH',
+          networkId: 1337,
+        },
+        records: {
+          'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+        },
+      });
+    });
+
+    it('should return correct domain resolution for L2 domain', async () => {
+      const { domain } = await DomainTestHelper.createTestDomain({
+        name: 'brad.crypto',
+        node:
+          '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+        ownerAddress: '0x0000000000000000000000000000000000000000',
+        blockchain: Blockchain.ETH,
+        networkId: 1337,
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        resolution: {},
+        resolver: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      });
+      const resolution = domain.getResolution(Blockchain.MATIC, 1337);
+      resolution.ownerAddress = '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8';
+      resolution.resolver = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
+      resolution.registry = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
+      resolution.resolution = {
+        'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+      };
+      domain.setResolution(resolution);
+      await domain.save();
+
+      const res = await supertest(api)
+        .get('/domains/brad.crypto')
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.status).eq(200);
+      expect(res.body).containSubset({
+        meta: {
+          domain: 'brad.crypto',
+          owner: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+          resolver: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f',
+          registry: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f',
+          blockchain: 'MATIC',
+          networkId: 1337,
+        },
+        records: {
+          'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+        },
+      });
+    });
+
     it('should return error for unauthorized query', async () => {
       const res = await supertest(api).get('/domains/brad.crypto').send();
       expect(res.status).eq(403);
@@ -239,89 +323,6 @@ describe('DomainsController', () => {
     });
   });
 
-  it('should return correct domain resolution for L2 domain', async () => {
-    const { domain } = await DomainTestHelper.createTestDomain({
-      name: 'brad.crypto',
-      node:
-        '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
-      ownerAddress: '0x0000000000000000000000000000000000000000',
-      blockchain: Blockchain.ETH,
-      networkId: 1337,
-      registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-      resolution: {},
-      resolver: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-    });
-    const resolution = domain.getResolution(Blockchain.MATIC, 1337);
-    resolution.ownerAddress = '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8';
-    resolution.resolver = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
-    resolution.registry = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
-    resolution.resolution = {
-      'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
-    };
-    domain.setResolution(resolution);
-    await domain.save();
-
-    const res = await supertest(api)
-      .get('/domains/brad.crypto')
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(200);
-    expect(res.body).containSubset({
-      meta: {
-        domain: 'brad.crypto',
-        owner: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
-        resolver: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f',
-        registry: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f',
-        blockchain: 'MATIC',
-        networkId: 1337,
-      },
-      records: {
-        'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
-      },
-    });
-  });
-
-  it('should return correct domain resolution for L2 domain on L1', async () => {
-    const { domain } = await DomainTestHelper.createTestDomain({
-      name: 'brad.crypto',
-      node:
-        '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
-      ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
-      blockchain: Blockchain.ETH,
-      networkId: 1337,
-      registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-      resolution: {
-        'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
-      },
-      resolver: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-    });
-    const resolution = domain.getResolution(Blockchain.MATIC, 1337);
-    resolution.ownerAddress = '0x0000000000000000000000000000000000000000';
-    resolution.resolver = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
-    resolution.registry = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
-    resolution.resolution = {};
-    domain.setResolution(resolution);
-    await domain.save();
-
-    const res = await supertest(api)
-      .get('/domains/brad.crypto')
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(200);
-    expect(res.body).containSubset({
-      meta: {
-        domain: 'brad.crypto',
-        owner: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
-        resolver: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        blockchain: 'ETH',
-        networkId: 1337,
-      },
-      records: {
-        'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
-      },
-    });
-  });
   describe('GET /domains', () => {
     it('should return error for unauthorized query', async () => {
       const res = await supertest(api)
@@ -687,188 +688,200 @@ describe('DomainsController', () => {
       expect(res.status).eq(400);
     });
   });
-  it('should format the 500 error', async () => {
-    const connection = getConnection();
-    connection.close();
-    const res = await supertest(api)
-      .get('/domains/brad.crypto')
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(500);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body.errors).to.exist;
-    expect(res.body.stack).to.not.exist;
-    await connection.connect(); // restore the connection to the db;
-  });
-  it('should return appropriate error for missing an owner param', async () => {
-    const res = await supertest(api)
-      .get('/domains/')
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'owners',
-          constraints: {
-            arrayNotEmpty: 'owners should not be empty',
-            isArray: 'owners must be an array',
-            isNotEmpty: 'each value in owners should not be empty',
-            isString: 'each value in owners must be a string',
-          },
-        },
-      ],
-    });
-  });
-  it('should return appropriate error for incorrect input', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&perPage=0',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
 
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).to.containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'perPage',
-          constraints: {
-            min: 'perPage must not be less than 1',
-          },
-        },
-      ],
+  describe('GET /domains/:domainName/transfers/latest', () => {
+    it('should return latest transfers from MATIC and ETH networks', async () => {
+      const res = await supertest(api)
+        .get('/domains/kirill.dao/transfers/latest')
+        .send();
+      console.log(res.body);
     });
   });
 
-  it('should return the correct validation error for incorrect networkId param', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=we&blockchains[]=ETH',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'networkIds',
-          constraints: {
-            isIn:
-              'each value in networkIds must be one of the following values: 1, 4, 137, 1337, 80001',
-          },
-        },
-      ],
+  describe('Errors handling', () => {
+    it('should format the 500 error', async () => {
+      const connection = getConnection();
+      connection.close();
+      const res = await supertest(api)
+        .get('/domains/brad.crypto')
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.status).eq(500);
+      expect(res.body.code).to.exist;
+      expect(res.body.message).to.exist;
+      expect(res.body.errors).to.exist;
+      expect(res.body.stack).to.not.exist;
+      await connection.connect(); // restore the connection to the db;
     });
-  });
+    it('should return appropriate error for missing an owner param', async () => {
+      const res = await supertest(api)
+        .get('/domains/')
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.status).eq(400);
+      expect(res.body).containSubset({
+        code: 'BadRequestError',
+        message: "Invalid queries, check 'errors' property for more info.",
+        errors: [
+          {
+            property: 'owners',
+            constraints: {
+              arrayNotEmpty: 'owners should not be empty',
+              isArray: 'owners must be an array',
+              isNotEmpty: 'each value in owners should not be empty',
+              isString: 'each value in owners must be a string',
+            },
+          },
+        ],
+      });
+    });
+    it('should return appropriate error for incorrect input', async () => {
+      const res = await supertest(api)
+        .get(
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&perPage=0',
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
 
-  it('should return the correct validation error for empty networkIds param', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]&blockchains[]=ETH',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'networkIds',
-          constraints: {
-            isIn:
-              'each value in networkIds must be one of the following values: 1, 4, 137, 1337, 80001',
-            isNotEmpty: 'each value in networkIds should not be empty',
+      expect(res.status).eq(400);
+      expect(res.body.code).to.exist;
+      expect(res.body.message).to.exist;
+      expect(res.body).to.containSubset({
+        code: 'BadRequestError',
+        message: "Invalid queries, check 'errors' property for more info.",
+        errors: [
+          {
+            property: 'perPage',
+            constraints: {
+              min: 'perPage must not be less than 1',
+            },
           },
-        },
-      ],
+        ],
+      });
     });
-  });
-  it('should return the correct validation error for empty blockchain param', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'blockchains',
-          constraints: {
-            isIn:
-              'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
-            isNotEmpty: 'each value in blockchains should not be empty',
+
+    it('should return the correct validation error for incorrect networkId param', async () => {
+      const res = await supertest(api)
+        .get(
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=we&blockchains[]=ETH',
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.status).eq(400);
+      expect(res.body.code).to.exist;
+      expect(res.body.message).to.exist;
+      expect(res.body).containSubset({
+        code: 'BadRequestError',
+        message: "Invalid queries, check 'errors' property for more info.",
+        errors: [
+          {
+            property: 'networkIds',
+            constraints: {
+              isIn:
+                'each value in networkIds must be one of the following values: 1, 4, 137, 1337, 80001',
+            },
           },
-        },
-      ],
+        ],
+      });
     });
-  });
-  it('should return the correct validation error for invalid blockchain param', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]=BAD',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'blockchains',
-          constraints: {
-            isIn:
-              'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
+
+    it('should return the correct validation error for empty networkIds param', async () => {
+      const res = await supertest(api)
+        .get(
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]&blockchains[]=ETH',
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.status).eq(400);
+      expect(res.body.code).to.exist;
+      expect(res.body.message).to.exist;
+      expect(res.body).containSubset({
+        code: 'BadRequestError',
+        message: "Invalid queries, check 'errors' property for more info.",
+        errors: [
+          {
+            property: 'networkIds',
+            constraints: {
+              isIn:
+                'each value in networkIds must be one of the following values: 1, 4, 137, 1337, 80001',
+              isNotEmpty: 'each value in networkIds should not be empty',
+            },
           },
-        },
-      ],
+        ],
+      });
     });
-  });
-  it('should return the correct validation error for invalid blockchain param #2', async () => {
-    const res = await supertest(api)
-      .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]=ETH,BAD',
-      )
-      .auth(testApiKey.apiKey, { type: 'bearer' })
-      .send();
-    expect(res.status).eq(400);
-    expect(res.body.code).to.exist;
-    expect(res.body.message).to.exist;
-    expect(res.body).containSubset({
-      code: 'BadRequestError',
-      message: "Invalid queries, check 'errors' property for more info.",
-      errors: [
-        {
-          property: 'blockchains',
-          constraints: {
-            isIn:
-              'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
+    it('should return the correct validation error for empty blockchain param', async () => {
+      const res = await supertest(api)
+        .get(
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]',
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.status).eq(400);
+      expect(res.body.code).to.exist;
+      expect(res.body.message).to.exist;
+      expect(res.body).containSubset({
+        code: 'BadRequestError',
+        message: "Invalid queries, check 'errors' property for more info.",
+        errors: [
+          {
+            property: 'blockchains',
+            constraints: {
+              isIn:
+                'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
+              isNotEmpty: 'each value in blockchains should not be empty',
+            },
           },
-        },
-      ],
+        ],
+      });
+    });
+    it('should return the correct validation error for invalid blockchain param', async () => {
+      const res = await supertest(api)
+        .get(
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]=BAD',
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.status).eq(400);
+      expect(res.body.code).to.exist;
+      expect(res.body.message).to.exist;
+      expect(res.body).containSubset({
+        code: 'BadRequestError',
+        message: "Invalid queries, check 'errors' property for more info.",
+        errors: [
+          {
+            property: 'blockchains',
+            constraints: {
+              isIn:
+                'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
+            },
+          },
+        ],
+      });
+    });
+    it('should return the correct validation error for invalid blockchain param #2', async () => {
+      const res = await supertest(api)
+        .get(
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&networkIds[]=1&blockchains[]=ETH,BAD',
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.status).eq(400);
+      expect(res.body.code).to.exist;
+      expect(res.body.message).to.exist;
+      expect(res.body).containSubset({
+        code: 'BadRequestError',
+        message: "Invalid queries, check 'errors' property for more info.",
+        errors: [
+          {
+            property: 'blockchains',
+            constraints: {
+              isIn:
+                'each value in blockchains must be one of the following values: ETH, ZIL, MATIC',
+            },
+          },
+        ],
+      });
     });
   });
 });

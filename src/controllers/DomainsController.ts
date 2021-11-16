@@ -271,37 +271,41 @@ export class DomainsController {
     @QueryParams() query: UnsDomainQuery,
   ): Promise<DomainLatestTransfersResponse> {
     const namehash = eip137Namehash(query.domainName);
-    const maxBlockNumberEvents = CnsRegistryEvent.createQueryBuilder('event');
-    maxBlockNumberEvents.addSelect('MAX(event.blockNumber)', 'blockNumber');
-    maxBlockNumberEvents.addSelect('event.blockchain');
-    maxBlockNumberEvents.addSelect('event.node');
-    maxBlockNumberEvents.where(
-      `event.node = :namehash AND event.type = :eventType`,
+    const maxBlockNumbersQuery = CnsRegistryEvent.createQueryBuilder('event');
+    maxBlockNumbersQuery.addSelect('MAX(event.blockNumber)', 'blockNumber');
+    maxBlockNumbersQuery.addSelect('event.blockchain');
+    maxBlockNumbersQuery.addSelect('event.node');
+    maxBlockNumbersQuery.where(
+      `event.node = :namehash AND event.type = :eventType AND event.blockchain <> :excludedBlockchain`,
       {
         namehash,
         eventType: 'Transfer',
+        excludedBlockchain: 'ZIL',
       },
     );
-    maxBlockNumberEvents.groupBy('event.blockchain, event.node');
-    const latestTransferEvents = await maxBlockNumberEvents.getMany();
-
-    const latestEthTransfer = await CnsRegistryEvent.getLastTransferEvent(
-      namehash,
-      'ETH',
-    );
-    const latestMaticTransfer = await CnsRegistryEvent.getLastTransferEvent(
-      namehash,
-      'MATIC',
-    );
-    const response = new DomainLatestTransfersResponse();
-    // todo potentialy move to single query using group statement. Use the same approach
-    // todo select app_id, max(attr_id) as max_attr_id from foo group by app_id;
-
-    if (latestEthTransfer) {
-      // todo
-    }
-    if (latestMaticTransfer) {
-      // todo
-    }
+    maxBlockNumbersQuery.groupBy('event.blockchain, event.node');
+    const maxBlockNumberEvents = await maxBlockNumbersQuery.getMany();
+    const lastTransfersQuery = CnsRegistryEvent.createQueryBuilder('event');
+    maxBlockNumberEvents.forEach((event: CnsRegistryEvent) => {
+      lastTransfersQuery.orWhere(
+        `event.blockNumber = :blockNumber AND event.type = :eventType AND node = :namehash AND blockchain = :blockchain`,
+        {
+          blockNumber: event.blockNumber,
+          eventType: 'Transfer',
+          namehash,
+          blockchain: event.blockchain,
+        },
+      );
+    });
+    const lastTransferEvents = await lastTransfersQuery.getMany();
+    return lastTransferEvents.reduce((previousValue, currentValue) => {
+      previousValue.blockchains[currentValue.blockchain as 'ETH' | 'MATIC'] = {
+        blockNumber: currentValue.blockNumber,
+        networkId: currentValue.networkId,
+        from: currentValue?.returnValues?.from,
+        to: currentValue?.returnValues?.to,
+      };
+      return previousValue;
+    }, new DomainLatestTransfersResponse());
   }
 }

@@ -9911,9 +9911,9 @@ unpipe@1.0.0, unpipe@~1.0.0:
   resolved "https://registry.yarnpkg.com/unpipe/-/unpipe-1.0.0.tgz#b2bf4ee8514aae6165b4817829d21b2ef49904ec"
   integrity sha1-sr9O6FFKrmFltIF4KdIbLvSZBOw=
 
-"uns@https://github.com/unstoppabledomains/uns.git#58d880375cc7996f6ab71dd461f87d1a900a1c40":
+"uns@https://github.com/unstoppabledomains/uns.git#9f659eb26c3fefd65d91cae3804b7de21747c212":
   version "0.1.0"
-  resolved "https://github.com/unstoppabledomains/uns.git#58d880375cc7996f6ab71dd461f87d1a900a1c40"
+  resolved "https://github.com/unstoppabledomains/uns.git#9f659eb26c3fefd65d91cae3804b7de21747c212"
 
 unset-value@^0.1.1:
   version "0.1.2"

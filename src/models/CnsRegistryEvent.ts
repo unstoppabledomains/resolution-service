@@ -37,6 +37,7 @@ type EventType = typeof EventTypes[any];
 
 @Entity({ name: 'cns_registry_events' })
 @Index(['blockNumber', 'blockchain', 'networkId', 'logIndex'], { unique: true })
+@Index(['type', 'blockchain', 'blockNumber', 'node'])
 export default class CnsRegistryEvent extends Model {
   @Column('text')
   contractAddress: string;
@@ -78,6 +79,7 @@ export default class CnsRegistryEvent extends Model {
   @Matches(/0x[0-9a-f]+/)
   @ValidateWith<CnsRegistryEvent>('consistentBlockNumberForHash')
   @Column({ type: 'text', nullable: true })
+  @Index()
   transactionHash: string | null = null;
 
   @IsObject()
