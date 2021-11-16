@@ -15,6 +15,9 @@ import { Attributes } from '../types/common';
 import punycode from 'punycode';
 import DomainsResolution from './DomainsResolution';
 import { Blockchain } from '../types/common';
+import { queryNewURIEvent } from '../utils/ethersUtils';
+import CnsRegistryEvent from './CnsRegistryEvent';
+import { logger } from '../logger';
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
@@ -108,6 +111,32 @@ export default class Domain extends Model {
         relations: ['resolutions', 'parent'],
       })) || new Domain({ node })
     );
+  }
+
+  static async findOnChainNoSafe(token: string): Promise<Domain | undefined> {
+    try {
+      const newURIevent = await queryNewURIEvent(token);
+      if (!newURIevent || !newURIevent.args) {
+        return undefined;
+      }
+
+      const { uri, tokenId } = newURIevent.args;
+      const expectedNode = eip137Namehash(uri);
+      const producedNode = CnsRegistryEvent.tokenIdToNode(tokenId);
+
+      if (expectedNode !== producedNode) {
+        return undefined;
+      }
+
+      const domain = await Domain.findOrBuildByNode(producedNode);
+      domain.name = uri;
+      // we are not saving the domain on the db to make sure there is no race conditions between api and workers
+      // domain will be parsed and stored by workers eventually
+      return domain;
+    } catch (error) {
+      logger.error(`Couldn't query NewURI event: ${error}`);
+      return undefined;
+    }
   }
 
   private getSplittedName(): string[] {
