@@ -77,16 +77,30 @@ export class EthUpdater {
     fromBlock: number,
     toBlock: number,
   ): Promise<Event[]> {
-    const unsEvents = await this.unsRegistry.queryFilter(
-      {},
-      fromBlock,
-      toBlock,
-    );
-    const cnsEvents = await this.cnsRegistry.queryFilter(
-      {},
-      fromBlock,
-      toBlock,
-    );
+    let unsEvents: Event[] = [];
+    if (this.unsRegistry.address != Domain.NullAddress) {
+      unsEvents = await this.unsRegistry.queryFilter({}, fromBlock, toBlock);
+      this.logger.info(
+        `Fetched ${
+          unsEvents.length
+        } unsEvents from ${fromBlock} to ${toBlock} by ${
+          toBlock - fromBlock + 1
+        } `,
+      );
+    }
+
+    let cnsEvents: Event[] = [];
+    if (this.cnsRegistry.address != Domain.NullAddress) {
+      cnsEvents = await this.cnsRegistry.queryFilter({}, fromBlock, toBlock);
+
+      this.logger.info(
+        `Fetched ${
+          cnsEvents.length
+        } cnsEvents from ${fromBlock} to ${toBlock} by ${
+          toBlock - fromBlock + 1
+        } `,
+      );
+    }
 
     // Merge UNS and CNS events and sort them by block number and index.
     const events: Event[] = [...cnsEvents, ...unsEvents];
@@ -102,20 +116,6 @@ export class EthUpdater {
       return a.blockNumber < b.blockNumber ? -1 : 1;
     });
 
-    this.logger.info(
-      `Fetched ${
-        cnsEvents.length
-      } cnsEvents from ${fromBlock} to ${toBlock} by ${
-        toBlock - fromBlock + 1
-      } `,
-    );
-    this.logger.info(
-      `Fetched ${
-        unsEvents.length
-      } unsEvents from ${fromBlock} to ${toBlock} by ${
-        toBlock - fromBlock + 1
-      } `,
-    );
     return events;
   }
 
@@ -325,6 +325,7 @@ export class EthUpdater {
         returnValues: values,
         blockchain: this.blockchain,
         networkId: this.networkId,
+        node: event.args?.[0],
       }),
     );
   }
@@ -451,7 +452,11 @@ export class EthUpdater {
 
     this.logger.debug(`Rebuilding domain ${domain?.name} from db events`);
     const domainEvents = await CnsRegistryEvent.find({
-      where: { node: tokenId },
+      where: {
+        node: tokenId,
+        blockchain: this.blockchain,
+        networkId: this.networkId,
+      },
       order: { blockNumber: 'ASC', logIndex: 'ASC' },
     });
     const convertedEvents: Event[] = [];
@@ -467,21 +472,27 @@ export class EthUpdater {
       tmpEvent.args.tokenId = BigNumber.from(tokenId);
       convertedEvents.push(tmpEvent as Event);
     }
-    await domain?.remove();
+
+    await domain?.getResolution(this.blockchain, this.networkId)?.remove();
     await this.processEvents(convertedEvents, manager, false);
   }
 
   private async handleReorg(): Promise<number> {
     const reorgStartingBlock = await this.findLastMatchingBlock();
-    await WorkerStatus.saveWorkerStatus(
-      this.blockchain,
-      reorgStartingBlock.blockNumber,
-      reorgStartingBlock.blockHash,
-    );
 
     await getConnection().transaction(async (manager) => {
+      await WorkerStatus.saveWorkerStatus(
+        this.blockchain,
+        reorgStartingBlock.blockNumber,
+        reorgStartingBlock.blockHash,
+        undefined,
+        manager.getRepository(WorkerStatus),
+      );
+
       const cleanUp = await CnsRegistryEvent.cleanUpEvents(
         reorgStartingBlock.blockNumber,
+        this.blockchain,
+        this.networkId,
         manager.getRepository(CnsRegistryEvent),
       );
 
