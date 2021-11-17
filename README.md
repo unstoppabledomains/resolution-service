@@ -49,12 +49,13 @@ variety of platforms and in the cloud.
 
 ```
 NODE_ENV=production
-RESOLUTION_POSTGRES_HOST=example.com:5432     # DB host
-RESOLUTION_POSTGRES_USERNAME=example          # DB user configured in postgres
-RESOLUTION_POSTGRES_PASSWORD=password         # DB password configured in postgres
-ETHEREUM_JSON_RPC_API_URL=https://alchemy.com # Address of a JSON RPC provider. This can be a public API (e.g. Alchemy), or a local ethereum node with JSON RPC enabled
-POLYGON_JSON_RPC_API_URL=https://alchemy.com  # Address of a JSON RPC provider. This can be a public API (e.g. Alchemy), or a local ethereum node with JSON RPC enabled
-VIEWBLOCK_API_KEY=apikey                      # key for Viewblock API, required for getting data from Zilliqa blockchain
+RESOLUTION_POSTGRES_HOST=example.com:5432      # DB host
+RESOLUTION_POSTGRES_USERNAME=example           # DB user configured in postgres
+RESOLUTION_POSTGRES_PASSWORD=password          # DB password configured in postgres
+RESOLUTION_POSTGRES_DATABASE=resolution_service # Name of the resolution service database
+ETHEREUM_JSON_RPC_API_URL=https://alchemy.com  # Address of a JSON RPC provider. This can be a public API (e.g. Alchemy), or a local ethereum node with JSON RPC enabled
+POLYGON_JSON_RPC_API_URL=https://alchemy.com   # Address of a JSON RPC provider. This can be a public API (e.g. Alchemy), or a local ethereum node with JSON RPC enabled
+VIEWBLOCK_API_KEY=apikey                       # key for Viewblock API, required for getting data from Zilliqa blockchain
 ```
 
 This is the minimum required set of configurations for the service. Additional
@@ -84,20 +85,27 @@ database.
 | Option                                      | Default value                                        | required           | Description                                                                                                                                                                                                                                                                                                                 |
 | ------------------------------------------- | ---------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | RESOLUTION_API_PORT                         | 3000                                                 | :x:                | The port for the HTTP API.                                                                                                                                                                                                                                                                                                  |
-| RESOLUTION_RUNNING_MODE                     | API,ETH_WORKER,ZIL_WORKER,MIGRATIONS                 | :x:                | Comma-separated list of running modes of the resolution service (see [Running modes](README.md#running-modes)).                                                                                                                                                                                                             |
+| RESOLUTION_RUNNING_MODE                     | API,ETH_WORKER,MATIC_WORKER,ZIL_WORKER,MIGRATIONS                 | :x:                | Comma-separated list of running modes of the resolution service (see [Running modes](README.md#running-modes)).                                                                                                                                                                                                             |
 | RESOLUTION_POSTGRES_HOST                    | localhost                                            | :heavy_check_mark: | Host for the postgres DB. Note that to connect to a postgres instance running on the same server as the container, `host.docker.internal` should be used instead of `localhost` on Windows and MacOS (see https://docs.docker.com/docker-for-windows/networking/#use-cases-and-workarounds).                                |
 | RESOLUTION_POSTGRES_USERNAME                | postgres                                             | :heavy_check_mark: | Username that is used to connect to postgres.                                                                                                                                                                                                                                                                               |
 | RESOLUTION_POSTGRES_PASSWORD                | secret                                               | :heavy_check_mark: | Password that is used to connect to postgres.                                                                                                                                                                                                                                                                               |
 | RESOLUTION_POSTGRES_DATABASE                | resolution_service                                   | :heavy_check_mark: | Database name in postgres.                                                                                                                                                                                                                                                                                                  |
 | RESOLUTION_POSTGRES_PORT                    | 5432                                                 | :x:                | Port number for Postgres database.                                                                                                                                                                                                                                                                                          |
-| ETHEREUM_CONFIRMATION_BLOCKS                | 3                                                    | :x:                | Number of blocks that the service will wait before accepting an event from the CNS contract. This helps to avoid block reorgs, forks, etc.                                                                                                                                                                                  |
-| ETHEREUM_BLOCK_FETCH_LIMIT                  | 1000                                                 | :x:                | Batch limit for fetching event data from the Ethereum JSON RPC. Note that some API providers may limit the amount of data that can be returned in a single request. So this number should be kept relatively low. However, raising this limit should speed up synchronization if a dedicated node is used with the service. |
+| ETHEREUM_CONFIRMATION_BLOCKS                | 20                                                    | :x:                | Number of blocks that the service will wait before accepting an event from the CNS contract. This helps to avoid block reorgs, forks, etc.                                                                                                                                                                                  |
+| ETHEREUM_BLOCK_FETCH_LIMIT                  | 500                                                 | :x:                | Batch limit for fetching event data from the Ethereum JSON RPC. Note that some API providers may limit the amount of data that can be returned in a single request. So this number should be kept relatively low. However, raising this limit should speed up synchronization if a dedicated node is used with the service. |
 | ETHEREUM_RECORDS_PER_PAGE                   | 100                                                  | :x:                | Batch limit for fetching domain records from CNS registry smart contract.                                                                                                                                                                                                                                                   |
 | ETHEREUM_FETCH_INTERVAL                     | 5000                                                 | :x:                | Specifies the interval to fetch data from the CNS registry in milliseconds.                                                                                                                                                                                                                                                 |
 | CNS_REGISTRY_EVENTS_STARTING_BLOCK          | 9080000                                              | :x:                | Starting block that is used to look for events in the CNS registry. This helps to avoid parsing old blockchain data, before the contract was even deployed.                                                                                                                                                                 |
 | CNS_RESOLVER_ADVANCED_EVENTS_STARTING_BLOCK | 9080000                                              | :x:                | Starting block that is used to look for events in the CNS registry.                                                                                                                                                                                                                                                         |
+| ETHEREUM_ACCEPTABLE_DELAY_IN_BLOCKS         | 100                                                  | :x:                | How much blocks Ethereum mirror can lag behind until it's considered as unacceptable and need to be fixed. /status endpoint will return `health: true/false` field depends on number of blocks behind compared with this number.                                                                                            |
 | ETHEREUM_JSON_RPC_API_URL                   | -                                                    | :heavy_check_mark: | Address of a JSON RPC provider. This can be a public API (e.g. Alchemy), or a local ethereum node with JSON RPC enabled.                                                                                                                                                                                                    |
 | ETHEREUM_NETWORK_ID                         | 1                                                    | :x:                | ID of the Ethereum network that is used by the service.                                                                                                                                                                                                                                                                     |
+| POLYGON_CONFIRMATION_BLOCKS                | 20                                                    | :x:                | Number of blocks that the service will wait before accepting an event from the smart contracts on Polygon. This helps to avoid block reorgs, forks, etc.                                                                                                                                                                                  |
+| POLYGON_BLOCK_FETCH_LIMIT                  | 500                                                 | :x:                | Batch limit for fetching event data from the Polygon JSON RPC. Note that some API providers may limit the amount of data that can be returned in a single request. So this number should be kept relatively low. However, raising this limit should speed up synchronization if a dedicated node is used with the service. |
+| POLYGON_RECORDS_PER_PAGE                   | 100                                                  | :x:                | Batch limit for fetching domain records from Polygon smart contracts.                                                                                                                                                                                                                                                   |
+| POLYGON_FETCH_INTERVAL                     | 5000                                                 | :x:                | Specifies the interval to fetch data from the Polygon blockchain in milliseconds.                                                                                                                                                                                                                                                 |
+| POLYGON_UNS_REGISTRY_EVENTS_STARTING_BLOCK          | 19345077                                              | :x:                | Starting block that is used to look for events in the UNS registry on the Polygon blockchain. This helps to avoid parsing old blockchain data, before the contract was even deployed.                                                                                                                                                                 |
+| POLYGON_ACCEPTABLE_DELAY_IN_BLOCKS          | 100                                                  | :x:                | How much blocks Polygon mirror can lag behind until it's considered as unacceptable and need to be fixed. /status endpoint will return `health: true/false` field depends on number of blocks behind compared with this number.                                                                                             |
 | POLYGON_JSON_RPC_API_URL                    | -                                                    | :heavy_check_mark: | Address of a Polygon JSON RPC provider. This can be a public API (e.g. Alchemy), or a local ethereum node with JSON RPC enabled.                                                                                                                                                                                            |
 | POLYGON_NETWORK_ID                          | 137                                                  | :x:                | ID of the Polygon network that is used by the service.                                                                                                                                                                                                                                                                      |
 | ZNS_NETWORK                                 | mainnet                                              | :x:                | Name of the Zilliqa network will be used by ZNS worker (mainnet or testnet).                                                                                                                                                                                                                                                |
@@ -107,9 +115,7 @@ database.
 | NEW_RELIC_APP_NAME                          | -                                                    | :x:                | App name will be used to access newrelic. If the app name is not specified, new relic will not be enabled.                                                                                                                                                                                                                  |
 | BUGSNAG_API_KEY                             | -                                                    | :x:                | API key that will be used to access bugsnag. If the key is not specified, bugsnag will not be enabled.                                                                                                                                                                                                                      |
 | TYPEORM_LOGGING_COLORIZE                    | true                                                 | :x:                | Colorize typeorm logs.                                                                                                                                                                                                                                                                                                      |
-| ZNS_ACCEPTABLE_DELAY_IN_BLOCKS              | 100                                                  | :x:                | How much blocks Zilliqa mirror can lag behind until it's considered as unacceptable and need to be fixed. /status endpoint will return `health: true/false` field depends on number of blocks behind compared with this number.                                                                                             |
-| ETHEREUM_ACCEPTABLE_DELAY_IN_BLOCKS         | 100                                                  | :x:                | How much blocks Ethereum mirror can lag behind until it's considered as unacceptable and need to be fixed. /status endpoint will return `health: true/false` field depends on number of blocks behind compared with this number.                                                                                            |
-| POLYGON_ACCEPTABLE_DELAY_IN_BLOCKS          | 100                                                  | :x:                | How much blocks Polygon mirror can lag behind until it's considered as unacceptable and need to be fixed. /status endpoint will return `health: true/false` field depends on number of blocks behind compared with this number.                                                                                             |
+| ZILLIQA_ACCEPTABLE_DELAY_IN_BLOCKS              | 100                                                  | :x:                | How much blocks Zilliqa mirror can lag behind until it's considered as unacceptable and need to be fixed. /status endpoint will return `health: true/false` field depends on number of blocks behind compared with this number.                                                                                             |
 
 ### Running modes
 
@@ -120,6 +126,7 @@ RESOLUTION_RUNNING_MODE environment variable. Available running modes:
 - **API** - Runs the service API.
 - **ETH_WORKER** - Runs the ETH worker to sync data from the Ethereum CNS and
   UNS registry
+- **MATIC_WORKER** - Runs the MATIC worker to sync data from the Polygon UNS registry
 - **ZIL_WORKER** - Runs the ZIL worker to sync data from the Zilliqa ZNS
   registry
 - **MIGRATIONS** - Runs the migration scripts if necessary.
@@ -191,8 +198,9 @@ yarn install
 RESOLUTION_POSTGRES_HOST=localhost
 RESOLUTION_POSTGRES_USERNAME=postgres
 RESOLUTION_POSTGRES_PASSWORD=password
-RESOLUTION_POSTGRES_DATABASE=password
-ETHEREUM_JSON_RPC_API_URL=localhost
+RESOLUTION_POSTGRES_DATABASE=resolution_service
+ETHEREUM_JSON_RPC_API_URL=localhost:8545
+POLYGON_JSON_RPC_API_URL=localhost:8546
 VIEWBLOCK_API_KEY=apikey
 ```
 
@@ -203,9 +211,6 @@ yarn start:dev
 ```
 
 ### Running unit tests
-
-> Make sure you've started Ethereum emulator before running the tests:
-> `yarn ganache-cli`
 
 Unit tests can be run using `yarn test`. This command will run the tests with
 ENV variables set in `./local.test.env` file. You could redefine any env
@@ -222,7 +227,7 @@ By default, the database name is `resolution_service_test`.
 
 ![Architecture chart](doc/ResolutionService.png)
 
-The service currently consists of three main components: API, and two workers.
+The service currently consists of three main components: API, and three workers.
 The API component is a basic HTTP API that allows reading domain data from the
 database. The OpenAPI specification:
 [OpenAPI specification](http://resolve.unstoppabledomains.com/api-docs/).
@@ -233,6 +238,11 @@ Currently there are two workers in the resolution service:
   Contains a scheduled job that connects to the Ethereum blockchain using JSON RPC
   and pulls CNS (.crypto) and UNS domains and resolution events. The events are parsed
   and saved to the database.
+- MATIC worker\
+  Contains a scheduled job that connects to the Polygon blockchain using JSON RPC
+  and pulls domains and resolution events. The events are parsed
+  and saved to the database.\
+  Since Polygon and Ethereum are compatible, we use two instances of the same worker implementation to pull data from these networks.
 - ZIL worker\
   Contains a scheduled job that connects to the Zilliqa blockchain using and pulls
   ZNS (.zil) domains and resolution events. The events are parsed and saved to the
@@ -249,16 +259,16 @@ Cloud Logging). The general log format should be:
 
 The resolution service has a configurable logging level. Log messages are at
 consistent levels across the whole service. We use the following guidelines to
-determine logging level: Event|Component|description|log level
------|---------|-----------|--------- Startup info|all|Log any startup
-information (e.g. worker is starting, API is listening)|info Sync
-progress|Workers|Log current sync progress of a worker (which blocks are being
-processed, how many blocks are left to process)|info Handled errors|all|Log any
-errors that can be handled gracefully (e.g. a malformed request that will return
-a 400 error)|warn Unhandled errors|all|Log any errors that were captured by
-top-level error handlers (e.g. an unexpected third-party API error, invalid db
-state)|error API Request|API controllers|Log any request to the API with their
-parameters|debug DB query|all|Log any db queries with their parameters|debug
+determine logging level: 
+
+Event|Component|description|log level
+-----|---------|-----------|--------- 
+Startup info|all|Log any startup information (e.g. worker is starting, API is listening)|info
+Sync progress|Workers|Log current sync progress of a worker (which blocks are being processed, how many blocks are left to process)|info
+Handled errors|all|Log any errors that can be handled gracefully (e.g. a malformed request that will return a 400 error)|warn
+Unhandled errors|all|Log any errors that were captured by top-level error handlers (e.g. an unexpected third-party API error, invalid db state)|error
+API Request|API controllers|Log any request to the API with their parameters|debug
+DB query|all|Log any db queries with their parameters|debug
 Parsed event|Workers|Log any event or transaction parsed by the worker|debug
 External API calls|all|Log external API calls|debug
 
