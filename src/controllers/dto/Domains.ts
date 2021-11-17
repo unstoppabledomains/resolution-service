@@ -75,21 +75,21 @@ export class DomainsListQuery {
   tlds: string[] | undefined = undefined;
 
   @IsOptional()
+  @IsIn(Object.keys(DomainsListQuery.SortFieldsMap))
   sortBy: 'id' | 'name' = 'id';
 
   @IsOptional()
+  @IsIn(['ASC', 'DESC'])
   sortDirection: 'ASC' | 'DESC' = 'ASC';
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(200)
   perPage = 100;
 
-  @IsNotEmpty()
-  @IsInt()
-  @Min(0)
-  startingAfter = 0;
+  @IsOptional()
+  startingAfter: string | undefined = undefined;
 
   get sort() {
     return {
@@ -124,12 +124,16 @@ export class DomainAttributes {
 
 export class DomainsListMeta {
   @IsNotEmpty()
-  @Min(0)
-  nextStartingAfter = 0;
+  @IsString()
+  nextStartingAfter: string;
 
   @IsNotEmpty()
   @IsString()
-  order: string;
+  sortBy: string;
+
+  @IsNotEmpty()
+  @IsString()
+  sortDirection: string;
 
   @IsNotEmpty()
   @IsInt()

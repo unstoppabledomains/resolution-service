@@ -14,8 +14,7 @@ import {
   DomainResponse,
   DomainsListQuery,
   DomainsListResponse,
-} from './models/Domains';
-import { domain } from 'process';
+} from './dto/Domains';
 
 @OpenAPI({
   security: [{ apiKeyAuth: [] }],
@@ -96,9 +95,11 @@ export class DomainsController {
       });
     }
 
-    if (query.startingAfter !== 0) {
+    if (query.startingAfter) {
       where.push({
-        query: `domain.id > :startingAfter`,
+        query: `${query.sort.column} ${
+          query.sort.direction === 'ASC' ? '>' : '<'
+        } :startingAfter`,
         parameters: { startingAfter: query.startingAfter },
       });
     }
@@ -114,9 +115,13 @@ export class DomainsController {
     }
     qb.orderBy(query.sort.column, query.sort.direction);
     qb.take(query.perPage + 1);
-    let domains = await qb.getMany();
+    const domains = await qb.getMany();
     const hasMore = domains.length > query.perPage;
-    domains = domains.slice(0, query.perPage);
+    if (hasMore) {
+      domains.pop();
+    }
+    const lastDomain =
+      domains.length !== 0 ? domains[domains.length - 1] : undefined;
 
     const response = new DomainsListResponse();
     response.data = [];
@@ -139,10 +144,10 @@ export class DomainsController {
     }
     response.meta = {
       perPage: query.perPage,
-      nextStartingAfter: domains.length
-        ? domains[domains.length - 1].id || 0
-        : 0,
-      order: 'id ASC',
+      nextStartingAfter:
+        lastDomain?.[query.sortBy]?.toString() || query.startingAfter || '',
+      sortBy: query.sortBy,
+      sortDirection: query.sortDirection,
       hasMore,
     };
     return response;

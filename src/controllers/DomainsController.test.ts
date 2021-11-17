@@ -8,7 +8,7 @@ import { env } from '../env';
 import { getConnection } from 'typeorm';
 import { Blockchain } from '../types/common';
 import { ETHContracts } from '../contracts';
-import { DomainAttributes } from './models/Domains';
+import { DomainAttributes } from './dto/Domains';
 
 describe('DomainsController', () => {
   let testApiKey: ApiKey;
@@ -377,8 +377,9 @@ describe('DomainsController', () => {
         ],
         meta: {
           hasMore: true,
-          nextStartingAfter: testDomain.id,
-          order: 'id ASC',
+          nextStartingAfter: testDomain.id?.toString(),
+          sortBy: 'id',
+          sortDirection: 'ASC',
           perPage: 1,
         },
       });
@@ -417,8 +418,9 @@ describe('DomainsController', () => {
         ],
         meta: {
           hasMore: false,
-          nextStartingAfter: testDomain.id,
-          order: 'id ASC',
+          nextStartingAfter: testDomain.id?.toString(),
+          sortBy: 'id',
+          sortDirection: 'ASC',
           perPage: 1,
         },
       });
@@ -457,8 +459,9 @@ describe('DomainsController', () => {
         meta: {
           hasMore: false,
           perPage: 100,
-          nextStartingAfter: testDomain.id,
-          order: 'id ASC',
+          nextStartingAfter: testDomain.id?.toString(),
+          sortBy: 'id',
+          sortDirection: 'ASC',
         },
       });
       expect(res.status).eq(200);
@@ -497,9 +500,10 @@ describe('DomainsController', () => {
         ],
         meta: {
           hasMore: false,
-          order: 'id ASC',
+          sortBy: 'id',
+          sortDirection: 'ASC',
           perPage: 100,
-          nextStartingAfter: testDomain.id,
+          nextStartingAfter: testDomain.id?.toString(),
         },
       });
       expect(res.status).eq(200);
@@ -598,9 +602,10 @@ describe('DomainsController', () => {
         ],
         meta: {
           hasMore: true,
-          order: 'id ASC',
+          sortBy: 'id',
+          sortDirection: 'ASC',
           perPage: 1,
-          nextStartingAfter: testDomainOne.id,
+          nextStartingAfter: testDomainOne.id?.toString(),
         },
       });
       expect(res.status).eq(200);
@@ -767,9 +772,10 @@ describe('DomainsController', () => {
         ],
         meta: {
           hasMore: false,
-          nextStartingAfter: domainFour.id,
+          nextStartingAfter: domainFour.id?.toString(),
           perPage: 100,
-          order: 'id ASC',
+          sortBy: 'id',
+          sortDirection: 'ASC',
         },
       });
       expect(res.status).eq(200);
@@ -822,13 +828,15 @@ describe('DomainsController', () => {
         ],
         meta: {
           hasMore: false,
-          nextStartingAfter: domain.id,
+          nextStartingAfter: domain.id?.toString(),
           perPage: 100,
-          order: 'id ASC',
+          sortBy: 'id',
+          sortDirection: 'ASC',
         },
       });
       expect(res.status).eq(200);
     });
+
     it('should return no domain from empty startingAfter', async () => {
       const { domain } = await DomainTestHelper.createTestDomain({
         name: 'test.crypto',
@@ -838,9 +846,9 @@ describe('DomainsController', () => {
       });
       const res = await supertest(api)
         .get(
-          `/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&startingAfter=${
+          `/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&startingAfter=${(
             (domain.id || 0) + 1
-          }`,
+          ).toString()}`,
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
@@ -848,9 +856,10 @@ describe('DomainsController', () => {
         data: [],
         meta: {
           hasMore: false,
-          nextStartingAfter: 0,
+          nextStartingAfter: (domain.id || 0) + 1,
           perPage: 100,
-          order: 'id ASC',
+          sortBy: 'id',
+          sortDirection: 'ASC',
         },
       });
       expect(res.status).eq(200);
@@ -883,24 +892,6 @@ describe('DomainsController', () => {
       expect(res.body).containSubset({
         message:
           'Given parameter owners is invalid. Value ("0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2") cannot be parsed into JSON.',
-      });
-      expect(res.status).eq(400);
-    });
-    it('should return error on invalid startingAfter value', async () => {
-      const res = await supertest(api)
-        .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&startingAfter=-1',
-        )
-        .auth(testApiKey.apiKey, { type: 'bearer' })
-        .send();
-      expect(res.body).containSubset({
-        errors: [
-          {
-            constraints: {
-              min: 'startingAfter must not be less than 0',
-            },
-          },
-        ],
       });
       expect(res.status).eq(400);
     });
@@ -1006,6 +997,13 @@ describe('DomainsController', () => {
           },
         },
       ],
+      meta: {
+        hasMore: false,
+        nextStartingAfter: testDomainOne.id?.toString(),
+        perPage: 100,
+        sortBy: 'id',
+        sortDirection: 'ASC',
+      },
     });
     expect(res.status).eq(200);
   });
@@ -1065,6 +1063,13 @@ describe('DomainsController', () => {
           },
         },
       ],
+      meta: {
+        hasMore: false,
+        nextStartingAfter: testDomainTwo.id?.toString(),
+        perPage: 100,
+        sortBy: 'id',
+        sortDirection: 'ASC',
+      },
     });
     expect(res.status).eq(200);
   });
@@ -1191,7 +1196,7 @@ describe('DomainsController', () => {
         a: { domain: Domain; resolution: DomainsResolution },
         b: { domain: Domain; resolution: DomainsResolution },
       ) => number,
-    ): DomainAttributes[] {
+    ) {
       const expectedData = testDomains
         .map((dom) => {
           // simple filter to get expected data
@@ -1219,13 +1224,15 @@ describe('DomainsController', () => {
             },
           };
         })
-        .sort((a, b) => sortFunc(a.sortingFields, b.sortingFields))
-        .map(({ sortingFields, ...keep }) => keep);
-      return expectedData;
+        .sort((a, b) => sortFunc(a.sortingFields, b.sortingFields));
+      return {
+        domains: expectedData.map(({ sortingFields }) => sortingFields.domain),
+        expectedData: expectedData.map(({ sortingFields, ...keep }) => keep),
+      };
     }
 
     it('should sort by domain name ascending', async () => {
-      const expectedData = getSortedTestDomains((a, b) =>
+      const { domains, expectedData } = getSortedTestDomains((a, b) =>
         a.domain.name.localeCompare(b.domain.name),
       );
 
@@ -1239,10 +1246,17 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
       expect(res.body.data).to.exist;
       expect(res.body.data).to.deep.equal(expectedData);
+      expect(res.body.meta).to.deep.equal({
+        hasMore: false,
+        nextStartingAfter: domains[domains.length - 1].name,
+        perPage: 100,
+        sortBy: 'name',
+        sortDirection: 'ASC',
+      });
     });
 
     it('should sort by domain name descending', async () => {
-      const expectedData = getSortedTestDomains(
+      const { domains, expectedData } = getSortedTestDomains(
         (a, b) => -a.domain.name.localeCompare(b.domain.name),
       );
 
@@ -1256,9 +1270,16 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
       expect(res.body.data).to.exist;
       expect(res.body.data).to.deep.equal(expectedData);
+      expect(res.body.meta).to.deep.equal({
+        hasMore: false,
+        nextStartingAfter: domains[domains.length - 1].name,
+        perPage: 100,
+        sortBy: 'name',
+        sortDirection: 'DESC',
+      });
     });
     it('should sort by domain id ascending by default', async () => {
-      const expectedData = getSortedTestDomains(
+      const { domains, expectedData } = getSortedTestDomains(
         (a, b) => (a.domain.id || 0) - (b.domain.id || 0),
       );
 
@@ -1270,10 +1291,17 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
       expect(res.body.data).to.exist;
       expect(res.body.data).to.deep.equal(expectedData);
+      expect(res.body.meta).to.deep.equal({
+        hasMore: false,
+        nextStartingAfter: domains[domains.length - 1].id?.toString(),
+        perPage: 100,
+        sortBy: 'id',
+        sortDirection: 'ASC',
+      });
     });
 
     it('should sort by domain id descending', async () => {
-      const expectedData = getSortedTestDomains(
+      const { domains, expectedData } = getSortedTestDomains(
         (a, b) => (b.domain.id || 0) - (a.domain.id || 0),
       );
 
@@ -1287,6 +1315,53 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
       expect(res.body.data).to.exist;
       expect(res.body.data).to.deep.equal(expectedData);
+      expect(res.body.meta).to.deep.equal({
+        hasMore: false,
+        nextStartingAfter: domains[domains.length - 1].id?.toString(),
+        perPage: 100,
+        sortBy: 'id',
+        sortDirection: 'DESC',
+      });
+    });
+
+    it('should return error for invalid sortBy', async () => {
+      const res = await supertest(api)
+        .get(
+          `/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&sortBy=invalid`,
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+
+      expect(res.status).eq(400);
+      expect(res.body).containSubset({
+        errors: [
+          {
+            constraints: {
+              isIn: 'sortBy must be one of the following values: id, name',
+            },
+          },
+        ],
+      });
+    });
+
+    it('should return error for invalid sortDirection', async () => {
+      const res = await supertest(api)
+        .get(
+          `/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&sortDirection=invalid`,
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+
+      expect(res.status).eq(400);
+      expect(res.body).containSubset({
+        errors: [
+          {
+            constraints: {
+              isIn: 'sortDirection must be one of the following values: ASC, DESC',
+            },
+          },
+        ],
+      });
     });
   });
 });
