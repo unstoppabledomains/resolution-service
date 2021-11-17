@@ -16,7 +16,6 @@ const parsePictureRecord = (avatarRecord: string) => {
     throw new Error('Invalid avatar record');
   }
   const [, chainId, nftStandard, contractAddress, tokenId] = matches;
-
   return { chainId, nftStandard, contractAddress, tokenId };
 };
 
@@ -53,7 +52,7 @@ const constructNFTContract = async (
   return nftContract;
 };
 
-const isOwnedByAddress = (
+export const isOwnedByAddress = async (
   ownerAddress: string,
   {
     contract,
@@ -64,7 +63,7 @@ const isOwnedByAddress = (
     nftStandard: string;
     tokenId: string;
   },
-) => {
+): Promise<boolean> => {
   if (nftStandard === 'erc721') {
     return contract.functions
       .ownerOf(tokenId)
@@ -82,10 +81,10 @@ const isOwnedByAddress = (
         ([address]) => address.toLowerCase() === ownerAddress.toLowerCase(),
       );
   }
-  return '';
+  return false;
 };
 
-const getTokenURI = ({
+export const getTokenURI = async ({
   contract,
   nftStandard,
   tokenId,
@@ -93,7 +92,7 @@ const getTokenURI = ({
   contract: ethers.Contract;
   nftStandard: string;
   tokenId: string;
-}) => {
+}): Promise<string> => {
   if (nftStandard === 'erc721') {
     return contract.functions.tokenURI(tokenId).then(([tokenURI]) => tokenURI);
   }
@@ -113,13 +112,46 @@ const useIpfsGateway = (url: string) => {
   return url;
 };
 
-const getImageURLFromTokenURI = async (tokenURI: string) => {
+export const getImageURLFromTokenURI = async (
+  tokenURI: string,
+): Promise<string> => {
   const resp = await nodeFetch(useIpfsGateway(tokenURI));
   if (!resp.ok) {
     throw new Error('Failed to fetch from tokenURI');
   }
   const metadata = await resp.json();
   return metadata.image || metadata.image_url;
+};
+
+export const getSocialPicture = async (
+  domainName: string,
+  avatarRecord: string,
+  ownerAddress: string,
+): Promise<string | undefined> => {
+  const { pictureOrUrl, nftStandard } = await getSocialPictureUrl(
+    avatarRecord,
+    ownerAddress,
+  );
+  let socialPicture = '';
+  if (pictureOrUrl) {
+    let data = '',
+      mimeType = null;
+    if (nftStandard === 'cryptopunks') {
+      data = btoa(
+        pictureOrUrl
+          .replace(`data:image/svg+xml;utf8,`, ``)
+          .replace(
+            `<svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 24 24">`,
+            `<svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 24 24"><rect width="100%" height="100%" fill="#648595"/>`,
+          ),
+      );
+      mimeType = 'image/svg+xml';
+    } else {
+      [data, mimeType] = await getNFTSocialPicture(pictureOrUrl);
+    }
+    socialPicture = createSocialPictureImage(domainName, data, mimeType);
+    return socialPicture;
+  }
 };
 
 export const getSocialPictureUrl = async (
@@ -179,7 +211,6 @@ export const getNFTSocialPicture = async (
   const data = await resp.buffer();
   const mimeType = resp.headers.get('Content-Type');
   const base64 = data.toString('base64');
-
   return [base64, mimeType];
 };
 
@@ -194,18 +225,17 @@ const getFontSize = (name: string): number => {
 };
 
 export const createSocialPictureImage = (
-  domain: Domain,
+  domainName: string,
   data: string,
   mimeType: string | null,
 ): string => {
-  let name = domain.name;
-  if (name.length > 30) {
-    name = name.substring(0, 30 - 3) + '...';
+  if (domainName.length > 30) {
+    domainName = domainName.substring(0, 30 - 3) + '...';
   }
-  const fontSize = getFontSize(name);
+  const fontSize = getFontSize(domainName);
   const svg = createSVGfromTemplate({
     background_image: data,
-    domain: name,
+    domain: domainName,
     fontSize,
     mimeType: mimeType || undefined,
   });

@@ -5,6 +5,8 @@ import { DomainTestHelper } from '../utils/testing/DomainTestHelper';
 import { eip137Namehash } from '../utils/namehash';
 import { DefaultImageData, BackgroundColor } from '../utils/generalImage';
 import nock from 'nock';
+import sinon from 'sinon';
+import * as socialModule from '../utils/socialPicture/index';
 
 describe('MetaDataController', () => {
   describe('GET /metadata/:DomainOrToken', () => {
@@ -65,6 +67,119 @@ describe('MetaDataController', () => {
         }),
       );
       expect(resWithName.background_color).eq(BackgroundColor);
+    });
+
+    it('should return the same image regardless of endpoint', async () => {
+      const domain = await DomainTestHelper.createTestDomain({
+        name: 'matt.crypto',
+        node: eip137Namehash('matt.crypto'),
+        resolution: {
+          'social.picture.value':
+            '1/erc721:0x9307edc4f23d87f9783a999f870b728ab9d34fe5/3531',
+        },
+        ownerAddress: '0xa59C818Ddb801f1253edEbf0Cf08c9E481EA2fE5',
+      });
+      const isOwnedByAddressStub = sinon.stub(socialModule, 'isOwnedByAddress');
+      isOwnedByAddressStub.resolves(true);
+
+      const getTokenURIStub = sinon.stub(socialModule, 'getTokenURI');
+      getTokenURIStub.resolves(
+        'https://time.mypinata.cloud/ipfs/QmTfEF7WNLkkD51vGY4Yrj77p3aBjGf15gRcuQzWXMUCC8/3531',
+      );
+
+      const getImageFromTokenURIStub = sinon.stub(
+        socialModule,
+        'getImageURLFromTokenURI',
+      );
+      getImageFromTokenURIStub.resolves(
+        'ipfs://QmYMeZcMhfxt9yvQtHBgudMsAPvLTSb2H2j178orf9ZnNM',
+      );
+
+      const getNFTSocialPictureStub = sinon.stub(
+        socialModule,
+        'getNFTSocialPicture',
+      );
+      getNFTSocialPictureStub.resolves(['base64Data', 'image/jpeg']);
+
+      const metadataResponse = await supertest(api)
+        .get(`/metadata/${domain.domain.name}`)
+        .send()
+        .then((r) => r.body);
+
+      const imageResponse = await supertest(api)
+        .get(`/image/${domain.domain.name}`)
+        .send()
+        .then((r) => r.body);
+
+      const expectedBase64Data =
+        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgICA8ZGVmcz4KICAgICAgICAgIDxwYXR0ZXJuIGlkPSJiYWNrSW1nIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSIwIiB5PSIwIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCI+CiAgICAgICAgICAgIDxpbWFnZSBocmVmPSJkYXRhOmltYWdlL2pwZWc7YmFzZTY0LGJhc2U2NERhdGEiIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiAvPgogICAgICAgICAgPC9wYXR0ZXJuPgogICAgICAgICAgPGZpbHRlciBpZD0ic2hhZG93eSI+CiAgICAgICAgICAgIDxmZURpZmZ1c2VMaWdodGluZyBpbj0iU291cmNlR3JhcGhpYyIgcmVzdWx0PSJsaWdodCIKICAgICAgICAgICAgICAgIGxpZ2h0aW5nLWNvbG9yPSJ3aGl0ZSI+CiAgICAgICAgICAgICAgPGZlRGlzdGFudExpZ2h0IGF6aW11dGg9IjI0MCIgZWxldmF0aW9uPSI0MCIvPgogICAgICAgICAgICA8L2ZlRGlmZnVzZUxpZ2h0aW5nPgogICAgICAgICAgICA8ZmVDb21wb3NpdGUgaW49IlNvdXJjZUdyYXBoaWMiIGluMj0ibGlnaHQiCiAgICAgICAgICAgICAgICAgICAgICAgIG9wZXJhdG9yPSJhcml0aG1ldGljIiBrMT0iMSIgazI9IjAiIGszPSIwIiBrND0iMCIvPgogICAgICAgICAgPC9maWx0ZXI+CiAgICA8L2RlZnM+CiAgICA8cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNiYWNrSW1nKSIgZmlsdGVyPSJ1cmwoI3NoYWRvd3kpIi8+CgogICAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTgsMjEpIj4KICAgICAgPHBhdGggeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBkPSJNMC42NjY2ODcgNDUuMzg5NUwwLjY3MDM1NCA0NS4zODY3TDAuNjc3Njg3IDQ1LjM4MTJMMC42NjY2ODcgNDUuMzg5NUwwLjY4Nzc3IDQ1LjM3MzlMMTEuNzUxMSAzNy4wNTEyQzExLjY5NTMgMzYuNDY2NSAxMS42NjY3IDM1Ljg3MzkgMTEuNjY2NyAzNS4yNzQ2VjIwLjU2MTlMMjIuNjY2NyAxNC40OTNWMjguODM3OEwzNS41IDE5LjE4MjZWNy40MTI0OUw0OC4zMzMzIDAuMzMyMDMxVjkuNTI2NTFMNTkuMzMzMyAxLjI1MTU3VjMuMDkwNjVMNDguMzMzMyAxMS4wMjA4VjEyLjUxNUw1OS4zMzMzIDQuOTI5NzNWNi43Njg4MUw0OC4zMzMzIDE0LjAwOTNWMTUuNTAzNUw1OS4zMzMzIDguNjA3ODlWMTAuNDQ3TDQ4LjMzMzMgMTYuOTk3OFYxOC40OTNMNTkuMzMzMyAxMi4yODYxVjE0LjEyNTFMNDguMzMzMyAxOS45ODcyVjIxLjQ4MDVMNTkuMzMzMyAxNS45NjQyVjE3LjgwMzNMNDguMzMzMyAyMi45NzQ4VjI0LjQ2OUw1OS4zMzMzIDE5LjY0MjRWMjEuNDgxNUw0OC4zMzMzIDI1Ljk2MzNWMzUuMjc0NkM0OC4zMzMzIDQ1LjQzMTUgNDAuMTI1MiA1My42NjU0IDMwIDUzLjY2NTRDMjEuNzE3MiA1My42NjU0IDE0LjcxNzMgNDguMTU1NCAxMi40NDQxIDQwLjU5TDAuNjc0MDIgNDUuMzg1OEwwLjY2NjY4NyA0NS4zODk1Wk0xMi4yNjExIDM5LjkzNzJMMC42ODEzNTQgNDUuMzgxMkwwLjY3Njc3IDQ1LjM4NEwxMi4zNDg5IDQwLjI2MkMxMi4zMTg2IDQwLjE1NDEgMTIuMjg5NCA0MC4wNDU4IDEyLjI2MTEgMzkuOTM3MlpNMTEuODY4OCAzOC4wMTQ4TDAuNjg3NzcgNDUuMzczOUwwLjY3NzY4NyA0NS4zODEyTDExLjkxOTQgMzguMzM0OEMxMS45MDE2IDM4LjIyODQgMTEuODg0NyAzOC4xMjE3IDExLjg2ODggMzguMDE0OFpNMTIuMTA1OSAzOS4yOTQxTDAuNjk2MDIgNDUuMzczOUwxMi4xODAyIDM5LjYxNDZDMTIuMTU0NSAzOS41MDgyIDEyLjEyOTcgMzkuNDAxMyAxMi4xMDU5IDM5LjI5NDFaTTExLjc4NDggMzcuMzczNUwwLjcwMTUyIDQ1LjM2NDdMMTEuODI0IDM3LjY5NDdDMTEuODEgMzcuNTg3OSAxMS43OTY5IDM3LjQ4MDggMTEuNzg0OCAzNy4zNzM1Wk0zNS41IDMxLjE5MzZMMjIuNzYxOCAzNi4zODUxQzIzLjI4NjQgMzkuNDEwOCAyNS45MTcxIDQxLjcxMTMgMjkuMDgzNCA0MS43MTEzQzMyLjYyNzIgNDEuNzExMyAzNS41IDM4LjgyOTUgMzUuNSAzNS4yNzQ2VjMxLjE5MzZaTTM1LjUgMjkuMDA4OEwyMi42NjY3IDM1LjA0MzhWMzUuMjc0NkMyMi42NjY3IDM1LjQyNjUgMjIuNjcxOSAzNS41NzcxIDIyLjY4MjIgMzUuNzI2NEwzNS41IDMwLjEwMTJWMjkuMDA4OFpNMzUuNSAyNi44MjY3TDIyLjY2NjcgMzMuNjY1NFYzNC4zNTQxTDM1LjUgMjcuOTE3M1YyNi44MjY3Wk0zNS41IDI0LjY0MUwyMi42NjY3IDMyLjI4NTFWMzIuOTc1N0wzNS41IDI1LjczNDNWMjQuNjQxWk0zNS41IDIyLjQ1NzFMMjIuNjY2NyAzMC45MDU4VjMxLjU5NTVMMzUuNSAyMy41NDk1VjIyLjQ1NzFaTTM1LjUgMjAuMjc0MUwyMi42NjY3IDI5LjUyNzRWMzAuMjE2MkwzNS41IDIxLjM2NTZWMjAuMjc0MVpNMC42NzY3NyA0NS4zODRMMC42NzQwMiA0NS4zODU4TDAuNjgxMzU0IDQ1LjM4MTJMMTIuMDM3NyAzOC45NzM2QzEyLjAxNiAzOC44NjcyIDExLjk5NTIgMzguNzYwNCAxMS45NzU0IDM4LjY1MzNMMC42Nzc2ODcgNDUuMzgxMkwwLjY3NDAyIDQ1LjM4NThMMC42NzAzNTQgNDUuMzg2N0wwLjY3Njc3IDQ1LjM4NFoiIGZpbGw9IndoaXRlIi8+CiAgICA8L2c+CiAgICA8ZyB0cmFuc2Zvcm09InNjYWxlKDEpIHRyYW5zbGF0ZSgyNTgsIDIxKSI+CiAgICAgIDxwYXRoIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZD0iTTIyIDExTDE5LjU2IDguMjFMMTkuOSA0LjUyTDE2LjI5IDMuN0wxNC40IDAuNUwxMSAxLjk2TDcuNiAwLjVMNS43MSAzLjY5TDIuMSA0LjVMMi40NCA4LjJMMCAxMUwyLjQ0IDEzLjc5TDIuMSAxNy40OUw1LjcxIDE4LjMxTDcuNiAyMS41TDExIDIwLjAzTDE0LjQgMjEuNDlMMTYuMjkgMTguM0wxOS45IDE3LjQ4TDE5LjU2IDEzLjc5TDIyIDExWk05LjA5IDE1LjcyTDUuMjkgMTEuOTFMNi43NyAxMC40M0w5LjA5IDEyLjc2TDE0Ljk0IDYuODlMMTYuNDIgOC4zN0w5LjA5IDE1LjcyWiIgZmlsbD0id2hpdGUiLz4KICAgIDwvZz4KICAgIDx0ZXh0CiAgICAgIHg9IjIwIgogICAgICB5PSIyNTAiCiAgICAgIGZvbnQtc2l6ZT0iMzJweCIKICAgICAgZm9udC13ZWlnaHQ9ImJvbGQiCiAgICAgIGZpbGw9IiNGRkZGRkYiCiAgICAgIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksIC1hcHBsZS1zeXN0ZW0sIEJsaW5rTWFjU3lzdGVtRm9udCwgJ1NlZ29lIFVJJywgUm9ib3RvLCBVYnVudHUsICdIZWx2ZXRpY2EgTmV1ZScsIE94eWdlbiwgQ2FudGFyZWxsLCBzYW5zLXNlcmlmIgogICAgICA+CiAgICAgICAgbWF0dAogICAgPC90ZXh0PgogICAgPHRleHQKICAgICAgeD0iMjAiCiAgICAgIHk9IjI4MCIKICAgICAgZm9udC1zaXplPSIyNHB4IgogICAgICBmaWxsPSIjRkZGRkZGIgogICAgICB3ZWlnaHQ9IjQwMCIKICAgICAgZm9udC1mYW1pbHk9InN5c3RlbS11aSwgLWFwcGxlLXN5c3RlbSwgQmxpbmtNYWNTeXN0ZW1Gb250LCAnU2Vnb2UgVUknLCBSb2JvdG8sIFVidW50dSwgJ0hlbHZldGljYSBOZXVlJywgT3h5Z2VuLCBDYW50YXJlbGwsIHNhbnMtc2VyaWYiCiAgICAgID4KICAgICAgICAuY3J5cHRvCiAgICA8L3RleHQ+CiAgPC9zdmc+';
+      expect(metadataResponse.image).to.equal(expectedBase64Data);
+      expect(imageResponse.image_data).to.equal(expectedBase64Data);
+
+      isOwnedByAddressStub.restore();
+      getTokenURIStub.restore();
+      getImageFromTokenURIStub.restore();
+      getNFTSocialPictureStub.restore();
+    });
+
+    it('should be able to return the correct nft image', async () => {
+      const domain = await DomainTestHelper.createTestDomain({
+        name: 'matt.crypto',
+        node: eip137Namehash('matt.crypto'),
+        resolution: {
+          'social.picture.value':
+            '1/erc721:0x9307edc4f23d87f9783a999f870b728ab9d34fe5/3531',
+        },
+        ownerAddress: '0xa59C818Ddb801f1253edEbf0Cf08c9E481EA2fE5',
+      });
+      const isOwnedByAddressStub = sinon.stub(socialModule, 'isOwnedByAddress');
+      isOwnedByAddressStub.resolves(true);
+
+      const getTokenURIStub = sinon.stub(socialModule, 'getTokenURI');
+      getTokenURIStub.resolves(
+        'https://time.mypinata.cloud/ipfs/QmTfEF7WNLkkD51vGY4Yrj77p3aBjGf15gRcuQzWXMUCC8/3531',
+      );
+
+      const getImageFromTokenURIStub = sinon.stub(
+        socialModule,
+        'getImageURLFromTokenURI',
+      );
+      getImageFromTokenURIStub.resolves(
+        'ipfs://QmYMeZcMhfxt9yvQtHBgudMsAPvLTSb2H2j178orf9ZnNM',
+      );
+
+      const getNFTSocialPictureStub = sinon.stub(
+        socialModule,
+        'getNFTSocialPicture',
+      );
+      getNFTSocialPictureStub.resolves(['base64Data', 'image/jpeg']);
+
+      const response = await supertest(api)
+        .get(`/metadata/${domain.domain.name}`)
+        .send()
+        .then((r) => r.body);
+
+      expect(isOwnedByAddressStub.calledOnce).to.eq(true);
+      expect(getTokenURIStub.calledOnce).to.eq(true);
+      expect(getImageFromTokenURIStub.calledOnce).to.eq(true);
+      expect(getNFTSocialPictureStub.calledOnce).to.eq(true);
+
+      const expectedBase64Data =
+        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgICA8ZGVmcz4KICAgICAgICAgIDxwYXR0ZXJuIGlkPSJiYWNrSW1nIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSIwIiB5PSIwIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCI+CiAgICAgICAgICAgIDxpbWFnZSBocmVmPSJkYXRhOmltYWdlL2pwZWc7YmFzZTY0LGJhc2U2NERhdGEiIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiAvPgogICAgICAgICAgPC9wYXR0ZXJuPgogICAgICAgICAgPGZpbHRlciBpZD0ic2hhZG93eSI+CiAgICAgICAgICAgIDxmZURpZmZ1c2VMaWdodGluZyBpbj0iU291cmNlR3JhcGhpYyIgcmVzdWx0PSJsaWdodCIKICAgICAgICAgICAgICAgIGxpZ2h0aW5nLWNvbG9yPSJ3aGl0ZSI+CiAgICAgICAgICAgICAgPGZlRGlzdGFudExpZ2h0IGF6aW11dGg9IjI0MCIgZWxldmF0aW9uPSI0MCIvPgogICAgICAgICAgICA8L2ZlRGlmZnVzZUxpZ2h0aW5nPgogICAgICAgICAgICA8ZmVDb21wb3NpdGUgaW49IlNvdXJjZUdyYXBoaWMiIGluMj0ibGlnaHQiCiAgICAgICAgICAgICAgICAgICAgICAgIG9wZXJhdG9yPSJhcml0aG1ldGljIiBrMT0iMSIgazI9IjAiIGszPSIwIiBrND0iMCIvPgogICAgICAgICAgPC9maWx0ZXI+CiAgICA8L2RlZnM+CiAgICA8cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNiYWNrSW1nKSIgZmlsdGVyPSJ1cmwoI3NoYWRvd3kpIi8+CgogICAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTgsMjEpIj4KICAgICAgPHBhdGggeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBkPSJNMC42NjY2ODcgNDUuMzg5NUwwLjY3MDM1NCA0NS4zODY3TDAuNjc3Njg3IDQ1LjM4MTJMMC42NjY2ODcgNDUuMzg5NUwwLjY4Nzc3IDQ1LjM3MzlMMTEuNzUxMSAzNy4wNTEyQzExLjY5NTMgMzYuNDY2NSAxMS42NjY3IDM1Ljg3MzkgMTEuNjY2NyAzNS4yNzQ2VjIwLjU2MTlMMjIuNjY2NyAxNC40OTNWMjguODM3OEwzNS41IDE5LjE4MjZWNy40MTI0OUw0OC4zMzMzIDAuMzMyMDMxVjkuNTI2NTFMNTkuMzMzMyAxLjI1MTU3VjMuMDkwNjVMNDguMzMzMyAxMS4wMjA4VjEyLjUxNUw1OS4zMzMzIDQuOTI5NzNWNi43Njg4MUw0OC4zMzMzIDE0LjAwOTNWMTUuNTAzNUw1OS4zMzMzIDguNjA3ODlWMTAuNDQ3TDQ4LjMzMzMgMTYuOTk3OFYxOC40OTNMNTkuMzMzMyAxMi4yODYxVjE0LjEyNTFMNDguMzMzMyAxOS45ODcyVjIxLjQ4MDVMNTkuMzMzMyAxNS45NjQyVjE3LjgwMzNMNDguMzMzMyAyMi45NzQ4VjI0LjQ2OUw1OS4zMzMzIDE5LjY0MjRWMjEuNDgxNUw0OC4zMzMzIDI1Ljk2MzNWMzUuMjc0NkM0OC4zMzMzIDQ1LjQzMTUgNDAuMTI1MiA1My42NjU0IDMwIDUzLjY2NTRDMjEuNzE3MiA1My42NjU0IDE0LjcxNzMgNDguMTU1NCAxMi40NDQxIDQwLjU5TDAuNjc0MDIgNDUuMzg1OEwwLjY2NjY4NyA0NS4zODk1Wk0xMi4yNjExIDM5LjkzNzJMMC42ODEzNTQgNDUuMzgxMkwwLjY3Njc3IDQ1LjM4NEwxMi4zNDg5IDQwLjI2MkMxMi4zMTg2IDQwLjE1NDEgMTIuMjg5NCA0MC4wNDU4IDEyLjI2MTEgMzkuOTM3MlpNMTEuODY4OCAzOC4wMTQ4TDAuNjg3NzcgNDUuMzczOUwwLjY3NzY4NyA0NS4zODEyTDExLjkxOTQgMzguMzM0OEMxMS45MDE2IDM4LjIyODQgMTEuODg0NyAzOC4xMjE3IDExLjg2ODggMzguMDE0OFpNMTIuMTA1OSAzOS4yOTQxTDAuNjk2MDIgNDUuMzczOUwxMi4xODAyIDM5LjYxNDZDMTIuMTU0NSAzOS41MDgyIDEyLjEyOTcgMzkuNDAxMyAxMi4xMDU5IDM5LjI5NDFaTTExLjc4NDggMzcuMzczNUwwLjcwMTUyIDQ1LjM2NDdMMTEuODI0IDM3LjY5NDdDMTEuODEgMzcuNTg3OSAxMS43OTY5IDM3LjQ4MDggMTEuNzg0OCAzNy4zNzM1Wk0zNS41IDMxLjE5MzZMMjIuNzYxOCAzNi4zODUxQzIzLjI4NjQgMzkuNDEwOCAyNS45MTcxIDQxLjcxMTMgMjkuMDgzNCA0MS43MTEzQzMyLjYyNzIgNDEuNzExMyAzNS41IDM4LjgyOTUgMzUuNSAzNS4yNzQ2VjMxLjE5MzZaTTM1LjUgMjkuMDA4OEwyMi42NjY3IDM1LjA0MzhWMzUuMjc0NkMyMi42NjY3IDM1LjQyNjUgMjIuNjcxOSAzNS41NzcxIDIyLjY4MjIgMzUuNzI2NEwzNS41IDMwLjEwMTJWMjkuMDA4OFpNMzUuNSAyNi44MjY3TDIyLjY2NjcgMzMuNjY1NFYzNC4zNTQxTDM1LjUgMjcuOTE3M1YyNi44MjY3Wk0zNS41IDI0LjY0MUwyMi42NjY3IDMyLjI4NTFWMzIuOTc1N0wzNS41IDI1LjczNDNWMjQuNjQxWk0zNS41IDIyLjQ1NzFMMjIuNjY2NyAzMC45MDU4VjMxLjU5NTVMMzUuNSAyMy41NDk1VjIyLjQ1NzFaTTM1LjUgMjAuMjc0MUwyMi42NjY3IDI5LjUyNzRWMzAuMjE2MkwzNS41IDIxLjM2NTZWMjAuMjc0MVpNMC42NzY3NyA0NS4zODRMMC42NzQwMiA0NS4zODU4TDAuNjgxMzU0IDQ1LjM4MTJMMTIuMDM3NyAzOC45NzM2QzEyLjAxNiAzOC44NjcyIDExLjk5NTIgMzguNzYwNCAxMS45NzU0IDM4LjY1MzNMMC42Nzc2ODcgNDUuMzgxMkwwLjY3NDAyIDQ1LjM4NThMMC42NzAzNTQgNDUuMzg2N0wwLjY3Njc3IDQ1LjM4NFoiIGZpbGw9IndoaXRlIi8+CiAgICA8L2c+CiAgICA8ZyB0cmFuc2Zvcm09InNjYWxlKDEpIHRyYW5zbGF0ZSgyNTgsIDIxKSI+CiAgICAgIDxwYXRoIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZD0iTTIyIDExTDE5LjU2IDguMjFMMTkuOSA0LjUyTDE2LjI5IDMuN0wxNC40IDAuNUwxMSAxLjk2TDcuNiAwLjVMNS43MSAzLjY5TDIuMSA0LjVMMi40NCA4LjJMMCAxMUwyLjQ0IDEzLjc5TDIuMSAxNy40OUw1LjcxIDE4LjMxTDcuNiAyMS41TDExIDIwLjAzTDE0LjQgMjEuNDlMMTYuMjkgMTguM0wxOS45IDE3LjQ4TDE5LjU2IDEzLjc5TDIyIDExWk05LjA5IDE1LjcyTDUuMjkgMTEuOTFMNi43NyAxMC40M0w5LjA5IDEyLjc2TDE0Ljk0IDYuODlMMTYuNDIgOC4zN0w5LjA5IDE1LjcyWiIgZmlsbD0id2hpdGUiLz4KICAgIDwvZz4KICAgIDx0ZXh0CiAgICAgIHg9IjIwIgogICAgICB5PSIyNTAiCiAgICAgIGZvbnQtc2l6ZT0iMzJweCIKICAgICAgZm9udC13ZWlnaHQ9ImJvbGQiCiAgICAgIGZpbGw9IiNGRkZGRkYiCiAgICAgIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksIC1hcHBsZS1zeXN0ZW0sIEJsaW5rTWFjU3lzdGVtRm9udCwgJ1NlZ29lIFVJJywgUm9ib3RvLCBVYnVudHUsICdIZWx2ZXRpY2EgTmV1ZScsIE94eWdlbiwgQ2FudGFyZWxsLCBzYW5zLXNlcmlmIgogICAgICA+CiAgICAgICAgbWF0dAogICAgPC90ZXh0PgogICAgPHRleHQKICAgICAgeD0iMjAiCiAgICAgIHk9IjI4MCIKICAgICAgZm9udC1zaXplPSIyNHB4IgogICAgICBmaWxsPSIjRkZGRkZGIgogICAgICB3ZWlnaHQ9IjQwMCIKICAgICAgZm9udC1mYW1pbHk9InN5c3RlbS11aSwgLWFwcGxlLXN5c3RlbSwgQmxpbmtNYWNTeXN0ZW1Gb250LCAnU2Vnb2UgVUknLCBSb2JvdG8sIFVidW50dSwgJ0hlbHZldGljYSBOZXVlJywgT3h5Z2VuLCBDYW50YXJlbGwsIHNhbnMtc2VyaWYiCiAgICAgID4KICAgICAgICAuY3J5cHRvCiAgICA8L3RleHQ+CiAgPC9zdmc+';
+
+      expect(response.image).to.equal(expectedBase64Data);
+      expect(response.attributes).to.deep.equal([
+        { trait_type: 'domain', value: 'matt.crypto' },
+        { trait_type: 'level', value: 2 },
+        { trait_type: 'length', value: 4 },
+        { trait_type: 'picture', value: 'verified-nft' },
+        { trait_type: 'type', value: 'standard' },
+      ]);
+
+      isOwnedByAddressStub.restore();
+      getTokenURIStub.restore();
+      getImageFromTokenURIStub.restore();
+      getNFTSocialPictureStub.restore();
     });
 
     it('should work with animal domain', async () => {
@@ -143,33 +258,6 @@ describe('MetaDataController', () => {
       expect(response.background_color).to.eq('4C47F7');
       expect(response.image_data).to.eq('correctImageData');
     });
-
-    // it('should return nft image from avatar record', async () => {
-    //   const domain = await DomainTestHelper.createTestDomain({
-    //     name: 'matt.crypto',
-    //     node: eip137Namehash('matt.crypto'),
-    //     resolution: {
-    //       'social.picture.value':
-    //         '1/erc721:0x9307edc4f23d87f9783a999f870b728ab9d34fe5/3531',
-    //     },
-    //     location: 'CNS',
-    //     ownerAddress: '0xa59C818Ddb801f1253edEbf0Cf08c9E481EA2fE5',
-    //   });
-    //   const expectedImageUrl =
-    //     'ipfs://QmYMeZcMhfxt9yvQtHBgudMsAPvLTSb2H2j178orf9ZnNM';
-    //   const response = await supertest(api)
-    //     .get(`/metadata/${domain.name}`)
-    //     .send()
-    //     .then((r) => r.body);
-    //   expect(response.image).to.equal(expectedImageUrl);
-    //   expect(response.attributes).to.deep.equal([
-    //     { trait_type: 'domain', value: 'trustbear.crypto' },
-    //     { trait_type: 'level', value: 2 },
-    //     { trait_type: 'length', value: 4 },
-    //     { trait_type: 'type', value: 'standard' },
-    //     { trait_type: 'avatar', value: 'verified-nft' },
-    //   ]);
-    // });
 
     it('should return branded animal domain metadata', async () => {
       nock('https://storage.googleapis.com')
