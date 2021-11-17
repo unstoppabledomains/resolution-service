@@ -12,15 +12,20 @@ import { logger } from './logger';
 chai.use(chaiSubset);
 chai.use(chaiAsPromised);
 chai.use(sinonChai);
+
+// This is placed in a function for easier test usage
+export const nockConfigure = () => {
+  nock.disableNetConnect();
+  nock.enableNetConnect((host) => {
+    return (
+      host.includes('127.0.0.1') ||
+      host.includes('localhost') ||
+      host.includes('storage.googleapis.com')
+    );
+  });
+};
 // disallow any 3-rd party http connections except localhost and google storage
-nock.disableNetConnect();
-nock.enableNetConnect((host) => {
-  return (
-    host.includes('127.0.0.1') ||
-    host.includes('localhost') ||
-    host.includes('storage.googleapis.com')
-  );
-});
+nockConfigure();
 
 if (process.env.NODE_ENV !== 'test') {
   throw new Error('NODE_ENV set to ' + process.env.NODE_ENV);

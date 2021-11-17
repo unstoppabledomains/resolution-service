@@ -290,7 +290,7 @@ describe('DomainsController', () => {
       },
       resolver: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
     });
-    const resolution = domain.getResolution(Blockchain.MATIC, 1337);
+    const resolution = await domain.getResolution(Blockchain.MATIC, 1337);
     resolution.ownerAddress = '0x0000000000000000000000000000000000000000';
     resolution.resolver = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
     resolution.registry = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
@@ -338,6 +338,92 @@ describe('DomainsController', () => {
       });
       expect(res.status).eq(200);
     });
+    it('should return true for hasMore', async () => {
+      const { domain: testDomain } = await DomainTestHelper.createTestDomain({
+        name: 'test1.crypto',
+        node: '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
+        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      });
+      await DomainTestHelper.createTestDomain({
+        name: 'test2.crypto',
+        node: '0xb899b9e12897c7cea4e24fc4815055b9777ad145507c5e0e1a4edac00b43cf0a',
+        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      });
+
+      const res = await supertest(api)
+        .get(
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&perPage=1',
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.body).to.deep.equal({
+        data: [
+          {
+            id: testDomain.name,
+            attributes: {
+              meta: {
+                domain: testDomain.name,
+                blockchain: 'ETH',
+                networkId: 1337,
+                owner: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+                registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+                resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
+              },
+              records: {},
+            },
+          },
+        ],
+        meta: {
+          hasMore: true,
+          nextStartingAfter: testDomain.id,
+          order: 'id ASC',
+          perPage: 1,
+        },
+      });
+      expect(res.status).eq(200);
+    });
+    it('should return false for hasMore', async () => {
+      const { domain: testDomain } = await DomainTestHelper.createTestDomain({
+        name: 'test1.crypto',
+        node: '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
+        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      });
+
+      const res = await supertest(api)
+        .get(
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&perPage=1',
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.body).to.deep.equal({
+        data: [
+          {
+            id: testDomain.name,
+            attributes: {
+              meta: {
+                domain: testDomain.name,
+                blockchain: 'ETH',
+                networkId: 1337,
+                owner: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+                registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+                resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
+              },
+              records: {},
+            },
+          },
+        ],
+        meta: {
+          hasMore: false,
+          nextStartingAfter: testDomain.id,
+          order: 'id ASC',
+          perPage: 1,
+        },
+      });
+      expect(res.status).eq(200);
+    });
     it('should return list of test domain', async () => {
       const { domain: testDomain, resolution } =
         await DomainTestHelper.createTestDomain({
@@ -368,6 +454,12 @@ describe('DomainsController', () => {
             },
           },
         ],
+        meta: {
+          hasMore: false,
+          perPage: 100,
+          nextStartingAfter: testDomain.id,
+          order: 'id ASC',
+        },
       });
       expect(res.status).eq(200);
     });
@@ -403,6 +495,12 @@ describe('DomainsController', () => {
             },
           },
         ],
+        meta: {
+          hasMore: false,
+          order: 'id ASC',
+          perPage: 100,
+          nextStartingAfter: testDomain.id,
+        },
       });
       expect(res.status).eq(200);
     });
@@ -498,11 +596,241 @@ describe('DomainsController', () => {
             },
           },
         ],
+        meta: {
+          hasMore: true,
+          order: 'id ASC',
+          perPage: 1,
+          nextStartingAfter: testDomainOne.id,
+        },
       });
       expect(res.status).eq(200);
     });
-    it('should return no domain from empty page', async () => {
-      await DomainTestHelper.createTestDomain({
+    it('should return single MATIC resolution for each domain with multiple resolutions', async () => {
+      const { domain: domainOne } =
+        await DomainTestHelper.createTestDomainWithMultipleResolutions(
+          {
+            name: 'test.crypto',
+            node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+            ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+          },
+          {
+            name: 'test.crypto',
+            node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+            ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+            resolution: {
+              'crypto.ETH.address':
+                '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            },
+            blockchain: Blockchain.MATIC,
+            networkId: env.APPLICATION.POLYGON.NETWORK_ID,
+          },
+        );
+      const { domain: domainTwo } =
+        await DomainTestHelper.createTestDomainWithMultipleResolutions(
+          {
+            name: 'test2.crypto',
+            node: '0xb899b9e12897c7cea4e24fc4815055b9777ad145507c5e0e1a4edac00b43cf0a',
+            ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+          },
+          {
+            name: 'test2.crypto',
+            node: '0xb899b9e12897c7cea4e24fc4815055b9777ad145507c5e0e1a4edac00b43cf0a',
+            ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+            resolution: {
+              'crypto.ETH.address':
+                '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            },
+            blockchain: Blockchain.MATIC,
+            networkId: env.APPLICATION.POLYGON.NETWORK_ID,
+          },
+        );
+      const { domain: domainThree } =
+        await DomainTestHelper.createTestDomainWithMultipleResolutions(
+          {
+            name: 'test3.crypto',
+            node: '0xde3d1be3661eadd92290828d632e0dd25703b6008cd92d03f51be25795fe922d',
+            ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+          },
+          {
+            name: 'test3.crypto',
+            node: '0xde3d1be3661eadd92290828d632e0dd25703b6008cd92d03f51be25795fe922d',
+            ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+            resolution: {
+              'crypto.ETH.address':
+                '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+            },
+            blockchain: Blockchain.MATIC,
+            networkId: env.APPLICATION.POLYGON.NETWORK_ID,
+          },
+        );
+      const { domain: domainFour } =
+        await DomainTestHelper.createTestDomainWithMultipleResolutions(
+          {
+            name: 'test4.crypto',
+            node: '0x36f2168288f23c788493ec57064e1e447342670aa096f834b862fed02439d202',
+            ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+          },
+          {
+            name: 'test4.crypto',
+            node: '0x36f2168288f23c788493ec57064e1e447342670aa096f834b862fed02439d202',
+            ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+            resolution: {
+              'crypto.ETH.address':
+                '0x033dc48B5dB4CA62861643e9D2C411D9eb6D1975',
+            },
+            blockchain: Blockchain.MATIC,
+            networkId: env.APPLICATION.POLYGON.NETWORK_ID,
+          },
+        );
+      const res = await supertest(api)
+        .get(`/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2`)
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.body).to.deep.equal({
+        data: [
+          {
+            id: domainOne.name,
+            attributes: {
+              meta: {
+                domain: domainOne.name,
+                blockchain: 'MATIC',
+                networkId: 1337,
+                owner: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+                registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+                resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
+              },
+              records: {
+                'crypto.ETH.address':
+                  '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+              },
+            },
+          },
+          {
+            id: domainTwo.name,
+            attributes: {
+              meta: {
+                domain: domainTwo.name,
+                blockchain: 'MATIC',
+                networkId: 1337,
+                owner: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+                registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+                resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
+              },
+              records: {
+                'crypto.ETH.address':
+                  '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+              },
+            },
+          },
+          {
+            id: domainThree.name,
+            attributes: {
+              meta: {
+                domain: domainThree.name,
+                blockchain: 'MATIC',
+                networkId: 1337,
+                owner: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+                registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+                resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
+              },
+              records: {
+                'crypto.ETH.address':
+                  '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+              },
+            },
+          },
+          {
+            id: domainFour.name,
+            attributes: {
+              meta: {
+                domain: domainFour.name,
+                blockchain: 'MATIC',
+                networkId: 1337,
+                owner: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+                registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+                resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
+              },
+              records: {
+                'crypto.ETH.address':
+                  '0x033dc48B5dB4CA62861643e9D2C411D9eb6D1975',
+              },
+            },
+          },
+        ],
+        meta: {
+          hasMore: false,
+          nextStartingAfter: domainFour.id,
+          perPage: 100,
+          order: 'id ASC',
+        },
+      });
+      expect(res.status).eq(200);
+    });
+    it('should return MATIC resolution for domain with multiple resolutions', async () => {
+      const { domain } =
+        await DomainTestHelper.createTestDomainWithMultipleResolutions(
+          {
+            name: 'test.crypto',
+            node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+            ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+          },
+          {
+            name: 'test.crypto',
+            node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+            ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+            resolution: {
+              'crypto.ETH.address':
+                '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            },
+            blockchain: Blockchain.MATIC,
+            networkId: env.APPLICATION.POLYGON.NETWORK_ID,
+          },
+        );
+      const res = await supertest(api)
+        .get(`/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2`)
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.body).to.deep.equal({
+        data: [
+          {
+            id: domain.name,
+            attributes: {
+              meta: {
+                domain: domain.name,
+                blockchain: 'MATIC',
+                networkId: 1337,
+                owner: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+                registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+                resolver: '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
+              },
+              records: {
+                'crypto.ETH.address':
+                  '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+              },
+            },
+          },
+        ],
+        meta: {
+          hasMore: false,
+          nextStartingAfter: domain.id,
+          perPage: 100,
+          order: 'id ASC',
+        },
+      });
+      expect(res.status).eq(200);
+    });
+    it('should return no domain from empty startingAfter', async () => {
+      const { domain } = await DomainTestHelper.createTestDomain({
         name: 'test.crypto',
         node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
@@ -510,15 +838,24 @@ describe('DomainsController', () => {
       });
       const res = await supertest(api)
         .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&page=2',
+          `/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&startingAfter=${
+            (domain.id || 0) + 1
+          }`,
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
       expect(res.body).to.deep.equal({
         data: [],
+        meta: {
+          hasMore: false,
+          nextStartingAfter: 0,
+          perPage: 100,
+          order: 'id ASC',
+        },
       });
       expect(res.status).eq(200);
     });
+
     it('should return error on missing owners param', async () => {
       const res = await supertest(api)
         .get('/domains?awef[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2')
@@ -549,10 +886,10 @@ describe('DomainsController', () => {
       });
       expect(res.status).eq(400);
     });
-    it('should return error on invalid page value', async () => {
+    it('should return error on invalid startingAfter value', async () => {
       const res = await supertest(api)
         .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&page=0',
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&startingAfter=-1',
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
@@ -560,25 +897,7 @@ describe('DomainsController', () => {
         errors: [
           {
             constraints: {
-              min: 'page must not be less than 1',
-            },
-          },
-        ],
-      });
-      expect(res.status).eq(400);
-    });
-    it('should return error on invalid perPage', async () => {
-      const res = await supertest(api)
-        .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&perPage=0',
-        )
-        .auth(testApiKey.apiKey, { type: 'bearer' })
-        .send();
-      expect(res.body).containSubset({
-        errors: [
-          {
-            constraints: {
-              min: 'perPage must not be less than 1',
+              min: 'startingAfter must not be less than 0',
             },
           },
         ],

@@ -1,6 +1,14 @@
 import { expect } from 'chai';
+import { env } from '../env';
 import { Blockchain } from '../types/common';
+import { EthereumHelper } from '../utils/testing/EthereumTestsHelper';
+import {
+  getNSConfig,
+  LayerTestFixture,
+} from '../utils/testing/LayerFixturesHelper';
 import Domain from './Domain';
+import nock from 'nock';
+import { nockConfigure } from '../mochaHooks';
 
 describe('Domain', () => {
   describe('constructor()', () => {
@@ -141,6 +149,81 @@ describe('Domain', () => {
       expect(domainFromDb).to.containSubset({
         node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303107',
       });
+    });
+  });
+
+  describe('.findOnChainNoSafe', () => {
+    const L1Fixture: LayerTestFixture = new LayerTestFixture();
+    const L2Fixture: LayerTestFixture = new LayerTestFixture();
+
+    before(async () => {
+      // Prepare eth network sandbox
+      // need both layers sandbox since the method is looking on both chains
+      await EthereumHelper.stopNetwork();
+      await L1Fixture.setup(Blockchain.ETH, env.APPLICATION.ETHEREUM, {});
+      await L2Fixture.setup(Blockchain.MATIC, env.APPLICATION.POLYGON, {
+        network: {
+          url: 'http://localhost:7546',
+          chainId: 1337,
+          dbPath: './.sandboxl2',
+        },
+      });
+    });
+
+    after(async () => {
+      // close the eth network
+      await L1Fixture.networkHelper.stopNetwork();
+      await L2Fixture.networkHelper.stopNetwork();
+    });
+
+    it('should find a domain from L1 layer', async () => {
+      const uns = getNSConfig('wallet');
+      const owner = L1Fixture.networkHelper.owner().address;
+      await L1Fixture.prepareService(owner, uns);
+
+      const token = uns.node.toHexString();
+
+      // Fire the method
+      const domain = await Domain.findOnChainNoSafe(token);
+      expect(domain).to.not.be.undefined;
+      // Domain should not be stored in db;
+      const domainFromDb = await Domain.findByNode(token);
+      expect(domainFromDb).to.be.undefined;
+    });
+
+    it('should find a domain from l2 layer', async () => {
+      const uns = getNSConfig('dao');
+      const owner = L2Fixture.networkHelper.owner().address;
+      await L2Fixture.prepareService(owner, uns);
+
+      const token = uns.node.toHexString();
+      const domain = await Domain.findOnChainNoSafe(token);
+      expect(domain).to.not.be.undefined;
+      // Domain should not be stored in db;
+      const domainFromDb = await Domain.findByNode(token);
+      expect(domainFromDb).to.be.undefined;
+    });
+
+    it('should return undefined if some error occur', async () => {
+      const uns = getNSConfig('nft');
+      const owner = L2Fixture.networkHelper.owner().address;
+      await L2Fixture.prepareService(owner, uns);
+
+      const token = uns.node.toHexString();
+      // nock will prevent any network queries with an error
+      // effectively simulating some random network error that might occur
+      nock.disableNetConnect();
+      const domain = await Domain.findOnChainNoSafe(token);
+      expect(domain).to.be.undefined;
+      // make sure to reconfigure nock as it is being used across the test set
+      nockConfigure();
+    });
+
+    it('should return undefined if domain is not found on any chain', async () => {
+      const uns = getNSConfig('x');
+      const token = uns.node.toHexString();
+      const domain = await Domain.findOnChainNoSafe(token);
+      expect(domain).to.be.undefined;
     });
   });
 

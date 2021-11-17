@@ -83,13 +83,13 @@ export class DomainsListQuery {
   @IsNotEmpty()
   @IsInt()
   @Min(1)
-  page = 1;
+  @Max(200)
+  perPage = 100;
 
   @IsNotEmpty()
   @IsInt()
-  @Min(1)
-  @Max(200)
-  perPage = 100;
+  @Min(0)
+  startingAfter = 0;
 
   get sort() {
     return {
@@ -122,6 +122,27 @@ export class DomainAttributes {
   attributes: DomainResponse;
 }
 
+export class DomainsListMeta {
+  @IsNotEmpty()
+  @Min(0)
+  nextStartingAfter = 0;
+
+  @IsNotEmpty()
+  @IsString()
+  order: string;
+
+  @IsNotEmpty()
+  @IsInt()
+  @Min(1)
+  @Max(200)
+  perPage = 100;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  hasMore = false;
+}
+
 export class DomainsListResponse {
   data: DomainAttributes[];
+  meta: DomainsListMeta;
 }

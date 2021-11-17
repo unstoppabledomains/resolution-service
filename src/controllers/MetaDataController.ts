@@ -20,21 +20,22 @@ import {
 import punycode from 'punycode';
 import btoa from 'btoa';
 import { getDomainResolution } from '../services/Resolution';
+import { binanceCustomImages } from '../utils/customDomains';
 
 const DEFAULT_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
-const CUSTOM_IMAGE_URL =
-  `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/custom` as const;
+const BASE_IMAGE_URL =
+  `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images` as const;
 const INVALID_DOMAIN_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/invalid-domain.svg` as const;
 const DomainsWithCustomImage: Record<string, string> = {
-  'code.crypto': 'code.svg',
-  'web3.crypto': 'web3.svg',
-  'privacy.crypto': 'privacy.svg',
-  'surf.crypto': 'surf.svg',
-  'hosting.crypto': 'hosting.svg',
-  'india.crypto': 'india.jpg',
-  'reseller-test-mago012.crypto': 'smiley-face.jpg',
+  'code.crypto': 'custom/code.svg',
+  'web3.crypto': 'custom/web3.svg',
+  'privacy.crypto': 'custom/privacy.svg',
+  'surf.crypto': 'custom/surf.svg',
+  'hosting.crypto': 'custom/hosting.svg',
+  'india.crypto': 'custom/india.jpg',
+  ...binanceCustomImages,
 };
 const AnimalHelper: AnimalDomainHelper = new AnimalDomainHelper();
 
@@ -115,7 +116,9 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
   ): Promise<OpenSeaMetadata> {
     const token = this.normalizeDomainOrToken(domainOrToken);
-    const domain = await Domain.findByNode(token);
+    const domain =
+      (await Domain.findByNode(token)) ||
+      (await Domain.findOnChainNoSafe(token));
     if (!domain) {
       return this.defaultMetaResponse(domainOrToken);
     }
@@ -193,7 +196,9 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
   ): Promise<ImageResponse> {
     const token = this.normalizeDomainOrToken(domainOrToken);
-    const domain = await Domain.findByNode(token);
+    const domain =
+      (await Domain.findByNode(token)) ||
+      (await Domain.findOnChainNoSafe(token));
 
     const name = domain ? domain.name : domainOrToken;
     const resolution = domain ? getDomainResolution(domain).resolution : {};
@@ -214,7 +219,9 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
   ): Promise<string> {
     const token = this.normalizeDomainOrToken(domainOrToken);
-    const domain = await Domain.findByNode(token);
+    const domain =
+      (await Domain.findByNode(token)) ||
+      (await Domain.findOnChainNoSafe(token));
 
     const name = domain ? domain.name : domainOrToken;
     const resolution = domain ? getDomainResolution(domain).resolution : {};
@@ -382,7 +389,7 @@ export class MetaDataController {
     name: string,
     resolution: Record<string, string>,
   ): Promise<string> {
-    if (this.isDomainWithCustomImage(name)) {
+    if (this.isDomainWithCustomImage(name) && !binanceCustomImages[name]) {
       return '';
     }
     const splittedName = name.split('.');
@@ -435,7 +442,7 @@ export class MetaDataController {
 
   private generateDomainImageUrl(name: string): string | null {
     if (DomainsWithCustomImage[name]) {
-      return `${CUSTOM_IMAGE_URL}/${DomainsWithCustomImage[name]}`;
+      return `${BASE_IMAGE_URL}/${DomainsWithCustomImage[name]}`;
     }
 
     const animalImageUrl = AnimalHelper.getAnimalImageUrl(name);

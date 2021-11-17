@@ -15,6 +15,7 @@ import {
   DomainsListQuery,
   DomainsListResponse,
 } from './models/Domains';
+import { domain } from 'process';
 
 @OpenAPI({
   security: [{ apiKeyAuth: [] }],
@@ -95,6 +96,13 @@ export class DomainsController {
       });
     }
 
+    if (query.startingAfter !== 0) {
+      where.push({
+        query: `domain.id > :startingAfter`,
+        parameters: { startingAfter: query.startingAfter },
+      });
+    }
+
     const qb = Domain.createQueryBuilder('domain');
     qb.leftJoinAndSelect('domain.resolutions', 'resolution');
     qb.leftJoinAndSelect('domain.parent', 'parent');
@@ -105,9 +113,10 @@ export class DomainsController {
       qb.andWhere(q.query, q.parameters);
     }
     qb.orderBy(query.sort.column, query.sort.direction);
-    qb.take(query.perPage);
-    qb.skip((query.page - 1) * query.perPage);
-    const domains = await qb.getMany();
+    qb.take(query.perPage + 1);
+    let domains = await qb.getMany();
+    const hasMore = domains.length > query.perPage;
+    domains = domains.slice(0, query.perPage);
 
     const response = new DomainsListResponse();
     response.data = [];
@@ -128,6 +137,14 @@ export class DomainsController {
         },
       });
     }
+    response.meta = {
+      perPage: query.perPage,
+      nextStartingAfter: domains.length
+        ? domains[domains.length - 1].id || 0
+        : 0,
+      order: 'id ASC',
+      hasMore,
+    };
     return response;
   }
 }
