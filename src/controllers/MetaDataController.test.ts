@@ -120,7 +120,7 @@ describe('MetaDataController', () => {
       getTokenURIStub.restore();
       getImageFromTokenURIStub.restore();
       getNFTSocialPictureStub.restore();
-    });
+    }).timeout(30000);
 
     it('should be able to return the correct nft image', async () => {
       const domain = await DomainTestHelper.createTestDomain({
