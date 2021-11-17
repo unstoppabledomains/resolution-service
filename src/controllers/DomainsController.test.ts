@@ -693,6 +693,7 @@ describe('DomainsController', () => {
     it('should return latest transfers from MATIC and ETH networks', async () => {
       const res = await supertest(api)
         .get('/domains/kirill.dao/transfers/latest')
+        .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
       console.log(res.body);
     });
