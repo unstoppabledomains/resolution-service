@@ -1324,6 +1324,30 @@ describe('DomainsController', () => {
       });
     });
 
+    it('should sort with starting after', async () => {
+      const { domains, expectedData } = getSortedTestDomains(
+        (a, b) => -a.domain.name.localeCompare(b.domain.name),
+      );
+
+      const res = await supertest(api)
+        .get(
+          `/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&sortBy=name&sortDirection=DESC&perPage=1&startingAfter[]=${domains[1].name}`,
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+
+      expect(res.status).eq(200);
+      expect(res.body.data).to.exist;
+      expect(res.body.data).to.deep.equal([expectedData[2]]);
+      expect(res.body.meta).to.deep.equal({
+        hasMore: true,
+        nextStartingAfter: domains[2].name,
+        perPage: 1,
+        sortBy: 'name',
+        sortDirection: 'DESC',
+      });
+    });
+
     it('should return error for invalid sortBy', async () => {
       const res = await supertest(api)
         .get(
