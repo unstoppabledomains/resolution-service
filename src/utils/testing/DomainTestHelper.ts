@@ -59,4 +59,29 @@ export class DomainTestHelper {
     await domain.save();
     return { domain, resolution };
   }
+
+  static async createTestDomainWithMultipleResolutions(
+    optionsOne: Attributes<CreateTestDomainOptions> = {},
+    optionsTwo: Attributes<CreateTestDomainOptions> = {},
+  ): Promise<{ domain: Domain; resolutions: DomainsResolution[] }> {
+    const { domain, resolution } = await this.createTestDomain(optionsOne);
+    const resolutionTwo = new DomainsResolution({
+      blockchain: optionsTwo.blockchain ?? Blockchain.ETH,
+      networkId: optionsTwo.networkId ?? env.APPLICATION.ETHEREUM.NETWORK_ID,
+      ownerAddress:
+        optionsTwo.ownerAddress ?? '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+      resolution: optionsTwo.resolution ?? {},
+      resolver:
+        optionsTwo.resolver ?? '0xb66DcE2DA6afAAa98F2013446dBCB0f4B0ab2842',
+      registry:
+        optionsTwo.registry ??
+        DomainTestHelper.getRegistryAddressFromLocation(
+          optionsTwo.blockchain ?? 'CNS',
+        ),
+    });
+    await resolutionTwo.save();
+    domain.resolutions = [resolution, resolutionTwo];
+    await domain.save();
+    return { domain, resolutions: [resolution, resolutionTwo] };
+  }
 }
