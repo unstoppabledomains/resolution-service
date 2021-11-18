@@ -26,9 +26,6 @@ if (!process.env.ETHEREUM_JSON_RPC_API_URL) {
 if (!process.env.POLYGON_JSON_RPC_API_URL) {
   requiredEnvNotSet.push('POLYGON_JSON_RPC_API_URL');
 }
-if (!process.env.POLYGON_NETWORK_ID) {
-  requiredEnvNotSet.push('POLYGON_NETWORK_ID');
-}
 
 if (requiredEnvNotSet.length !== 0) {
   throw new Error(
@@ -57,14 +54,7 @@ export const env = {
     PORT: process.env.RESOLUTION_API_PORT || process.env.PORT || 3000,
     RUNNING_MODE: process.env.RESOLUTION_RUNNING_MODE
       ? process.env.RESOLUTION_RUNNING_MODE.split(',')
-      : [
-          'MIGRATIONS',
-          'LOAD_SNAPSHOT',
-          'API',
-          'ETH_WORKER',
-          'MATIC_WORKER',
-          'ZIL_WORKER',
-        ],
+      : ['MIGRATIONS', 'API', 'ETH_WORKER', 'MATIC_WORKER', 'ZIL_WORKER'],
     ETHEREUM: {
       CNS_REGISTRY_EVENTS_STARTING_BLOCK: Number(
         process.env.CNS_REGISTRY_EVENTS_STARTING_BLOCK || 9080000,

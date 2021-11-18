@@ -25,7 +25,11 @@ export function DefaultImageData(args: {
           <text text-anchor="middle" id="domain" font-family="${FontFamily}" font-size="${
     args.fontSize
   }" font-weight="bold" fill="#FFFFFF">
-              <tspan x="22.5%" y="26">${args.label}</tspan>
+              <tspan x="22.5%" y="26">${
+                args.label.length > 30
+                  ? args.label.substr(0, 29).concat('...')
+                  : args.label
+              }</tspan>
           </text>
       </g>
       <g id="sign" transform="translate(56.000000, 19.000000)">

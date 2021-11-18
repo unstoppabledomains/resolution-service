@@ -9,6 +9,7 @@ import {
 import {
   ArrayNotEmpty,
   IsArray,
+  IsBoolean,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -22,8 +23,6 @@ import {
 } from 'class-validator';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
-import { In } from 'typeorm';
-import DomainsResolution from '../models/DomainsResolution';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
 import { Blockchain } from '../types/common';
 import { toNumber } from 'lodash';
@@ -72,18 +71,6 @@ class DomainsListQuery {
   @IsNotEmpty({ each: true })
   owners: string[];
 
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsNotEmpty({ each: true })
-  @IsIn(Object.keys(NetworkConfig.networks), { each: true })
-  networkIds: string[] = Object.keys(NetworkConfig.networks);
-
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsNotEmpty({ each: true })
-  @IsIn(Object.values(Blockchain), { each: true })
-  blockchains: string[] = Object.values(Blockchain);
-
   @IsNotEmpty()
   @IsInt()
   @Min(1)
@@ -95,16 +82,14 @@ class DomainsListQuery {
   @Max(200)
   perPage = 100;
 
-  get hasDeafultBlockchains(): boolean {
-    return this.blockchains === Object.values(Blockchain);
-  }
-
-  get hasDeafultNetworks(): boolean {
-    return this.networkIds === Object.keys(NetworkConfig.networks);
-  }
+  @IsNotEmpty()
+  @IsInt()
+  @Min(0)
+  startingAfter = 0;
 }
 
 class DomainAttributes {
+  @IsNotEmpty()
   @IsString()
   id: string;
 
@@ -112,8 +97,29 @@ class DomainAttributes {
   attributes: DomainResponse;
 }
 
+class DomainsListMeta {
+  @IsNotEmpty()
+  @Min(0)
+  nextStartingAfter = 0;
+
+  @IsNotEmpty()
+  @IsString()
+  order: string;
+
+  @IsNotEmpty()
+  @IsInt()
+  @Min(1)
+  @Max(200)
+  perPage = 100;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  hasMore = false;
+}
+
 class DomainsListResponse {
   data: DomainAttributes[];
+  meta: DomainsListMeta;
 }
 
 @OpenAPI({
@@ -185,25 +191,24 @@ export class DomainsController {
     @QueryParams() query: DomainsListQuery,
   ): Promise<DomainsListResponse> {
     const ownersQuery = query.owners.map((owner) => owner.toLowerCase());
-    let resolutions = await DomainsResolution.find({
-      where: {
-        ownerAddress: ownersQuery ? In(ownersQuery) : undefined,
-        blockchain: In(query.blockchains),
-        networkId: In(query.networkIds.map(toNumber)),
-      },
-      relations: ['domain'],
-      take: query.perPage,
-      skip: (query.page - 1) * query.perPage,
-    });
 
-    if (query.hasDeafultNetworks && query.hasDeafultBlockchains) {
-      const uniqueDomains = new Set();
-      resolutions = resolutions.filter((res) => {
-        const dname = res.domain.name;
-        return uniqueDomains.has(dname) ? false : uniqueDomains.add(dname);
-      });
-      resolutions = resolutions.map((res) => getDomainResolution(res.domain));
-    }
+    let domains = await Domain.createQueryBuilder('domain')
+      .leftJoinAndSelect('domain.resolutions', 'resolution')
+      .where('resolution.ownerAddress IN (:...ownerAddress)', {
+        ownerAddress: ownersQuery ? ownersQuery : undefined,
+      })
+      .andWhere('domain.id > :startingAfter', {
+        startingAfter: query.startingAfter,
+      })
+      .orderBy('domain.id', 'ASC')
+      .take(query.perPage * 3 + 1)
+      .getMany();
+    const hasMore = domains.length > query.perPage;
+    domains = domains.slice(0, query.perPage);
+    const resolutions = domains.map((domain) => ({
+      ...getDomainResolution(domain),
+      domain,
+    }));
 
     const response = new DomainsListResponse();
     response.data = [];
@@ -223,6 +228,14 @@ export class DomainsController {
         },
       });
     }
+    response.meta = {
+      perPage: query.perPage,
+      nextStartingAfter: domains.length
+        ? domains[domains.length - 1].id || 0
+        : 0,
+      order: 'id ASC',
+      hasMore,
+    };
     return response;
   }
 }
