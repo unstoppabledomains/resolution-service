@@ -12,14 +12,8 @@ import { pathThatSvg } from 'path-that-svg';
 import { IsArray, IsObject, IsOptional, IsString } from 'class-validator';
 import { env } from '../env';
 import { logger } from '../logger';
-import {
-  getSocialPictureUrl,
-  getNFTSocialPicture,
-  createSocialPictureImage,
-  getSocialPicture,
-} from '../utils/socialPicture';
+import { getSocialPicture } from '../utils/socialPicture';
 import punycode from 'punycode';
-import btoa from 'btoa';
 import { getDomainResolution } from '../services/Resolution';
 import { binanceCustomImages } from '../utils/customDomains';
 import DomainsResolution from '../models/DomainsResolution';
@@ -126,7 +120,6 @@ export class MetaDataController {
       resolution.resolution['social.picture.value'] || '',
       resolution.ownerAddress || '',
     );
-    // console.log({domain: domain.name, records: resolution.resolution, socialPicture});
     const description = this.getDomainDescription(
       domain.name,
       resolution.resolution,

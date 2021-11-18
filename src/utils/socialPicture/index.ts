@@ -132,7 +132,6 @@ export const getSocialPicture = async (
     avatarRecord,
     ownerAddress,
   );
-  console.log({ pictureOrUrl, nftStandard });
   let socialPicture = '';
   if (pictureOrUrl) {
     let data = '',
@@ -205,16 +204,13 @@ export const getSocialPictureUrl = async (
 export const getNFTSocialPicture = async (
   imageUrl: string,
 ): Promise<[string, string | null]> => {
-  console.log('fetching the nft image');
   const resp = await nodeFetch(useIpfsGateway(imageUrl));
   if (!resp.ok) {
     throw new Error('Failed to fetch NFT image');
   }
-  console.log('finished fetching image');
   const data = await resp.buffer();
   const mimeType = resp.headers.get('Content-Type');
   const base64 = data.toString('base64');
-  console.log('returning base64 and mimeType');
   return [base64, mimeType];
 };
 
