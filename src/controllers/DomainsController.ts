@@ -6,121 +6,15 @@ import {
   QueryParams,
   UseBefore,
 } from 'routing-controllers';
-import {
-  ArrayNotEmpty,
-  IsArray,
-  IsBoolean,
-  IsInt,
-  IsNotEmpty,
-  IsObject,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-  IsNumber,
-  ValidateNested,
-  IsIn,
-} from 'class-validator';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { Domain } from '../models';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
-import { Blockchain } from '../types/common';
-import { toNumber } from 'lodash';
-import NetworkConfig from 'uns/uns-config.json';
 import { getDomainResolution } from '../services/Resolution';
-
-class DomainMetadata {
-  @IsString()
-  domain: string;
-
-  @IsOptional()
-  @IsString()
-  owner: string | null = null;
-
-  @IsOptional()
-  @IsString()
-  resolver: string | null = null;
-
-  @IsOptional()
-  @IsString()
-  @IsIn(Object.values(Blockchain), { each: true })
-  blockchain: keyof typeof Blockchain | null = null;
-
-  @IsOptional()
-  @IsNumber()
-  @IsIn(Object.keys(NetworkConfig.networks).map(toNumber))
-  networkId: number | null = null;
-
-  @IsOptional()
-  @IsString()
-  registry: string | null = null;
-}
-
-class DomainResponse {
-  @ValidateNested()
-  meta: DomainMetadata;
-
-  @IsObject()
-  records: Record<string, string> = {};
-}
-
-class DomainsListQuery {
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsString({ each: true })
-  @IsNotEmpty({ each: true })
-  owners: string[];
-
-  @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  page = 1;
-
-  @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  @Max(200)
-  perPage = 100;
-
-  @IsNotEmpty()
-  @IsInt()
-  @Min(0)
-  startingAfter = 0;
-}
-
-class DomainAttributes {
-  @IsNotEmpty()
-  @IsString()
-  id: string;
-
-  @ValidateNested()
-  attributes: DomainResponse;
-}
-
-class DomainsListMeta {
-  @IsNotEmpty()
-  @Min(0)
-  nextStartingAfter = 0;
-
-  @IsNotEmpty()
-  @IsString()
-  order: string;
-
-  @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  @Max(200)
-  perPage = 100;
-
-  @IsNotEmpty()
-  @IsBoolean()
-  hasMore = false;
-}
-
-class DomainsListResponse {
-  data: DomainAttributes[];
-  meta: DomainsListMeta;
-}
+import {
+  DomainResponse,
+  DomainsListQuery,
+  DomainsListResponse,
+} from './dto/Domains';
 
 @OpenAPI({
   security: [{ apiKeyAuth: [] }],
@@ -192,32 +86,52 @@ export class DomainsController {
   ): Promise<DomainsListResponse> {
     const ownersQuery = query.owners.map((owner) => owner.toLowerCase());
 
-    let domains = await Domain.createQueryBuilder('domain')
-      .leftJoinAndSelect('domain.resolutions', 'resolution')
-      .where('resolution.ownerAddress IN (:...ownerAddress)', {
-        ownerAddress: ownersQuery ? ownersQuery : undefined,
-      })
-      .andWhere('domain.id > :startingAfter', {
-        startingAfter: query.startingAfter,
-      })
-      .orderBy('domain.id', 'ASC')
-      .take(query.perPage * 3 + 1)
-      .getMany();
+    // Use raw query becaues typeorm doesn't seem to handle multiple nested relations (e.g. resolution.domain.parent.name)
+    const where = [];
+    if (query.tlds) {
+      where.push({
+        query: `"parent"."name" in (:...tlds)`,
+        parameters: { tlds: query.tlds },
+      });
+    }
+
+    if (query.startingAfter) {
+      where.push({
+        query: `${query.sort.column} ${
+          query.sort.direction === 'ASC' ? '>' : '<'
+        } :startingAfter`,
+        parameters: { startingAfter: query.startingAfter },
+      });
+    }
+
+    const qb = Domain.createQueryBuilder('domain');
+    qb.leftJoinAndSelect('domain.resolutions', 'resolution');
+    qb.leftJoinAndSelect('domain.parent', 'parent');
+    qb.where(`"resolution"."owner_address" in (:...owners)`, {
+      owners: ownersQuery,
+    });
+    for (const q of where) {
+      qb.andWhere(q.query, q.parameters);
+    }
+    qb.orderBy(query.sort.column, query.sort.direction);
+    qb.take(query.perPage + 1);
+    const domains = await qb.getMany();
     const hasMore = domains.length > query.perPage;
-    domains = domains.slice(0, query.perPage);
-    const resolutions = domains.map((domain) => ({
-      ...getDomainResolution(domain),
-      domain,
-    }));
+    if (hasMore) {
+      domains.pop();
+    }
+    const lastDomain =
+      domains.length !== 0 ? domains[domains.length - 1] : undefined;
 
     const response = new DomainsListResponse();
     response.data = [];
-    for (const resolution of resolutions) {
+    for (const domain of domains) {
+      const resolution = getDomainResolution(domain);
       response.data.push({
-        id: resolution.domain.name,
+        id: domain.name,
         attributes: {
           meta: {
-            domain: resolution.domain.name,
+            domain: domain.name,
             blockchain: resolution.blockchain,
             networkId: resolution.networkId,
             owner: resolution.ownerAddress,
@@ -230,10 +144,10 @@ export class DomainsController {
     }
     response.meta = {
       perPage: query.perPage,
-      nextStartingAfter: domains.length
-        ? domains[domains.length - 1].id || 0
-        : 0,
-      order: 'id ASC',
+      nextStartingAfter:
+        lastDomain?.[query.sortBy]?.toString() || query.startingAfter || '',
+      sortBy: query.sortBy,
+      sortDirection: query.sortDirection,
       hasMore,
     };
     return response;

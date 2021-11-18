@@ -110,9 +110,7 @@ export default class AnimalDomainHelper {
     return map[prefix] || prefix;
   }
 
-  private extractPrefixAndAnimal(
-    domainName: string,
-  ): {
+  private extractPrefixAndAnimal(domainName: string): {
     prefix: string;
     animal: string;
   } {

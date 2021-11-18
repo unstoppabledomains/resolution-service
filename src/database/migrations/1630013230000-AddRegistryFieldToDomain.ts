@@ -1,7 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddRegistryFieldToDomain1630013230000
-  implements MigrationInterface {
+  implements MigrationInterface
+{
   name = 'AddRegistryFieldToDomain1630013230000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
