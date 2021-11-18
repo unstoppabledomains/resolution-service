@@ -14,7 +14,7 @@ chai.use(chaiAsPromised);
 chai.use(sinonChai);
 
 // This is placed in a function for easier test usage
-export const nockConfigure = () => {
+export const nockConfigure = (): void => {
   nock.disableNetConnect();
   nock.enableNetConnect((host) => {
     return (

@@ -1,4 +1,4 @@
-import supertest from 'supertest';
+import supertest, { SuperAgentTest } from 'supertest';
 import { api } from '../api';
 import { expect } from 'chai';
 import { DomainTestHelper } from '../utils/testing/DomainTestHelper';
@@ -7,12 +7,6 @@ import { DefaultImageData, BackgroundColor } from '../utils/generalImage';
 import nock from 'nock';
 import sinon from 'sinon';
 import * as socialModule from '../utils/socialPicture/index';
-import {
-  isOwnedByAddress,
-  getTokenURI,
-  getImageURLFromTokenURI,
-  getNFTSocialPicture,
-} from '../utils/socialPicture/index';
 import {
   getNSConfig,
   LayerTestFixture,
@@ -543,21 +537,24 @@ describe('MetaDataController', () => {
   });
 
   describe('GET /metadata and /image with stubs', () => {
+    const sandbox = sinon.createSandbox();
     let isOwnedByAddressStub: sinon.SinonStub;
     let getTokenURIStub: sinon.SinonStub;
     let getImageFromTokenURIStub: sinon.SinonStub;
     let getNFTSocialPictureStub: sinon.SinonStub;
+    let agent: SuperAgentTest;
 
-    beforeEach(() => {
-      isOwnedByAddressStub = sinon.stub(socialModule, 'isOwnedByAddress');
+    beforeEach(async () => {
+      sandbox.restore();
+      isOwnedByAddressStub = sandbox.stub(socialModule, 'isOwnedByAddress');
       isOwnedByAddressStub.resolves(true);
 
-      getTokenURIStub = sinon.stub(socialModule, 'getTokenURI');
+      getTokenURIStub = sandbox.stub(socialModule, 'getTokenURI');
       getTokenURIStub.resolves(
         'https://time.mypinata.cloud/ipfs/QmTfEF7WNLkkD51vGY4Yrj77p3aBjGf15gRcuQzWXMUCC8/3531',
       );
 
-      getImageFromTokenURIStub = sinon.stub(
+      getImageFromTokenURIStub = sandbox.stub(
         socialModule,
         'getImageURLFromTokenURI',
       );
@@ -565,15 +562,13 @@ describe('MetaDataController', () => {
         'ipfs://QmYMeZcMhfxt9yvQtHBgudMsAPvLTSb2H2j178orf9ZnNM',
       );
 
-      getNFTSocialPictureStub = sinon.stub(socialModule, 'getNFTSocialPicture');
+      getNFTSocialPictureStub = sandbox.stub(
+        socialModule,
+        'getNFTSocialPicture',
+      );
       getNFTSocialPictureStub.resolves(['base64Data', 'image/jpeg']);
-    });
-
-    afterEach(() => {
-      isOwnedByAddressStub.restore();
-      getTokenURIStub.restore();
-      getImageFromTokenURIStub.restore();
-      getNFTSocialPictureStub.restore();
+      const mockedApi = await import('../api');
+      agent = supertest.agent(mockedApi.api);
     });
 
     it('should return the same image regardless of endpoint', async () => {
@@ -587,12 +582,12 @@ describe('MetaDataController', () => {
         ownerAddress: '0xa59C818Ddb801f1253edEbf0Cf08c9E481EA2fE5',
       });
 
-      const metadataResponse = await supertest(api)
+      const metadataResponse = await agent
         .get(`/metadata/${domain.domain.name}`)
         .send()
         .then((r) => r.body);
 
-      const imageResponse = await supertest(api)
+      const imageResponse = await agent
         .get(`/image/${domain.domain.name}`)
         .send()
         .then((r) => r.body);
@@ -614,7 +609,7 @@ describe('MetaDataController', () => {
         ownerAddress: '0xa59C818Ddb801f1253edEbf0Cf08c9E481EA2fE5',
       });
 
-      const response = await supertest(api)
+      const response = await agent
         .get(`/metadata/${domain.domain.name}`)
         .send()
         .then((r) => r.body);

@@ -1,7 +1,6 @@
 import { ethers } from 'ethers';
 import { env } from '../../env';
 import nodeFetch from 'node-fetch';
-import { Domain } from '../../models';
 import { createCanvas } from 'canvas';
 import createSVGfromTemplate from './svgTemplate';
 import btoa from 'btoa';
