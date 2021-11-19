@@ -13,6 +13,8 @@ import { EthereumHelper } from '../utils/testing/EthereumTestsHelper';
 import { Blockchain } from '../types/common';
 import { env } from '../env';
 import Domain from '../models/Domain';
+import * as socialPicture from '../utils/socialPicture';
+import sinon from 'sinon';
 
 describe('MetaDataController', () => {
   const L1Fixture: LayerTestFixture = new LayerTestFixture();
@@ -33,6 +35,10 @@ describe('MetaDataController', () => {
   after(async () => {
     await L1Fixture.networkHelper.stopNetwork();
     await L2Fixture.networkHelper.stopNetwork();
+  });
+
+  afterEach(() => {
+    sinon.restore();
   });
 
   describe('GET /metadata/:DomainOrToken', () => {
@@ -85,22 +91,10 @@ describe('MetaDataController', () => {
         },
       };
       expect(resWithName.properties).to.deep.eq(correctProperties);
-      expect(resWithName.image_data).eq(
-        DefaultImageData({
-          label: domain.label,
-          tld: domain.extension,
-          fontSize: 24,
-        }),
-      );
       expect(resWithName.background_color).eq(BackgroundColor);
     });
 
     it('should work with animal domain', async () => {
-      nock('https://storage.googleapis.com')
-        .get('/dot-crypto-metadata-api/images/animals/lemming.svg')
-        .twice()
-        .reply(200, 'correctImageData');
-
       const { domain: animalDomain } = await DomainTestHelper.createTestDomain({
         name: 'unstoppablelemming.crypto',
         node: '0xccfd2756994b2ea38fcd2deaf3ae2b2a4678fce6e81fbe4f856ceb0cb50dfee9',
@@ -168,35 +162,34 @@ describe('MetaDataController', () => {
       };
       expect(response.properties).to.deep.eq(correctProperties);
       expect(response.background_color).to.eq('4C47F7');
-      expect(response.image_data).to.eq('correctImageData');
     });
 
-    // it('should return nft image from avatar record', async () => {
-    //   const domain = await DomainTestHelper.createTestDomain({
-    //     name: 'matt.crypto',
-    //     node: eip137Namehash('matt.crypto'),
-    //     resolution: {
-    //       'social.picture.value':
-    //         '1/erc721:0x9307edc4f23d87f9783a999f870b728ab9d34fe5/3531',
-    //     },
-    //     location: 'CNS',
-    //     ownerAddress: '0xa59C818Ddb801f1253edEbf0Cf08c9E481EA2fE5',
-    //   });
-    //   const expectedImageUrl =
-    //     'ipfs://QmYMeZcMhfxt9yvQtHBgudMsAPvLTSb2H2j178orf9ZnNM';
-    //   const response = await supertest(api)
-    //     .get(`/metadata/${domain.name}`)
-    //     .send()
-    //     .then((r) => r.body);
-    //   expect(response.image).to.equal(expectedImageUrl);
-    //   expect(response.attributes).to.deep.equal([
-    //     { trait_type: 'domain', value: 'trustbear.crypto' },
-    //     { trait_type: 'level', value: 2 },
-    //     { trait_type: 'length', value: 4 },
-    //     { trait_type: 'type', value: 'standard' },
-    //     { trait_type: 'avatar', value: 'verified-nft' },
-    //   ]);
-    // });
+    it('should return nft image from avatar record', async () => {
+      sinon.stub(socialPicture, 'hasSocialPicture').resolves(true);
+
+      const { domain } = await DomainTestHelper.createTestDomain({
+        name: 'matt.crypto',
+        node: eip137Namehash('matt.crypto'),
+        resolution: {
+          'social.picture.value':
+            '1/erc721:0x9307edc4f23d87f9783a999f870b728ab9d34fe5/3531',
+        },
+        ownerAddress: '0xa59C818Ddb801f1253edEbf0Cf08c9E481EA2fE5',
+      });
+      const expectedImageUrl = '/image-src/matt.crypto';
+      const response = await supertest(api)
+        .get(`/metadata/${domain.name}`)
+        .send()
+        .then((r) => r.body);
+      expect(response.image).to.equal(expectedImageUrl);
+      expect(response.attributes).to.deep.equal([
+        { trait_type: 'domain', value: 'matt.crypto' },
+        { trait_type: 'level', value: 2 },
+        { trait_type: 'length', value: 4 },
+        { trait_type: 'picture', value: 'verified-nft' },
+        { trait_type: 'type', value: 'standard' },
+      ]);
+    });
 
     it('should return branded animal domain metadata', async () => {
       nock('https://storage.googleapis.com')
@@ -239,11 +232,6 @@ describe('MetaDataController', () => {
           'https://unstoppabledomains.com/search?searchTerm=unknown.crypto',
         image:
           'https://storage.googleapis.com/dot-crypto-metadata-api/images/unstoppabledomains.svg',
-        image_data: DefaultImageData({
-          label: 'unknown',
-          tld: 'crypto',
-          fontSize: 24,
-        }),
         attributes: [
           { trait_type: 'domain', value: 'unknown.crypto' },
           { trait_type: 'level', value: 2 },
@@ -264,7 +252,6 @@ describe('MetaDataController', () => {
         description: null,
         external_url: null,
         image: null,
-        image_data: null,
         attributes: [],
       });
     });
@@ -289,11 +276,6 @@ describe('MetaDataController', () => {
         external_url: `https://unstoppabledomains.com/search?searchTerm=${uns.name}`,
         image:
           'https://storage.googleapis.com/dot-crypto-metadata-api/images/unstoppabledomains.svg',
-        image_data: DefaultImageData({
-          label: uns.label,
-          tld: uns.tld,
-          fontSize: 16,
-        }),
         background_color: '4C47F7',
         attributes: [
           { trait_type: 'domain', value: uns.name },
@@ -309,6 +291,8 @@ describe('MetaDataController', () => {
     });
 
     it('should work with special domains', async () => {
+      sinon.stub(socialPicture, 'hasSocialPicture').resolves(false);
+
       const CUSTOM_IMAGE_URL =
         'https://storage.googleapis.com/dot-crypto-metadata-api/images/custom' as const;
       const domainsWithCustomImage: Record<string, string> = {

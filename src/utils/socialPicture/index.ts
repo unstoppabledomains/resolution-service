@@ -126,7 +126,7 @@ export const getSocialPictureUrl = async (
   avatarRecord: string,
   ownerAddress: string,
 ): Promise<{ pictureOrUrl: string; nftStandard: string }> => {
-  if (!avatarRecord || !ownerAddress) {
+  if (!(await hasSocialPicture(avatarRecord, ownerAddress))) {
     return { pictureOrUrl: '', nftStandard: '' };
   }
   try {
@@ -136,14 +136,6 @@ export const getSocialPictureUrl = async (
       contractAddress,
       nftStandard,
     );
-    const isOwner = await isOwnedByAddress(ownerAddress, {
-      contract: nftContract,
-      nftStandard,
-      tokenId,
-    });
-    if (!isOwner) {
-      throw new Error('User does not own NFT');
-    }
     if (nftStandard === 'cryptopunks') {
       const cryptoPunksImageContract = await constructNFTContract(
         CryptoPunksImageContractAddress,
@@ -163,8 +155,33 @@ export const getSocialPictureUrl = async (
       tokenURI.replace('0x{id}', tokenId),
     );
     return { pictureOrUrl: imageURL, nftStandard };
-  } catch {
+  } catch (err) {
     return { pictureOrUrl: '', nftStandard: '' };
+  }
+};
+
+export const hasSocialPicture = async (
+  avatarRecord: string,
+  ownerAddress: string,
+): Promise<boolean> => {
+  if (!avatarRecord || !ownerAddress) {
+    return false;
+  }
+  try {
+    const { nftStandard, contractAddress, tokenId } =
+      parsePictureRecord(avatarRecord);
+    const nftContract = await constructNFTContract(
+      contractAddress,
+      nftStandard,
+    );
+    const isOwner = await isOwnedByAddress(ownerAddress, {
+      contract: nftContract,
+      nftStandard,
+      tokenId,
+    });
+    return isOwner === '' ? false : isOwner;
+  } catch (err) {
+    return false;
   }
 };
 

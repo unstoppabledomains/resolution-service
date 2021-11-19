@@ -1,4 +1,4 @@
-import { Controller, Get, Header, Param } from 'routing-controllers';
+import { Controller, Get, Header, Param, Req } from 'routing-controllers';
 import { ResponseSchema } from 'routing-controllers-openapi';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import fetch from 'node-fetch';
@@ -16,11 +16,13 @@ import {
   getSocialPictureUrl,
   getNFTSocialPicture,
   createSocialPictureImage,
+  hasSocialPicture,
 } from '../utils/socialPicture';
 import punycode from 'punycode';
 import btoa from 'btoa';
 import { getDomainResolution } from '../services/Resolution';
 import { binanceCustomImages } from '../utils/customDomains';
+import { Request } from 'express';
 
 const DEFAULT_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
@@ -61,10 +63,6 @@ class OpenSeaMetadata extends Erc721Metadata {
   @IsOptional()
   @IsString()
   external_link?: string;
-
-  @IsOptional()
-  @IsString()
-  image_data?: string | null;
 
   @IsObject()
   properties: DomainProperties;
@@ -113,6 +111,7 @@ export class MetaDataController {
   @Get('/metadata/:domainOrToken')
   @ResponseSchema(OpenSeaMetadata)
   async getMetaData(
+    @Req() request: Request,
     @Param('domainOrToken') domainOrToken: string,
   ): Promise<OpenSeaMetadata> {
     const token = this.normalizeDomainOrToken(domainOrToken);
@@ -124,29 +123,11 @@ export class MetaDataController {
     }
     const resolution = getDomainResolution(domain);
 
-    const { pictureOrUrl, nftStandard } = await getSocialPictureUrl(
+    const hasPicture = await hasSocialPicture(
       resolution.resolution['social.picture.value'],
       resolution.ownerAddress || '',
     );
-    let socialPicture = '';
-    if (pictureOrUrl) {
-      let data = '',
-        mimeType = null;
-      if (nftStandard === 'cryptopunks') {
-        data = btoa(
-          pictureOrUrl
-            .replace(`data:image/svg+xml;utf8,`, ``)
-            .replace(
-              `<svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 24 24">`,
-              `<svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 24 24"><rect width="100%" height="100%" fill="#648595"/>`,
-            ),
-        );
-        mimeType = 'image/svg+xml';
-      } else {
-        [data, mimeType] = await getNFTSocialPicture(pictureOrUrl);
-      }
-      socialPicture = createSocialPictureImage(domain, data, mimeType);
-    }
+
     const description = this.getDomainDescription(
       domain.name,
       resolution.resolution,
@@ -155,7 +136,7 @@ export class MetaDataController {
       ipfsContent:
         resolution.resolution['dweb.ipfs.hash'] ||
         resolution.resolution['ipfs.html.value'],
-      verifiedNftPicture: socialPicture !== '',
+      verifiedNftPicture: hasPicture,
     });
 
     const metadata: OpenSeaMetadata = {
@@ -165,15 +146,13 @@ export class MetaDataController {
         records: resolution.resolution,
       },
       external_url: `https://unstoppabledomains.com/search?searchTerm=${domain.name}`,
-      image: socialPicture || this.generateDomainImageUrl(domain.name),
+      image: hasPicture
+        ? `${request.baseUrl}/image-src/${domain.name}`
+        : this.generateDomainImageUrl(domain.name),
       attributes: domainAttributes,
     };
 
-    if (!this.isDomainWithCustomImage(domain.name) && !socialPicture) {
-      metadata.image_data = await this.generateImageData(
-        domain.name,
-        resolution.resolution,
-      );
+    if (!this.isDomainWithCustomImage(domain.name) && !hasPicture) {
       metadata.background_color = '4C47F7';
     }
 
@@ -241,7 +220,6 @@ export class MetaDataController {
     const description = name ? this.getDomainDescription(name, {}) : null;
     const attributes = name ? this.getDomainAttributes(name) : [];
     const image = name ? this.generateDomainImageUrl(name) : null;
-    const image_data = name ? await this.generateImageData(name, {}) : null;
     const external_url = name
       ? `https://unstoppabledomains.com/search?searchTerm=${name}`
       : null;
@@ -254,7 +232,6 @@ export class MetaDataController {
       external_url,
       attributes,
       image,
-      image_data,
     };
   }
 
