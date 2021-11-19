@@ -147,7 +147,9 @@ export class MetaDataController {
       },
       external_url: `https://unstoppabledomains.com/search?searchTerm=${domain.name}`,
       image: hasPicture
-        ? `${request.baseUrl}/image-src/${domain.name}`
+        ? `${request.protocol}://${request.get('host')}/image-src/${
+            domain.name
+          }`
         : this.generateDomainImageUrl(domain.name),
       attributes: domainAttributes,
     };

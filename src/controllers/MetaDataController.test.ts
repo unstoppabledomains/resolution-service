@@ -176,12 +176,14 @@ describe('MetaDataController', () => {
         },
         ownerAddress: '0xa59C818Ddb801f1253edEbf0Cf08c9E481EA2fE5',
       });
-      const expectedImageUrl = '/image-src/matt.crypto';
+      // supertest api runs on localhost with random port
+      const expectedImageUrl =
+        /^http:\/\/127.0.0.1:\d*\/image-src\/matt.crypto$/;
       const response = await supertest(api)
         .get(`/metadata/${domain.name}`)
         .send()
         .then((r) => r.body);
-      expect(response.image).to.equal(expectedImageUrl);
+      expect(response.image).to.match(expectedImageUrl);
       expect(response.attributes).to.deep.equal([
         { trait_type: 'domain', value: 'matt.crypto' },
         { trait_type: 'level', value: 2 },
