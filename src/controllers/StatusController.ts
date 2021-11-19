@@ -48,7 +48,11 @@ export class StatusController {
 
   private static async blockchainStatusForNetwork(
     blockchain: Blockchain,
-    config: { NETWORK_ID: number; ACCEPTABLE_DELAY_IN_BLOCKS: number },
+    config: {
+      NETWORK_ID: number;
+      ACCEPTABLE_DELAY_IN_BLOCKS: number;
+      CONFIRMATION_BLOCKS: number;
+    },
     latestBlockCallback: () => Promise<number>,
   ): Promise<BlockchainStatus> {
     const status: BlockchainStatus = {
@@ -62,7 +66,7 @@ export class StatusController {
     };
     status.isUpToDate =
       status.latestNetworkBlock - status.latestMirroredBlock <=
-      status.acceptableDelayInBlocks;
+      status.acceptableDelayInBlocks + config.CONFIRMATION_BLOCKS;
     return status;
   }
 

@@ -119,6 +119,7 @@ export const env = {
       ACCEPTABLE_DELAY_IN_BLOCKS: Number(
         process.env.ZILLIQA_ACCEPTABLE_DELAY_IN_BLOCKS || 200,
       ),
+      CONFIRMATION_BLOCKS: Number(process.env.ZILLIQA_CONFIRMATION_BLOCKS || 0),
     },
     ERC721_METADATA: {
       GOOGLE_CLOUD_STORAGE_BASE_URL:

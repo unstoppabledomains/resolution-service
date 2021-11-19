@@ -42,7 +42,7 @@ describe('StatusController', () => {
       blockchain: {
         ETH: {
           acceptableDelayInBlocks: 100,
-          latestMirroredBlock: 1101,
+          latestMirroredBlock: 901,
           latestNetworkBlock: 1207,
           networkId: 1337,
           isUpToDate: false,
