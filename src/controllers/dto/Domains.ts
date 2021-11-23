@@ -19,6 +19,9 @@ import { toNumber } from 'lodash';
 import NetworkConfig from 'uns/uns-config.json';
 import ValidateWith from '../../services/ValidateWith';
 
+// Need to specity types explicitly because routing-controllers gets easily confused
+/* eslint-disable @typescript-eslint/no-inferrable-types */
+
 export class DomainMetadata {
   @IsString()
   domain: string;
@@ -86,10 +89,10 @@ export class DomainsListQuery {
   @IsInt()
   @Min(1)
   @Max(200)
-  perPage = 100;
+  perPage: number = 100;
 
   @IsOptional()
-  startingAfter = '';
+  startingAfter: string = '';
 
   get sort() {
     return {
