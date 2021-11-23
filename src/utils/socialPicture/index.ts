@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { env } from '../../env';
 import nodeFetch from 'node-fetch';
+import { Domain } from '../../models';
 import { createCanvas } from 'canvas';
 import createSVGfromTemplate from './svgTemplate';
 import btoa from 'btoa';
@@ -122,11 +123,15 @@ export const getImageURLFromTokenURI = async (
   return metadata.image || metadata.image_url;
 };
 
-export const getSocialPicture = async (
-  domainName: string,
-  avatarRecord: string,
-  ownerAddress: string,
-): Promise<string | undefined> => {
+export const getSocialPicture = async (params: {
+  domainName: string;
+  avatarRecord: string;
+  ownerAddress: string;
+  toBase64?: boolean;
+}): Promise<string | undefined> => {
+  const { domainName, avatarRecord, ownerAddress } = params;
+  const toBase64 = params.toBase64 ?? true;
+
   const { pictureOrUrl, nftStandard } = await getSocialPictureUrl(
     avatarRecord,
     ownerAddress,
@@ -148,7 +153,12 @@ export const getSocialPicture = async (
     } else {
       [data, mimeType] = await getNFTSocialPicture(pictureOrUrl);
     }
-    socialPicture = createSocialPictureImage(domainName, data, mimeType);
+    socialPicture = createSocialPictureImage(
+      domainName,
+      data,
+      mimeType,
+      toBase64,
+    );
     return socialPicture;
   }
 };
@@ -227,6 +237,7 @@ export const createSocialPictureImage = (
   domainName: string,
   data: string,
   mimeType: string | null,
+  toBase64 = true,
 ): string => {
   if (domainName.length > 30) {
     domainName = domainName.substring(0, 30 - 3) + '...';
@@ -238,7 +249,9 @@ export const createSocialPictureImage = (
     fontSize,
     mimeType: mimeType || undefined,
   });
-
+  if (!toBase64) {
+    return svg;
+  }
   try {
     return (
       'data:image/svg+xml;base64,' +

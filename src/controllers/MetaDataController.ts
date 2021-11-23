@@ -117,11 +117,11 @@ export class MetaDataController {
     }
     const resolution = getDomainResolution(domain);
 
-    const socialPicture = await getSocialPicture(
-      domain.name,
-      resolution.resolution['social.picture.value'] || '',
-      resolution.ownerAddress || '',
-    );
+    const socialPicture = await getSocialPicture({
+      domainName: domain.name,
+      avatarRecord: resolution.resolution['social.picture.value'] || '',
+      ownerAddress: resolution.ownerAddress || '',
+    });
     const description = this.getDomainDescription(
       domain.name,
       resolution.resolution,
@@ -180,15 +180,14 @@ export class MetaDataController {
       ? getDomainResolution(domain)
       : ({} as DomainsResolution);
     const records = resolution.resolution || {};
-
     if (!name.includes('.')) {
       return { image_data: '' };
     }
-    const socialPicture = await getSocialPicture(
-      name,
-      records['social.picture.value'] || '',
-      resolution.ownerAddress || '',
-    );
+    const socialPicture = await getSocialPicture({
+      domainName: name,
+      avatarRecord: records['social.picture.value'] || '',
+      ownerAddress: resolution.ownerAddress || '',
+    });
     return {
       image_data:
         socialPicture || (await this.generateImageData(name, records)),
@@ -216,16 +215,18 @@ export class MetaDataController {
       return '';
     }
 
-    const socialPicture = await getSocialPicture(
-      name,
-      records['social.picture.value'] || '',
-      resolution.ownerAddress || '',
-    );
+    let socialPicture = await getSocialPicture({
+      domainName: name,
+      avatarRecord: records['social.picture.value'] || '',
+      ownerAddress: resolution.ownerAddress || '',
+      toBase64: false,
+    });
 
-    return (
-      socialPicture ??
-      (await pathThatSvg(await this.generateImageData(name, records)))
-    );
+    if (!socialPicture) {
+      socialPicture = await this.generateImageData(name, records);
+    }
+
+    return await pathThatSvg(socialPicture);
   }
 
   private async defaultMetaResponse(
