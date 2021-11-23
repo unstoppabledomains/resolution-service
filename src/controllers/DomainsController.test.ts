@@ -525,7 +525,7 @@ describe('DomainsController', () => {
         });
 
       const res = await supertest(api)
-        .get('/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2')
+        .get('/domains?owners=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2')
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
       expect(res.body.data).to.have.deep.members([
@@ -558,6 +558,52 @@ describe('DomainsController', () => {
           },
         },
       ]);
+      expect(res.status).eq(200);
+    });
+    it('should return domains for multiple owners', async () => {
+      const testDomains = await Promise.all([
+        await DomainTestHelper.createTestDomain({
+          name: 'test.crypto',
+          node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        }),
+        await DomainTestHelper.createTestDomain({
+          name: 'test1.crypto',
+          node: '0x99cc72a0f40d092d1b8b3fa8f2da5b7c0c6a9726679112e3827173f8b2460502',
+          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        }),
+        await DomainTestHelper.createTestDomain({
+          name: 'test3.crypto',
+          node: '0xde3d1be3661eadd92290828d632e0dd25703b6008cd92d03f51be25795fe922d',
+          ownerAddress: '0x111115e932a88b2e7d0130712b3aa9fb7c522222',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        }),
+      ]);
+
+      const expectedDomains = testDomains.map((d) => ({
+        id: d.domain.name,
+        attributes: {
+          meta: {
+            domain: d.domain.name,
+            blockchain: d.resolution.blockchain,
+            networkId: d.resolution.networkId,
+            owner: d.resolution.ownerAddress,
+            registry: d.resolution.registry,
+            resolver: d.resolution.resolver,
+          },
+          records: {},
+        },
+      }));
+
+      const res = await supertest(api)
+        .get(
+          '/domains?owners=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&owners=0x111115e932a88b2e7d0130712b3aa9fb7c522222',
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.body.data).to.have.deep.members(expectedDomains);
       expect(res.status).eq(200);
     });
     it('should return one domain perPage', async () => {
@@ -856,7 +902,7 @@ describe('DomainsController', () => {
         data: [],
         meta: {
           hasMore: false,
-          nextStartingAfter: (domain.id || 0) + 1,
+          nextStartingAfter: ((domain.id || 0) + 1).toString(),
           perPage: 100,
           sortBy: 'id',
           sortDirection: 'ASC',
@@ -881,17 +927,6 @@ describe('DomainsController', () => {
             },
           },
         ],
-      });
-      expect(res.status).eq(400);
-    });
-    it('should return error on non array owners', async () => {
-      const res = await supertest(api)
-        .get('/domains?owners=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2')
-        .auth(testApiKey.apiKey, { type: 'bearer' })
-        .send();
-      expect(res.body).containSubset({
-        message:
-          'Given parameter owners is invalid. Value ("0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2") cannot be parsed into JSON.',
       });
       expect(res.status).eq(400);
     });
@@ -976,7 +1011,7 @@ describe('DomainsController', () => {
 
     const res = await supertest(api)
       .get(
-        '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&tlds[]=crypto',
+        '/domains?owners=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&tlds=crypto',
       )
       .auth(testApiKey.apiKey, { type: 'bearer' })
       .send();
@@ -1100,8 +1135,10 @@ describe('DomainsController', () => {
   });
 
   describe('domains list sorting', () => {
-    let testDomains: { domain: Domain; resolutions: DomainsResolution[] }[] =
-      [];
+    let testDomains: {
+      domain: Domain;
+      resolutions: DomainsResolution[];
+    }[] = [];
     // Test domains list:
     // 0: .crypto domain on L1
     // 1: .crypto domain on L2
@@ -1331,7 +1368,7 @@ describe('DomainsController', () => {
 
       const res = await supertest(api)
         .get(
-          `/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&sortBy=name&sortDirection=DESC&perPage=1&startingAfter[]=${domains[1].name}`,
+          `/domains?owners=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&sortBy=name&sortDirection=DESC&perPage=1&startingAfter=${domains[1].name}`,
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
@@ -1351,7 +1388,7 @@ describe('DomainsController', () => {
     it('should return error for invalid sortBy', async () => {
       const res = await supertest(api)
         .get(
-          `/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&sortBy=invalid`,
+          `/domains?owners=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&sortBy=invalid`,
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();

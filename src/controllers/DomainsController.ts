@@ -15,6 +15,7 @@ import {
   DomainsListQuery,
   DomainsListResponse,
 } from './dto/Domains';
+import { ConvertArrayQueryParams } from '../middleware/ConvertArrayQueryParams';
 
 @OpenAPI({
   security: [{ apiKeyAuth: [] }],
@@ -81,6 +82,8 @@ export class DomainsController {
       },
     },
   })
+  @UseBefore(ConvertArrayQueryParams('owners'))
+  @UseBefore(ConvertArrayQueryParams('tlds'))
   async getDomainsList(
     @QueryParams() query: DomainsListQuery,
   ): Promise<DomainsListResponse> {
@@ -95,7 +98,7 @@ export class DomainsController {
       });
     }
 
-    if (query.startingAfter) {
+    if (query.startingAfter.length !== 0) {
       where.push({
         query: `${query.sort.column} ${
           query.sort.direction === 'ASC' ? '>' : '<'
