@@ -691,6 +691,7 @@ describe('DomainsController', () => {
 
   describe('GET /domains/:domainName/transfers/latest', () => {
     it('should return latest transfers from MATIC and ETH networks', async () => {
+      // todo implement test
       const res = await supertest(api)
         .get('/domains/kirill.dao/transfers/latest')
         .auth(testApiKey.apiKey, { type: 'bearer' })

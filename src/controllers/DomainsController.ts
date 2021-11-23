@@ -132,6 +132,9 @@ class UnsDomainQuery {
 
 class DomainLatestTransfer {
   @IsString()
+  domain: string;
+
+  @IsString()
   @IsNotEmpty()
   from: string;
 
@@ -146,14 +149,15 @@ class DomainLatestTransfer {
   @IsInt()
   @IsNotEmpty()
   blockNumber: number;
+
+  @IsString()
+  @IsNotEmpty()
+  blockchain: string;
 }
 
-class DomainLatestTransfersResponse {
+class DomainLatestTransferResponse {
   @ValidateNested()
-  blockchains: {
-    ETH: DomainLatestTransfer | null;
-    MATIC: DomainLatestTransfer | null;
-  };
+  data: DomainLatestTransfer[];
 }
 
 @OpenAPI({
@@ -269,7 +273,7 @@ export class DomainsController {
   @Get('/domains/:domainName/transfers/latest')
   async getDomainsLastTransfer(
     @QueryParams() query: UnsDomainQuery,
-  ): Promise<DomainLatestTransfersResponse> {
+  ): Promise<DomainLatestTransferResponse> {
     const namehash = eip137Namehash(query.domainName);
     const maxBlockNumbersQuery = CnsRegistryEvent.createQueryBuilder('event');
     maxBlockNumbersQuery.addSelect('MAX(event.blockNumber)', 'blockNumber');
@@ -297,15 +301,18 @@ export class DomainsController {
         },
       );
     });
+    const response = new DomainLatestTransferResponse();
     const lastTransferEvents = await lastTransfersQuery.getMany();
-    return lastTransferEvents.reduce((previousValue, currentValue) => {
-      previousValue.blockchains[currentValue.blockchain as 'ETH' | 'MATIC'] = {
-        blockNumber: currentValue.blockNumber,
-        networkId: currentValue.networkId,
-        from: currentValue?.returnValues?.from,
-        to: currentValue?.returnValues?.to,
+    response.data = lastTransferEvents.map((event) => {
+      return {
+        domain: query.domainName,
+        from: event?.returnValues?.from,
+        to: event?.returnValues?.to,
+        networkId: event.networkId,
+        blockNumber: event.blockNumber,
+        blockchain: event.blockchain,
       };
-      return previousValue;
-    }, new DomainLatestTransfersResponse());
+    });
+    return response;
   }
 }
