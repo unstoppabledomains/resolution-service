@@ -930,17 +930,6 @@ describe('DomainsController', () => {
       });
       expect(res.status).eq(400);
     });
-    it('should return error on non array owners', async () => {
-      const res = await supertest(api)
-        .get('/domains?owners=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2')
-        .auth(testApiKey.apiKey, { type: 'bearer' })
-        .send();
-      expect(res.body).containSubset({
-        message:
-          'Given parameter owners is invalid. Value ("0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2") cannot be parsed into JSON.',
-      });
-      expect(res.status).eq(400);
-    });
   });
   it('should format the 500 error', async () => {
     const connection = getConnection();
