@@ -89,7 +89,7 @@ export class DomainsListQuery {
   perPage = 100;
 
   @IsOptional()
-  startingAfter: string | undefined = undefined;
+  startingAfter = '';
 
   get sort() {
     return {

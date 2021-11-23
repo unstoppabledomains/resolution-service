@@ -98,7 +98,7 @@ export class DomainsController {
       });
     }
 
-    if (query.startingAfter) {
+    if (query.startingAfter.length !== 0) {
       where.push({
         query: `${query.sort.column} ${
           query.sort.direction === 'ASC' ? '>' : '<'

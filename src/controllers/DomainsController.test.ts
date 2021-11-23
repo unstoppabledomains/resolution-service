@@ -902,7 +902,7 @@ describe('DomainsController', () => {
         data: [],
         meta: {
           hasMore: false,
-          nextStartingAfter: (domain.id || 0) + 1,
+          nextStartingAfter: ((domain.id || 0) + 1).toString(),
           perPage: 100,
           sortBy: 'id',
           sortDirection: 'ASC',
@@ -1368,7 +1368,7 @@ describe('DomainsController', () => {
 
       const res = await supertest(api)
         .get(
-          `/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&sortBy=name&sortDirection=DESC&perPage=1&startingAfter[]=${domains[1].name}`,
+          `/domains?owners=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&sortBy=name&sortDirection=DESC&perPage=1&startingAfter=${domains[1].name}`,
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
@@ -1388,7 +1388,7 @@ describe('DomainsController', () => {
     it('should return error for invalid sortBy', async () => {
       const res = await supertest(api)
         .get(
-          `/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&sortBy=invalid`,
+          `/domains?owners=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&sortBy=invalid`,
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
