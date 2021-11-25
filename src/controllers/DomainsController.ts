@@ -3,6 +3,7 @@ import {
   Get,
   JsonController,
   Param,
+  Params,
   QueryParams,
   UseBefore,
 } from 'routing-controllers';
@@ -19,6 +20,7 @@ import {
   DomainLatestTransferResponse,
 } from './dto/Domains';
 import { ConvertArrayQueryParams } from '../middleware/ConvertArrayQueryParams';
+import { In } from 'typeorm';
 
 @OpenAPI({
   security: [{ apiKeyAuth: [] }],
@@ -161,37 +163,25 @@ export class DomainsController {
 
   @Get('/domains/:domainName/transfers/latest')
   async getDomainsLastTransfer(
-    @QueryParams() query: UnsDomainQuery,
+    @Params() query: UnsDomainQuery,
   ): Promise<DomainLatestTransferResponse> {
-    const namehash = eip137Namehash(query.domainName);
-    const maxBlockNumbersQuery = CnsRegistryEvent.createQueryBuilder('event');
-    maxBlockNumbersQuery.addSelect('MAX(event.blockNumber)', 'blockNumber');
-    maxBlockNumbersQuery.addSelect('event.blockchain');
-    maxBlockNumbersQuery.addSelect('event.node');
-    maxBlockNumbersQuery.where(
-      `event.node = :namehash AND event.type = :eventType AND event.blockchain <> :excludedBlockchain`,
-      {
-        namehash,
-        eventType: 'Transfer',
-        excludedBlockchain: 'ZIL',
-      },
-    );
-    maxBlockNumbersQuery.groupBy('event.blockchain, event.node');
-    const maxBlockNumberEvents = await maxBlockNumbersQuery.getMany();
-    const lastTransfersQuery = CnsRegistryEvent.createQueryBuilder('event');
-    maxBlockNumberEvents.forEach((event: CnsRegistryEvent) => {
-      lastTransfersQuery.orWhere(
-        `event.blockNumber = :blockNumber AND event.type = :eventType AND node = :namehash AND blockchain = :blockchain`,
-        {
-          blockNumber: event.blockNumber,
-          eventType: 'Transfer',
-          namehash,
-          blockchain: event.blockchain,
-        },
-      );
+    const tokenId = eip137Namehash(query.domainName);
+    const domainEvents = await CnsRegistryEvent.createQueryBuilder();
+    domainEvents.select();
+    domainEvents.distinctOn(['blockchain']);
+    domainEvents.where({
+      node: tokenId,
+      blockchain: In(['ETH', 'MATIC']),
+      type: 'Transfer',
     });
+    domainEvents.orderBy({
+      blockchain: 'ASC',
+      block_number: 'DESC',
+      log_index: 'DESC',
+    });
+    const lastTransferEvents = await domainEvents.getMany();
+
     const response = new DomainLatestTransferResponse();
-    const lastTransferEvents = await lastTransfersQuery.getMany();
     response.data = lastTransferEvents.map((event) => {
       return {
         domain: query.domainName,
