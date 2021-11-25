@@ -4,16 +4,17 @@ import NetworkConfig from 'uns/uns-config.json';
 import { EthereumProvider } from '../workers/EthereumProvider';
 
 describe('eth', () => {
-  const contractKeys: (keyof typeof NetworkConfig.networks['1']['contracts'])[] = [
-    'UNSRegistry',
-    'CNSRegistry',
-    'SignatureController',
-    'WhitelistedMinter',
-    'URIPrefixController',
-    'DomainZoneController',
-    'Resolver',
-    'ProxyReader',
-  ];
+  const contractKeys: (keyof typeof NetworkConfig.networks['1']['contracts'])[] =
+    [
+      'UNSRegistry',
+      'CNSRegistry',
+      'SignatureController',
+      'WhitelistedMinter',
+      'URIPrefixController',
+      'DomainZoneController',
+      'Resolver',
+      'ProxyReader',
+    ];
 
   function compareNetworkConfig(
     config: CryptoConfig,

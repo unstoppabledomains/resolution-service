@@ -5,8 +5,36 @@ import { DomainTestHelper } from '../utils/testing/DomainTestHelper';
 import { eip137Namehash } from '../utils/namehash';
 import { DefaultImageData, BackgroundColor } from '../utils/generalImage';
 import nock from 'nock';
+import {
+  getNSConfig,
+  LayerTestFixture,
+} from '../utils/testing/LayerFixturesHelper';
+import { EthereumHelper } from '../utils/testing/EthereumTestsHelper';
+import { Blockchain } from '../types/common';
+import { env } from '../env';
+import Domain from '../models/Domain';
 
 describe('MetaDataController', () => {
+  const L1Fixture: LayerTestFixture = new LayerTestFixture();
+  const L2Fixture: LayerTestFixture = new LayerTestFixture();
+
+  before(async () => {
+    await EthereumHelper.stopNetwork();
+    await L1Fixture.setup(Blockchain.ETH, env.APPLICATION.ETHEREUM, {});
+    await L2Fixture.setup(Blockchain.MATIC, env.APPLICATION.POLYGON, {
+      network: {
+        url: 'http://localhost:7546',
+        chainId: 1337,
+        dbPath: './.sandboxl2',
+      },
+    });
+  });
+
+  after(async () => {
+    await L1Fixture.networkHelper.stopNetwork();
+    await L2Fixture.networkHelper.stopNetwork();
+  });
+
   describe('GET /metadata/:DomainOrToken', () => {
     it('should work', async () => {
       const { domain } = await DomainTestHelper.createTestDomain({
@@ -75,8 +103,7 @@ describe('MetaDataController', () => {
 
       const { domain: animalDomain } = await DomainTestHelper.createTestDomain({
         name: 'unstoppablelemming.crypto',
-        node:
-          '0xccfd2756994b2ea38fcd2deaf3ae2b2a4678fce6e81fbe4f856ceb0cb50dfee9',
+        node: '0xccfd2756994b2ea38fcd2deaf3ae2b2a4678fce6e81fbe4f856ceb0cb50dfee9',
         ownerAddress: '0xe7474d07fd2fa286e7e0aa23cd107f8379085037',
         resolution: {
           'crypto.ETH.address': '0xe7474D07fD2FA286e7e0aa23cd107F8379085037',
@@ -178,8 +205,7 @@ describe('MetaDataController', () => {
 
       const { domain: animalDomain } = await DomainTestHelper.createTestDomain({
         name: 'trustbear.crypto',
-        node:
-          '0x329b868d34359c1961358088be9bfbd21e65eb8ab95e90b21e50d99c02b34c72',
+        node: '0x329b868d34359c1961358088be9bfbd21e65eb8ab95e90b21e50d99c02b34c72',
       });
       const expectedImageUrl =
         'https://storage.googleapis.com/dot-crypto-metadata-api/images/trust/bear.svg';
@@ -243,8 +269,48 @@ describe('MetaDataController', () => {
       });
     });
 
+    it('should query the newURI event on the fly to return a freshly minted domain', async () => {
+      const uns = getNSConfig('wallet');
+      const owner = L2Fixture.networkHelper.owner().address;
+      await L2Fixture.prepareService(owner, uns);
+
+      const token = uns.node.toHexString();
+      const responseWithNode = await supertest(api)
+        .get(`/metadata/${token}`)
+        .send()
+        .then((r) => r.body);
+      expect(responseWithNode).to.deep.eq({
+        name: uns.name,
+        properties: {
+          records: {},
+        },
+        description:
+          'A CNS or UNS blockchain domain. Use it to resolve your cryptocurrency addresses and decentralized websites.',
+        external_url: `https://unstoppabledomains.com/search?searchTerm=${uns.name}`,
+        image:
+          'https://storage.googleapis.com/dot-crypto-metadata-api/images/unstoppabledomains.svg',
+        image_data: DefaultImageData({
+          label: uns.label,
+          tld: uns.tld,
+          fontSize: 16,
+        }),
+        background_color: '4C47F7',
+        attributes: [
+          { trait_type: 'domain', value: uns.name },
+          { trait_type: 'level', value: 2 },
+          { trait_type: 'length', value: uns.label.length },
+          { trait_type: 'type', value: 'standard' },
+        ],
+      });
+
+      // domain should not be saved during this call
+      const domain = await Domain.findByNode(uns.node.toHexString());
+      expect(domain).to.be.undefined;
+    });
+
     it('should work with special domains', async () => {
-      const CUSTOM_IMAGE_URL = 'https://storage.googleapis.com/dot-crypto-metadata-api/images/custom' as const;
+      const CUSTOM_IMAGE_URL =
+        'https://storage.googleapis.com/dot-crypto-metadata-api/images/custom' as const;
       const domainsWithCustomImage: Record<string, string> = {
         'code.crypto': 'code.svg',
         'web3.crypto': 'web3.svg',
@@ -331,18 +397,16 @@ describe('MetaDataController', () => {
     });
 
     it('should return the same attributes regardless of what record key is used for ipfs', async () => {
-      const {
-        domain: domainHtmlValue,
-      } = await DomainTestHelper.createTestDomain({
-        resolution: { 'ipfs.html.value': 'ipfs hash content' },
-      });
-      const {
-        domain: domainDwebHash,
-      } = await DomainTestHelper.createTestDomain({
-        name: 'testdomain2.crypto',
-        node: eip137Namehash('testdomain2.crypto'),
-        resolution: { 'dweb.ipfs.hash': 'ipfs hash content' },
-      });
+      const { domain: domainHtmlValue } =
+        await DomainTestHelper.createTestDomain({
+          resolution: { 'ipfs.html.value': 'ipfs hash content' },
+        });
+      const { domain: domainDwebHash } =
+        await DomainTestHelper.createTestDomain({
+          name: 'testdomain2.crypto',
+          node: eip137Namehash('testdomain2.crypto'),
+          resolution: { 'dweb.ipfs.hash': 'ipfs hash content' },
+        });
 
       const htmlValueResponse = await supertest(api)
         .get(`/metadata/${domainHtmlValue.name}`)
@@ -459,6 +523,37 @@ describe('MetaDataController', () => {
         .then((r) => r.body);
       expect(responseWithNode).to.deep.eq({
         image_data: '',
+      });
+    });
+
+    it('should query the newURI event and return image data for default domain if such exists', async () => {
+      const uns = getNSConfig('nft');
+      const owner = L2Fixture.networkHelper.owner().address;
+      await L2Fixture.prepareService(owner, uns);
+
+      const response = await supertest(api)
+        .get(`/image/${uns.node.toHexString()}`)
+        .send()
+        .then((r) => r.body);
+
+      expect(response).to.deep.eq({
+        image_data: DefaultImageData({
+          label: uns.label,
+          tld: uns.tld,
+          fontSize: 16,
+        }),
+      });
+
+      const responseWithName = await supertest(api)
+        .get(`/image/${uns.name}`)
+        .send()
+        .then((r) => r.body);
+      expect(responseWithName).to.deep.eq({
+        image_data: DefaultImageData({
+          label: uns.label,
+          tld: uns.tld,
+          fontSize: 16,
+        }),
       });
     });
   });
