@@ -9,7 +9,6 @@ import AnimalDomainHelper, {
 import { DefaultImageData } from '../utils/generalImage';
 import { MetadataImageFontSize } from '../types/common';
 import { pathThatSvg } from 'path-that-svg';
-import { IsArray, IsObject, IsOptional, IsString } from 'class-validator';
 import { env } from '../env';
 import { logger } from '../logger';
 import {
@@ -20,6 +19,7 @@ import {
 import punycode from 'punycode';
 import btoa from 'btoa';
 import { getDomainResolution } from '../services/Resolution';
+import { ImageResponse, OpenSeaMetadata } from './dto/Metadata';
 
 const DEFAULT_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
@@ -36,57 +36,6 @@ const DomainsWithCustomImage: Record<string, string> = {
   'india.crypto': 'custom/india.jpg',
 };
 const AnimalHelper: AnimalDomainHelper = new AnimalDomainHelper();
-
-type DomainProperties = {
-  records: Record<string, string>;
-};
-
-class Erc721Metadata {
-  @IsString()
-  name: string | null;
-
-  @IsString()
-  description: string | null;
-
-  @IsString()
-  image: string | null;
-
-  @IsString()
-  external_url: string | null;
-}
-
-class OpenSeaMetadata extends Erc721Metadata {
-  @IsOptional()
-  @IsString()
-  external_link?: string;
-
-  @IsOptional()
-  @IsString()
-  image_data?: string | null;
-
-  @IsObject()
-  properties: DomainProperties;
-
-  @IsArray()
-  attributes: Array<OpenSeaMetadataAttribute>;
-
-  @IsOptional()
-  @IsString()
-  background_color?: string;
-
-  @IsOptional()
-  @IsString()
-  animation_url?: string;
-
-  @IsOptional()
-  @IsString()
-  youtube_url?: string;
-}
-
-class ImageResponse {
-  @IsString()
-  image_data: string;
-}
 
 @Controller()
 export class MetaDataController {
