@@ -161,7 +161,7 @@ export class UnsDomainQuery {
   domainName: string;
 
   isNotZilDomain(): boolean {
-    return this.domainName.endsWith('zil');
+    return !this.domainName.endsWith('zil');
   }
 }
 
