@@ -154,7 +154,6 @@ export class DomainsListResponse {
   meta: DomainsListMeta;
 }
 
-const ensOnZil = new RegExp('[.]zil$');
 export class UnsDomainQuery {
   @IsString()
   @IsNotEmpty()
@@ -162,7 +161,7 @@ export class UnsDomainQuery {
   domainName: string;
 
   isNotZilDomain(): boolean {
-    return ensOnZil && !ensOnZil.test(this.domainName);
+    return this.domainName.endsWith('zil');
   }
 }
 

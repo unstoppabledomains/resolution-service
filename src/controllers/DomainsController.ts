@@ -162,6 +162,27 @@ export class DomainsController {
   }
 
   @Get('/domains/:domainName/transfers/latest')
+  @OpenAPI({
+    responses: {
+      '200': {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                data: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/DomainLatestTransfer',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
   async getDomainsLastTransfer(
     @Params() query: UnsDomainQuery,
   ): Promise<DomainLatestTransferResponse> {
