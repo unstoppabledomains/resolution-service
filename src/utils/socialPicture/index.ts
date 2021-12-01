@@ -114,7 +114,7 @@ const useIpfsGateway = (url: string) => {
 };
 
 const getImageURLFromTokenURI = async (tokenURI: string) => {
-  const resp = await nodeFetch(useIpfsGateway(tokenURI));
+  const resp = await nodeFetch(useIpfsGateway(tokenURI), { timeout: 3000 });
   if (!resp.ok) {
     throw new Error('Failed to fetch from tokenURI');
   }
@@ -171,7 +171,7 @@ export const getSocialPictureUrl = async (
 export const getNFTSocialPicture = async (
   imageUrl: string,
 ): Promise<[string, string | null]> => {
-  const resp = await nodeFetch(useIpfsGateway(imageUrl));
+  const resp = await nodeFetch(useIpfsGateway(imageUrl), { timeout: 3000 });
   if (!resp.ok) {
     throw new Error('Failed to fetch NFT image');
   }

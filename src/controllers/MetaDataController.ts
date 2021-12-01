@@ -141,9 +141,14 @@ export class MetaDataController {
         );
         mimeType = 'image/svg+xml';
       } else {
-        [data, mimeType] = await getNFTSocialPicture(pictureOrUrl);
+        [data, mimeType] = await getNFTSocialPicture(pictureOrUrl).catch(() => [
+          '',
+          null,
+        ]);
       }
-      socialPicture = createSocialPictureImage(domain, data, mimeType);
+      if (data) {
+        socialPicture = createSocialPictureImage(domain, data, mimeType);
+      }
     }
     const description = this.getDomainDescription(
       domain.name,
