@@ -1,6 +1,6 @@
 #!/bin/bash
 
-[[ $SERVICE_NAME = "workers" ]] && SCALING="manual_scaling:\n  instances: 1" || SCALING=""
+[[ $SERVICE_NAME = "workers" ]] && SCALING="resources:\n\tcpu: 1\n\tmemory_gb: 2\n\nautomatic_scaling:\n\tmin_num_instances: 4\n\tmax_num_instances: 50" || SCALING=""
 [[ $BUGSNAG_API_KEY = "" ]] && BUGSNAG_API_KEY_FIELD="" || BUGSNAG_API_KEY_FIELD="BUGSNAG_API_KEY: ${BUGSNAG_API_KEY}"
 [[ $NEW_RELIC_APP_NAME = "" ]] && NEW_RELIC_APP_NAME_FIELD="" || NEW_RELIC_APP_NAME_FIELD="NEW_RELIC_APP_NAME: ${NEW_RELIC_APP_NAME}"
 [[ $NEW_RELIC_LICENSE_KEY = "" ]] && NEW_RELIC_LICENSE_KEY_FIELD="" || NEW_RELIC_LICENSE_KEY_FIELD="NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}"
