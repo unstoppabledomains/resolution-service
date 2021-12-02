@@ -19,9 +19,7 @@ export default function createSocialPictureSvg({
   return `<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
           <pattern id="backImg" patternUnits="userSpaceOnUse" x="0" y="0" width="300" height="300">
-          <object data="data:${mimeType};base64,${background_image}" type="${mimeType}" width="300" height="300">
-            <image href="data:${mimeType};base64,${background_image}" width="300" height="300" />
-          </object>
+          <image href="data:${mimeType};base64,${background_image}" width="300" height="300" />
           </pattern>
           <filter id="shadowy">
             <feDiffuseLighting in="SourceGraphic" result="light"
