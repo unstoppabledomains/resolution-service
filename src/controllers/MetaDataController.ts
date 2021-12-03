@@ -1,23 +1,12 @@
-import {
-  Controller,
-  Get,
-  Header,
-  OnUndefined,
-  Param,
-  Redirect,
-  Req,
-  Res,
-} from 'routing-controllers';
+import { Controller, Get, Header, Param, Res } from 'routing-controllers';
 import { ResponseSchema } from 'routing-controllers-openapi';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
-import fetch from 'node-fetch';
 import Domain from '../models/Domain';
 import AnimalDomainHelper, {
   OpenSeaMetadataAttribute,
 } from '../utils/AnimalDomainHelper/AnimalDomainHelper';
-import { DefaultImageData, svgToBase64 } from '../utils/generalImage';
+import { DefaultImageData } from '../utils/generalImage';
 import { MetadataImageFontSize } from '../types/common';
-import { pathThatSvg } from 'path-that-svg';
 import { env } from '../env';
 import { logger } from '../logger';
 import {
@@ -27,10 +16,9 @@ import {
   hasSocialPicture,
 } from '../utils/socialPicture';
 import punycode from 'punycode';
-import btoa from 'btoa';
 import { getDomainResolution } from '../services/Resolution';
 import { OpenSeaMetadata } from './dto/Metadata';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { DomainsResolution } from '../models';
 
 const DEFAULT_IMAGE_URL =
@@ -47,6 +35,8 @@ const DomainsWithCustomImage: Record<string, string> = {
   'hosting.crypto': 'custom/hosting.svg',
   'india.crypto': 'custom/india.jpg',
 };
+const BASE_METADATA_IMAGE_URL =
+  env.APPLICATION.ERC721_METADATA.METADATA_BASE_URI;
 const AnimalHelper: AnimalDomainHelper = new AnimalDomainHelper();
 
 @Controller()
@@ -72,17 +62,15 @@ export class MetaDataController {
   @Get('/metadata/:domainOrToken')
   @ResponseSchema(OpenSeaMetadata)
   async getMetaData(
-    @Req() request: Request,
     @Param('domainOrToken') domainOrToken: string,
   ): Promise<OpenSeaMetadata> {
-    const baseUrl = `${request.protocol}://${request.get('host')}`;
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain =
       (await Domain.findByNode(token)) ||
       (await Domain.findOnChainNoSafe(token));
 
     if (!domain) {
-      return this.defaultMetaResponse(baseUrl, domainOrToken);
+      return this.defaultMetaResponse(domainOrToken);
     }
 
     const resolution = getDomainResolution(domain);
@@ -111,7 +99,8 @@ export class MetaDataController {
         records: resolution.resolution,
       },
       external_url: `https://unstoppabledomains.com/search?searchTerm=${domain.name}`,
-      image: `${baseUrl}/metadata/${domain.name}/image`,
+      image: `${BASE_METADATA_IMAGE_URL}/metadata/${domain.name}/image`,
+      background_color: '4C47F7',
       attributes: domainAttributes,
     };
 
@@ -161,13 +150,14 @@ export class MetaDataController {
   }
 
   private async defaultMetaResponse(
-    baseUrl: string,
     domainOrToken: string,
   ): Promise<OpenSeaMetadata> {
     const name = domainOrToken.includes('.') ? domainOrToken : null;
     const description = name ? this.getDomainDescription(name, {}) : null;
     const attributes = name ? this.getDomainAttributes(name) : [];
-    const image = name ? `${baseUrl}/metadata/${name}/image` : null;
+    const image = name
+      ? `${BASE_METADATA_IMAGE_URL}/metadata/${name}/image`
+      : null;
     const external_url = name
       ? `https://unstoppabledomains.com/search?searchTerm=${name}`
       : null;
@@ -180,6 +170,7 @@ export class MetaDataController {
       external_url,
       attributes,
       image,
+      background_color: '4C47F7',
     };
   }
 

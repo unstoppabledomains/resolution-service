@@ -5,7 +5,6 @@ import { Domain } from '../../models';
 import { createCanvas } from 'canvas';
 import createSVGfromTemplate from './svgTemplate';
 import btoa from 'btoa';
-import { svgToBase64 } from '../generalImage';
 
 const CryptoPunksImageContractAddress =
   '0x16F5A35647D6F03D5D3da7b35409D65ba03aF3B2';
@@ -165,10 +164,6 @@ export const getSocialPictureUrl = async (
   try {
     const { nftStandard, contractAddress, tokenId } =
       parsePictureRecord(avatarRecord);
-    const nftContract = await constructNFTContract(
-      contractAddress,
-      nftStandard,
-    );
 
     if (nftStandard === 'cryptopunks') {
       const cryptoPunksImageContract = await constructNFTContract(
@@ -180,6 +175,11 @@ export const getSocialPictureUrl = async (
       );
       return { pictureOrUrl: svgImage, nftStandard, backgroundColor: '' };
     }
+
+    const nftContract = await constructNFTContract(
+      contractAddress,
+      nftStandard,
+    );
     const tokenURI = await getTokenURI({
       contract: nftContract,
       nftStandard,

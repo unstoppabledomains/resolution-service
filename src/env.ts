@@ -124,6 +124,9 @@ export const env = {
     ERC721_METADATA: {
       GOOGLE_CLOUD_STORAGE_BASE_URL:
         'https://storage.googleapis.com/dot-crypto-metadata-api',
+      METADATA_BASE_URI:
+        process.env.METADATA_BASE_URI ||
+        'https://metadata.unstoppabledomains.com',
     },
     NEW_RELIC_LICENSE_KEY: process.env.NEW_RELIC_LICENSE_KEY || '',
     NEW_RELIC_APP_NAME: process.env.NEW_RELIC_APP_NAME || '',
