@@ -46,8 +46,3 @@ export class OpenSeaMetadata extends Erc721Metadata {
   @IsString()
   youtube_url?: string;
 }
-
-export class ImageResponse {
-  @IsString()
-  image_data: string;
-}

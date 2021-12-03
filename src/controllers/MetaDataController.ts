@@ -1,4 +1,13 @@
-import { Controller, Get, Header, Param } from 'routing-controllers';
+import {
+  Controller,
+  Get,
+  Header,
+  OnUndefined,
+  Param,
+  Redirect,
+  Req,
+  Res,
+} from 'routing-controllers';
 import { ResponseSchema } from 'routing-controllers-openapi';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import fetch from 'node-fetch';
@@ -6,7 +15,7 @@ import Domain from '../models/Domain';
 import AnimalDomainHelper, {
   OpenSeaMetadataAttribute,
 } from '../utils/AnimalDomainHelper/AnimalDomainHelper';
-import { DefaultImageData } from '../utils/generalImage';
+import { DefaultImageData, svgToBase64 } from '../utils/generalImage';
 import { MetadataImageFontSize } from '../types/common';
 import { pathThatSvg } from 'path-that-svg';
 import { env } from '../env';
@@ -15,11 +24,14 @@ import {
   getSocialPictureUrl,
   getNFTSocialPicture,
   createSocialPictureImage,
+  hasSocialPicture,
 } from '../utils/socialPicture';
 import punycode from 'punycode';
 import btoa from 'btoa';
 import { getDomainResolution } from '../services/Resolution';
-import { ImageResponse, OpenSeaMetadata } from './dto/Metadata';
+import { OpenSeaMetadata } from './dto/Metadata';
+import { Request, Response } from 'express';
+import { DomainsResolution } from '../models';
 
 const DEFAULT_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
@@ -60,60 +72,36 @@ export class MetaDataController {
   @Get('/metadata/:domainOrToken')
   @ResponseSchema(OpenSeaMetadata)
   async getMetaData(
+    @Req() request: Request,
     @Param('domainOrToken') domainOrToken: string,
   ): Promise<OpenSeaMetadata> {
+    const baseUrl = `${request.protocol}://${request.get('host')}`;
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain =
       (await Domain.findByNode(token)) ||
       (await Domain.findOnChainNoSafe(token));
+
     if (!domain) {
-      return this.defaultMetaResponse(domainOrToken);
+      return this.defaultMetaResponse(baseUrl, domainOrToken);
     }
+
     const resolution = getDomainResolution(domain);
 
-    const { pictureOrUrl, nftStandard, backgroundColor } =
-      await getSocialPictureUrl(
-        resolution.resolution['social.picture.value'],
-        resolution.ownerAddress || '',
-      );
-    let socialPicture = '';
-    if (pictureOrUrl) {
-      let data = '',
-        mimeType = null;
-      if (nftStandard === 'cryptopunks') {
-        data = btoa(
-          pictureOrUrl
-            .replace(`data:image/svg+xml;utf8,`, ``)
-            .replace(
-              `<svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 24 24">`,
-              `<svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 24 24"><rect width="100%" height="100%" fill="#648595"/>`,
-            ),
-        );
-        mimeType = 'image/svg+xml';
-      } else {
-        [data, mimeType] = await getNFTSocialPicture(pictureOrUrl).catch(() => [
-          '',
-          null,
-        ]);
-      }
-      if (data) {
-        socialPicture = createSocialPictureImage(
-          domain,
-          data,
-          mimeType,
-          backgroundColor,
-        );
-      }
-    }
     const description = this.getDomainDescription(
       domain.name,
       resolution.resolution,
     );
+
+    const hasPicture = await hasSocialPicture(
+      resolution.resolution['social.picture.value'],
+      resolution.ownerAddress || '',
+    );
+
     const domainAttributes = this.getDomainAttributes(domain.name, {
       ipfsContent:
         resolution.resolution['dweb.ipfs.hash'] ||
         resolution.resolution['ipfs.html.value'],
-      verifiedNftPicture: socialPicture !== '',
+      verifiedNftPicture: hasPicture,
     });
 
     const metadata: OpenSeaMetadata = {
@@ -123,17 +111,9 @@ export class MetaDataController {
         records: resolution.resolution,
       },
       external_url: `https://unstoppabledomains.com/search?searchTerm=${domain.name}`,
-      image: socialPicture || this.generateDomainImageUrl(domain.name),
+      image: `${baseUrl}/metadata/${domain.name}/image`,
       attributes: domainAttributes,
     };
-
-    if (!this.isDomainWithCustomImage(domain.name) && !socialPicture) {
-      metadata.image_data = await this.generateImageData(
-        domain.name,
-        resolution.resolution,
-      );
-      metadata.background_color = '4C47F7';
-    }
 
     if (!this.isValidDNSDomain(domain.name)) {
       metadata.attributes.push({ value: 'invalid' });
@@ -148,58 +128,43 @@ export class MetaDataController {
     return metadata;
   }
 
-  @Get('/image/:domainOrToken')
-  @ResponseSchema(ImageResponse)
-  async getImage(
-    @Param('domainOrToken') domainOrToken: string,
-  ): Promise<ImageResponse> {
-    const token = this.normalizeDomainOrToken(domainOrToken);
-    const domain =
-      (await Domain.findByNode(token)) ||
-      (await Domain.findOnChainNoSafe(token));
-
-    const name = domain ? domain.name : domainOrToken;
-    const resolution = domain ? getDomainResolution(domain).resolution : {};
-
-    if (!name.includes('.')) {
-      return { image_data: '' };
-    }
-
-    return {
-      image_data: await this.generateImageData(name, resolution),
-    };
-  }
-
-  @Get('/image-src/:domainOrToken')
+  @Get('/metadata/:domainOrToken/image')
   @Header('Access-Control-Allow-Origin', '*')
-  @Header('Content-Type', 'image/svg+xml')
+  @Redirect('url') // placeholder value, overridden by return values
   async getImageSrc(
     @Param('domainOrToken') domainOrToken: string,
-  ): Promise<string> {
+  ): Promise<string | undefined> {
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain =
       (await Domain.findByNode(token)) ||
       (await Domain.findOnChainNoSafe(token));
 
-    const name = domain ? domain.name : domainOrToken;
-    const resolution = domain ? getDomainResolution(domain).resolution : {};
-
-    if (!name.includes('.')) {
-      return '';
+    if (!domain) {
+      return DEFAULT_IMAGE_URL;
     }
 
-    const imageData = await this.generateImageData(name, resolution);
-    return await pathThatSvg(imageData);
+    const resolution = getDomainResolution(domain);
+
+    // if image is default - redirect
+    const imageUri = this.generateDomainImageUrl(domain.name);
+    if (imageUri) {
+      return imageUri;
+    }
+
+    // if image is custom - generate and return
+    const imageData = await this.generateImageData(domain, resolution);
+
+    return imageData;
   }
 
   private async defaultMetaResponse(
+    baseUrl: string,
     domainOrToken: string,
   ): Promise<OpenSeaMetadata> {
     const name = domainOrToken.includes('.') ? domainOrToken : null;
     const description = name ? this.getDomainDescription(name, {}) : null;
     const attributes = name ? this.getDomainAttributes(name) : [];
-    const image = name ? this.generateDomainImageUrl(name) : null;
-    const image_data = name ? await this.generateImageData(name, {}) : null;
+    const image = name ? `${baseUrl}/metadata/${name}/image` : null;
     const external_url = name
       ? `https://unstoppabledomains.com/search?searchTerm=${name}`
       : null;
@@ -212,7 +177,6 @@ export class MetaDataController {
       external_url,
       attributes,
       image,
-      image_data,
     };
   }
 
@@ -327,10 +291,6 @@ export class MetaDataController {
     return AnimalHelper.getAnimalAttributes(name);
   }
 
-  private isDomainWithCustomImage(name: string): boolean {
-    return Boolean(DomainsWithCustomImage[name]);
-  }
-
   private isValidDNSDomain(domain: string): boolean {
     const labels = domain.split('.');
     if (labels[labels.length - 1] === '') {
@@ -344,40 +304,32 @@ export class MetaDataController {
   }
 
   private async generateImageData(
-    name: string,
-    resolution: Record<string, string>,
+    domain: Domain,
+    resolution: DomainsResolution,
   ): Promise<string> {
-    if (this.isDomainWithCustomImage(name)) {
-      return '';
+    try {
+      const { pictureOrUrl, nftStandard } = await getSocialPictureUrl(
+        resolution.resolution['social.picture.value'],
+        resolution.ownerAddress || '',
+      );
+
+      if (pictureOrUrl) {
+        const [data, mimeType] = await getNFTSocialPicture(
+          nftStandard,
+          pictureOrUrl,
+        );
+        const socialPicture = createSocialPictureImage(domain, data, mimeType);
+        return socialPicture;
+      }
+    } catch (error) {
+      // In case we can't get the social picture, use default.
+      logger.warn(error);
     }
-    const splittedName = name.split('.');
+
+    const splittedName = domain.name.split('.');
     const extension = splittedName.pop() || '';
     const label = splittedName.join('.');
 
-    const animalImage = await AnimalHelper.getAnimalImageData(name);
-    if (animalImage) {
-      return animalImage;
-    }
-
-    const imagePathFromDomain = resolution['social.image.value'];
-    if (
-      imagePathFromDomain &&
-      imagePathFromDomain.startsWith(
-        'https://cdn.unstoppabledomains.com/bucket/',
-      ) &&
-      imagePathFromDomain.endsWith('.svg')
-    ) {
-      try {
-        const ret = await fetch(imagePathFromDomain);
-        return await ret.text();
-      } catch (error) {
-        logger.error(
-          `Failed to generate image data from the following endpoint: ${imagePathFromDomain}`,
-        );
-        logger.error(error);
-        return this.generateDefaultImageData(label, extension);
-      }
-    }
     return this.generateDefaultImageData(label, extension);
   }
 
@@ -395,7 +347,7 @@ export class MetaDataController {
     if (label.length > 30) {
       label = label.substr(0, 29).concat('...');
     }
-    return DefaultImageData({ label, tld, fontSize });
+    return svgToBase64(DefaultImageData({ label, tld, fontSize }));
   }
 
   private generateDomainImageUrl(name: string): string | null {
@@ -408,6 +360,6 @@ export class MetaDataController {
       return animalImageUrl;
     }
 
-    return DEFAULT_IMAGE_URL;
+    return null;
   }
 }

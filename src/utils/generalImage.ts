@@ -1,4 +1,5 @@
 import { MetadataImageFontSize } from '../types/common';
+import btoa from 'btoa';
 
 export const BackgroundColor = '4C47F7';
 export const FontFamily =
@@ -38,4 +39,15 @@ export function DefaultImageData(args: {
       </g>
   </g>
 </svg>`;
+}
+
+export function svgToBase64(svg: string): string {
+  return (
+    'data:image/svg+xml;base64,' +
+    btoa(
+      encodeURIComponent(svg).replace(/%([0-9A-F]{2})/g, function (match, p1) {
+        return String.fromCharCode(parseInt(p1, 16));
+      }),
+    )
+  );
 }
