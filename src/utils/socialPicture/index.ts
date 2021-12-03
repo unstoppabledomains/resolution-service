@@ -252,7 +252,7 @@ export const createSocialPictureImage = (
   });
 
   try {
-    return svgToBase64(svg);
+    return svg;
   } catch (e) {
     console.log(e);
     return '';

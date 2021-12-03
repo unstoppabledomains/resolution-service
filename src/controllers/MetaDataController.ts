@@ -130,31 +130,34 @@ export class MetaDataController {
 
   @Get('/metadata/:domainOrToken/image')
   @Header('Access-Control-Allow-Origin', '*')
-  @Redirect('url') // placeholder value, overridden by return values
   async getImageSrc(
     @Param('domainOrToken') domainOrToken: string,
-  ): Promise<string | undefined> {
+    @Res() response: Response,
+  ): Promise<Response> {
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain =
       (await Domain.findByNode(token)) ||
       (await Domain.findOnChainNoSafe(token));
 
     if (!domain) {
-      return DEFAULT_IMAGE_URL;
+      response.redirect(DEFAULT_IMAGE_URL);
+      return response;
     }
 
     const resolution = getDomainResolution(domain);
 
     // if image is default - redirect
-    const imageUri = this.generateDomainImageUrl(domain.name);
-    if (imageUri) {
-      return imageUri;
+    const imageUrl = this.generateDomainImageUrl(domain.name);
+    if (imageUrl) {
+      response.redirect(imageUrl);
+      return response;
     }
 
     // if image is custom - generate and return
     const imageData = await this.generateImageData(domain, resolution);
 
-    return imageData;
+    response.setHeader('Content-Type', 'image/svg+xml');
+    return response.send(imageData);
   }
 
   private async defaultMetaResponse(
@@ -347,7 +350,7 @@ export class MetaDataController {
     if (label.length > 30) {
       label = label.substr(0, 29).concat('...');
     }
-    return svgToBase64(DefaultImageData({ label, tld, fontSize }));
+    return DefaultImageData({ label, tld, fontSize });
   }
 
   private generateDomainImageUrl(name: string): string | null {

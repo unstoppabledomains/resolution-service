@@ -40,14 +40,3 @@ export function DefaultImageData(args: {
   </g>
 </svg>`;
 }
-
-export function svgToBase64(svg: string): string {
-  return (
-    'data:image/svg+xml;base64,' +
-    btoa(
-      encodeURIComponent(svg).replace(/%([0-9A-F]{2})/g, function (match, p1) {
-        return String.fromCharCode(parseInt(p1, 16));
-      }),
-    )
-  );
-}
