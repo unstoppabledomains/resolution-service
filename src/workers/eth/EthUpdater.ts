@@ -285,12 +285,11 @@ export class EthUpdater {
     }
 
     try {
-      const resolutionRecord =
-        await this.cnsResolver.getResolverRecordsByKeyHash(
-          resolverAddress,
-          keyHash,
-          node,
-        );
+      const resolutionRecord = await this.cnsResolver.getResolverRecordsByKeyHash(
+        resolverAddress,
+        keyHash,
+        node,
+      );
       resolution.resolution[resolutionRecord.key] = resolutionRecord.value;
     } catch (error: unknown) {
       if (error instanceof CnsResolverError) {

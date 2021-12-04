@@ -29,13 +29,15 @@ describe('ZilProvider', () => {
     const transactions = await provider.getLatestTransactions(0, 1);
     interceptor.done();
     const firstTx = {
-      hash: '0x8ddd3f31d79c2c40f03a38e5fc645df945419c8679064e05bc50f08e23dec5be',
+      hash:
+        '0x8ddd3f31d79c2c40f03a38e5fc645df945419c8679064e05bc50f08e23dec5be',
       blockNumber: 2566938,
       atxuid: 0,
       events: [],
     };
     const secondTx = {
-      hash: '0x47e5d1f098d00c46341e92c6cfc052cecf80c4bb6a69405911bd406b6d56d069',
+      hash:
+        '0x47e5d1f098d00c46341e92c6cfc052cecf80c4bb6a69405911bd406b6d56d069',
       blockNumber: 2566944,
       atxuid: 1,
       events: [
