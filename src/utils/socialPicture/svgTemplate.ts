@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 interface SvgFields {
   background_image: string;
   domain: string;
