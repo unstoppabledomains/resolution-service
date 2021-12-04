@@ -119,15 +119,22 @@ const getImageURLFromTokenURI = async (tokenURI: string) => {
     throw new Error('Failed to fetch from tokenURI');
   }
   const metadata = await resp.json();
-  return metadata.image || metadata.image_url;
+  return {
+    imageURL: metadata.image || metadata.image_url,
+    backgroundColor: metadata.background_color || '',
+  };
 };
 
 export const getSocialPictureUrl = async (
   avatarRecord: string,
   ownerAddress: string,
-): Promise<{ pictureOrUrl: string; nftStandard: string }> => {
+): Promise<{
+  pictureOrUrl: string;
+  nftStandard: string;
+  backgroundColor: string;
+}> => {
   if (!avatarRecord || !ownerAddress) {
-    return { pictureOrUrl: '', nftStandard: '' };
+    return { pictureOrUrl: '', nftStandard: '', backgroundColor: '' };
   }
   try {
     const { nftStandard, contractAddress, tokenId } = parsePictureRecord(
@@ -153,19 +160,19 @@ export const getSocialPictureUrl = async (
       const [svgImage] = await cryptoPunksImageContract.functions.punkImageSvg(
         tokenId,
       );
-      return { pictureOrUrl: svgImage, nftStandard };
+      return { pictureOrUrl: svgImage, nftStandard, backgroundColor: '' };
     }
     const tokenURI = await getTokenURI({
       contract: nftContract,
       nftStandard,
       tokenId,
     });
-    const imageURL = await getImageURLFromTokenURI(
+    const { imageURL, backgroundColor } = await getImageURLFromTokenURI(
       tokenURI.replace('0x', '').replace('{id}', tokenId),
     );
-    return { pictureOrUrl: imageURL, nftStandard };
+    return { pictureOrUrl: imageURL, nftStandard, backgroundColor };
   } catch {
-    return { pictureOrUrl: '', nftStandard: '' };
+    return { pictureOrUrl: '', nftStandard: '', backgroundColor: '' };
   }
 };
 
@@ -197,6 +204,7 @@ export const createSocialPictureImage = (
   domain: Domain,
   data: string,
   mimeType: string | null,
+  backgroundColor: string,
 ): string => {
   let name = domain.name;
   if (name.length > 30) {
@@ -204,6 +212,7 @@ export const createSocialPictureImage = (
   }
   const fontSize = getFontSize(name);
   const svg = createSVGfromTemplate({
+    background_color: backgroundColor,
     background_image: data,
     domain: name,
     fontSize,

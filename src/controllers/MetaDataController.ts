@@ -119,7 +119,11 @@ export class MetaDataController {
     }
     const resolution = getDomainResolution(domain);
 
-    const { pictureOrUrl, nftStandard } = await getSocialPictureUrl(
+    const {
+      pictureOrUrl,
+      nftStandard,
+      backgroundColor,
+    } = await getSocialPictureUrl(
       resolution.resolution['social.picture.value'],
       resolution.ownerAddress || '',
     );
@@ -144,7 +148,12 @@ export class MetaDataController {
         ]);
       }
       if (data) {
-        socialPicture = createSocialPictureImage(domain, data, mimeType);
+        socialPicture = createSocialPictureImage(
+          domain,
+          data,
+          mimeType,
+          backgroundColor,
+        );
       }
     }
     const description = this.getDomainDescription(
