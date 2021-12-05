@@ -168,7 +168,7 @@ export const getSocialPictureUrl = async (
       tokenId,
     });
     const { imageURL, backgroundColor } = await getImageURLFromTokenURI(
-      tokenURI.replace('0x', '').replace('{id}', tokenId),
+      tokenURI.replace('0x{id}', '').replace('{id}', '') + tokenId,
     );
     return { pictureOrUrl: imageURL, nftStandard, backgroundColor };
   } catch {
