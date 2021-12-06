@@ -319,6 +319,87 @@ describe('DomainsController', () => {
     });
   });
 
+  it('should return correct domain resolution for L2 domain', async () => {
+    const { domain } = await DomainTestHelper.createTestDomain({
+      name: 'brad.crypto',
+      node: '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+      ownerAddress: '0x0000000000000000000000000000000000000000',
+      blockchain: Blockchain.ETH,
+      networkId: 1337,
+      registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      resolution: {},
+      resolver: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+    });
+    const resolution = domain.getResolution(Blockchain.MATIC, 1337);
+    resolution.ownerAddress = '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8';
+    resolution.resolver = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
+    resolution.registry = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
+    resolution.resolution = {
+      'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+    };
+    domain.setResolution(resolution);
+    await domain.save();
+
+    const res = await supertest(api)
+      .get('/domains/brad.crypto')
+      .auth(testApiKey.apiKey, { type: 'bearer' })
+      .send();
+    expect(res.status).eq(200);
+    expect(res.body).containSubset({
+      meta: {
+        domain: 'brad.crypto',
+        owner: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+        resolver: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f',
+        registry: '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f',
+        blockchain: 'MATIC',
+        networkId: 1337,
+      },
+      records: {
+        'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+      },
+    });
+  });
+
+  it('should return correct domain resolution for L2 domain on L1', async () => {
+    const { domain } = await DomainTestHelper.createTestDomain({
+      name: 'brad.crypto',
+      node: '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+      ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+      blockchain: Blockchain.ETH,
+      networkId: 1337,
+      registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      resolution: {
+        'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+      },
+      resolver: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+    });
+    const resolution = await domain.getResolution(Blockchain.MATIC, 1337);
+    resolution.ownerAddress = '0x0000000000000000000000000000000000000000';
+    resolution.resolver = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
+    resolution.registry = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
+    resolution.resolution = {};
+    domain.setResolution(resolution);
+    await domain.save();
+
+    const res = await supertest(api)
+      .get('/domains/brad.crypto')
+      .auth(testApiKey.apiKey, { type: 'bearer' })
+      .send();
+    expect(res.status).eq(200);
+    expect(res.body).containSubset({
+      meta: {
+        domain: 'brad.crypto',
+        owner: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+        resolver: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        blockchain: 'ETH',
+        networkId: 1337,
+      },
+      records: {
+        'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+      },
+    });
+  });
   describe('GET /domains', () => {
     it('should return error for unauthorized query', async () => {
       const res = await supertest(api)
@@ -885,6 +966,76 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
     });
 
+    it('filters domains list by tld', async () => {
+      const { domain: testDomainOne, resolution: resolutionOne } =
+        await DomainTestHelper.createTestDomain({
+          name: 'test.crypto',
+          node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        });
+      await DomainTestHelper.createTestDomain({
+        blockchain: Blockchain.ZIL,
+        networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
+        name: 'test1.zil',
+        node: '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
+        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      });
+    });
+
+    it('filters domains list by multiple tlds', async () => {
+      const { domain: testDomainOne, resolution: resolutionOne } =
+        await DomainTestHelper.createTestDomain({
+          name: 'test.crypto',
+          node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        });
+      const { domain: testDomainTwo, resolution: resolutionTwo } =
+        await DomainTestHelper.createTestDomain({
+          blockchain: Blockchain.ZIL,
+          networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
+          name: 'test1.zil',
+          node: '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
+          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        });
+
+      const res = await supertest(api)
+        .get(
+          '/domains?owners=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&tlds=crypto',
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.body).to.deep.equal({
+        data: [
+          {
+            id: testDomainOne.name,
+            attributes: {
+              meta: {
+                domain: testDomainOne.name,
+                blockchain: resolutionOne.blockchain,
+                networkId: resolutionOne.networkId,
+                owner: resolutionOne.ownerAddress,
+                registry: resolutionOne.registry,
+                resolver: resolutionOne.resolver,
+              },
+              records: {},
+            },
+          },
+        ],
+        meta: {
+          hasMore: false,
+          nextStartingAfter: testDomainOne.id?.toString(),
+          perPage: 100,
+          sortBy: 'id',
+          sortDirection: 'ASC',
+        },
+      });
+      expect(res.status).eq(200);
+    });
+
     it('should return no domain from empty startingAfter', async () => {
       const { domain } = await DomainTestHelper.createTestDomain({
         name: 'test.crypto',
@@ -1181,123 +1332,6 @@ describe('DomainsController', () => {
           },
         ],
       });
-    });
-
-    it('filters domains list by tld', async () => {
-      const { domain: testDomainOne, resolution: resolutionOne } =
-        await DomainTestHelper.createTestDomain({
-          name: 'test.crypto',
-          node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        });
-      await DomainTestHelper.createTestDomain({
-        blockchain: Blockchain.ZIL,
-        networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
-        name: 'test1.zil',
-        node: '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
-        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-      });
-
-      const res = await supertest(api)
-        .get(
-          '/domains?owners=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&tlds=crypto',
-        )
-        .auth(testApiKey.apiKey, { type: 'bearer' })
-        .send();
-      expect(res.body).to.deep.equal({
-        data: [
-          {
-            id: testDomainOne.name,
-            attributes: {
-              meta: {
-                domain: testDomainOne.name,
-                blockchain: resolutionOne.blockchain,
-                networkId: resolutionOne.networkId,
-                owner: resolutionOne.ownerAddress,
-                registry: resolutionOne.registry,
-                resolver: resolutionOne.resolver,
-              },
-              records: {},
-            },
-          },
-        ],
-        meta: {
-          hasMore: false,
-          nextStartingAfter: testDomainOne.id?.toString(),
-          perPage: 100,
-          sortBy: 'id',
-          sortDirection: 'ASC',
-        },
-      });
-      expect(res.status).eq(200);
-    });
-
-    it('filters domains list by multiple tlds', async () => {
-      const { domain: testDomainOne, resolution: resolutionOne } =
-        await DomainTestHelper.createTestDomain({
-          name: 'test.crypto',
-          node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        });
-      const { domain: testDomainTwo, resolution: resolutionTwo } =
-        await DomainTestHelper.createTestDomain({
-          blockchain: Blockchain.ZIL,
-          networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
-          name: 'test1.zil',
-          node: '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
-          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        });
-
-      const res = await supertest(api)
-        .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&tlds=crypto&tlds=zil',
-        )
-        .auth(testApiKey.apiKey, { type: 'bearer' })
-        .send();
-      expect(res.body).to.deep.equal({
-        data: [
-          {
-            id: testDomainOne.name,
-            attributes: {
-              meta: {
-                domain: testDomainOne.name,
-                blockchain: resolutionOne.blockchain,
-                networkId: resolutionOne.networkId,
-                owner: resolutionOne.ownerAddress,
-                registry: resolutionOne.registry,
-                resolver: resolutionOne.resolver,
-              },
-              records: {},
-            },
-          },
-          {
-            id: testDomainTwo.name,
-            attributes: {
-              meta: {
-                domain: testDomainTwo.name,
-                blockchain: resolutionTwo.blockchain,
-                networkId: resolutionTwo.networkId,
-                owner: resolutionTwo.ownerAddress,
-                registry: resolutionTwo.registry,
-                resolver: resolutionTwo.resolver,
-              },
-              records: {},
-            },
-          },
-        ],
-        meta: {
-          hasMore: false,
-          nextStartingAfter: testDomainTwo.id?.toString(),
-          perPage: 100,
-          sortBy: 'id',
-          sortDirection: 'ASC',
-        },
-      });
-      expect(res.status).eq(200);
     });
 
     it('should return error for incorrect tlds', async () => {

@@ -114,20 +114,27 @@ const useIpfsGateway = (url: string) => {
 };
 
 const getImageURLFromTokenURI = async (tokenURI: string) => {
-  const resp = await nodeFetch(useIpfsGateway(tokenURI));
+  const resp = await nodeFetch(useIpfsGateway(tokenURI), { timeout: 3000 });
   if (!resp.ok) {
     throw new Error('Failed to fetch from tokenURI');
   }
   const metadata = await resp.json();
-  return metadata.image || metadata.image_url;
+  return {
+    imageURL: metadata.image || metadata.image_url,
+    backgroundColor: metadata.background_color || '',
+  };
 };
 
 export const getSocialPictureUrl = async (
   avatarRecord: string,
   ownerAddress: string,
-): Promise<{ pictureOrUrl: string; nftStandard: string }> => {
+): Promise<{
+  pictureOrUrl: string;
+  nftStandard: string;
+  backgroundColor: string;
+}> => {
   if (!avatarRecord || !ownerAddress) {
-    return { pictureOrUrl: '', nftStandard: '' };
+    return { pictureOrUrl: '', nftStandard: '', backgroundColor: '' };
   }
   try {
     const { nftStandard, contractAddress, tokenId } =
@@ -152,26 +159,26 @@ export const getSocialPictureUrl = async (
       const [svgImage] = await cryptoPunksImageContract.functions.punkImageSvg(
         tokenId,
       );
-      return { pictureOrUrl: svgImage, nftStandard };
+      return { pictureOrUrl: svgImage, nftStandard, backgroundColor: '' };
     }
     const tokenURI = await getTokenURI({
       contract: nftContract,
       nftStandard,
       tokenId,
     });
-    const imageURL = await getImageURLFromTokenURI(
-      tokenURI.replace('0x{id}', tokenId),
+    const { imageURL, backgroundColor } = await getImageURLFromTokenURI(
+      tokenURI.replace('0x{id}', '').replace('{id}', '') + tokenId,
     );
-    return { pictureOrUrl: imageURL, nftStandard };
+    return { pictureOrUrl: imageURL, nftStandard, backgroundColor };
   } catch {
-    return { pictureOrUrl: '', nftStandard: '' };
+    return { pictureOrUrl: '', nftStandard: '', backgroundColor: '' };
   }
 };
 
 export const getNFTSocialPicture = async (
   imageUrl: string,
 ): Promise<[string, string | null]> => {
-  const resp = await nodeFetch(useIpfsGateway(imageUrl));
+  const resp = await nodeFetch(useIpfsGateway(imageUrl), { timeout: 3000 });
   if (!resp.ok) {
     throw new Error('Failed to fetch NFT image');
   }
@@ -196,6 +203,7 @@ export const createSocialPictureImage = (
   domain: Domain,
   data: string,
   mimeType: string | null,
+  backgroundColor: string,
 ): string => {
   let name = domain.name;
   if (name.length > 30) {
@@ -203,6 +211,7 @@ export const createSocialPictureImage = (
   }
   const fontSize = getFontSize(name);
   const svg = createSVGfromTemplate({
+    background_color: backgroundColor,
     background_image: data,
     domain: name,
     fontSize,

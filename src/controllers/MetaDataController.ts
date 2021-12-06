@@ -20,7 +20,6 @@ import {
 import punycode from 'punycode';
 import btoa from 'btoa';
 import { getDomainResolution } from '../services/Resolution';
-import { binanceCustomImages } from '../utils/customDomains';
 
 const DEFAULT_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
@@ -35,7 +34,6 @@ const DomainsWithCustomImage: Record<string, string> = {
   'surf.crypto': 'custom/surf.svg',
   'hosting.crypto': 'custom/hosting.svg',
   'india.crypto': 'custom/india.jpg',
-  ...binanceCustomImages,
 };
 const AnimalHelper: AnimalDomainHelper = new AnimalDomainHelper();
 
@@ -124,10 +122,11 @@ export class MetaDataController {
     }
     const resolution = getDomainResolution(domain);
 
-    const { pictureOrUrl, nftStandard } = await getSocialPictureUrl(
-      resolution.resolution['social.picture.value'],
-      resolution.ownerAddress || '',
-    );
+    const { pictureOrUrl, nftStandard, backgroundColor } =
+      await getSocialPictureUrl(
+        resolution.resolution['social.picture.value'],
+        resolution.ownerAddress || '',
+      );
     let socialPicture = '';
     if (pictureOrUrl) {
       let data = '',
@@ -143,9 +142,19 @@ export class MetaDataController {
         );
         mimeType = 'image/svg+xml';
       } else {
-        [data, mimeType] = await getNFTSocialPicture(pictureOrUrl);
+        [data, mimeType] = await getNFTSocialPicture(pictureOrUrl).catch(() => [
+          '',
+          null,
+        ]);
       }
-      socialPicture = createSocialPictureImage(domain, data, mimeType);
+      if (data) {
+        socialPicture = createSocialPictureImage(
+          domain,
+          data,
+          mimeType,
+          backgroundColor,
+        );
+      }
     }
     const description = this.getDomainDescription(
       domain.name,
@@ -389,7 +398,7 @@ export class MetaDataController {
     name: string,
     resolution: Record<string, string>,
   ): Promise<string> {
-    if (this.isDomainWithCustomImage(name) && !binanceCustomImages[name]) {
+    if (this.isDomainWithCustomImage(name)) {
       return '';
     }
     const splittedName = name.split('.');

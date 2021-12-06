@@ -1,4 +1,5 @@
 interface SvgFields {
+  background_color: string;
   background_image: string;
   domain: string;
   fontSize: number;
@@ -9,6 +10,7 @@ const FontFamily =
   "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu, 'Helvetica Neue', Oxygen, Cantarell, sans-serif";
 
 export default function createSocialPictureSvg({
+  background_color,
   background_image,
   domain,
   fontSize,
@@ -18,6 +20,11 @@ export default function createSocialPictureSvg({
   return `<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
           <pattern id="backImg" patternUnits="userSpaceOnUse" x="0" y="0" width="300" height="300">
+            ${
+              background_color
+                ? `<rect fill="${background_color}" width="300" height="300"/>`
+                : ''
+            }
             <image href="data:${mimeType};base64,${background_image}" width="300" height="300" />
           </pattern>
           <filter id="shadowy">
