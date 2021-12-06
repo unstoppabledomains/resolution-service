@@ -21,9 +21,12 @@ import punycode from 'punycode';
 import btoa from 'btoa';
 import { getDomainResolution } from '../services/Resolution';
 
-const DEFAULT_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
-const BASE_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images` as const;
-const INVALID_DOMAIN_IMAGE_URL = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/invalid-domain.svg` as const;
+const DEFAULT_IMAGE_URL =
+  `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
+const BASE_IMAGE_URL =
+  `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images` as const;
+const INVALID_DOMAIN_IMAGE_URL =
+  `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/invalid-domain.svg` as const;
 const DomainsWithCustomImage: Record<string, string> = {
   'code.crypto': 'custom/code.svg',
   'web3.crypto': 'custom/web3.svg',
@@ -119,14 +122,11 @@ export class MetaDataController {
     }
     const resolution = getDomainResolution(domain);
 
-    const {
-      pictureOrUrl,
-      nftStandard,
-      backgroundColor,
-    } = await getSocialPictureUrl(
-      resolution.resolution['social.picture.value'],
-      resolution.ownerAddress || '',
-    );
+    const { pictureOrUrl, nftStandard, backgroundColor } =
+      await getSocialPictureUrl(
+        resolution.resolution['social.picture.value'],
+        resolution.ownerAddress || '',
+      );
     let socialPicture = '';
     if (pictureOrUrl) {
       let data = '',

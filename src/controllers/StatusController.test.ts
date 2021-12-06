@@ -329,8 +329,7 @@ function generateEthRpcResponse(networkBlockNumber: number) {
         '0x476574682f76312e302e312d39383130306634372f6c696e75782f676f312e34',
       gasLimit: '0x3141592',
       gasUsed: '0x21000',
-      hash:
-        '0xf93283571ae16dcecbe1816adc126954a739350cd1523a1559eabeae155fbb63',
+      hash: '0xf93283571ae16dcecbe1816adc126954a739350cd1523a1559eabeae155fbb63',
       miner: '0x909755D480A27911cB7EeeB5edB918fae50883c0',
       nonce: '0x1a455280001cc3f8',
       number: networkBlockNumber,

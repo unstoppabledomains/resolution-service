@@ -31,8 +31,7 @@ describe('Resolution service', () => {
     it('should return zil resolution for zil domain', () => {
       const domain = new Domain({
         name: 'test.zil',
-        node:
-          '0x628ece4569e336250b53b5053c9421fea0b8cfb20f49077b7ec559b4f27817e5',
+        node: '0x628ece4569e336250b53b5053c9421fea0b8cfb20f49077b7ec559b4f27817e5',
       });
       const resolution = new DomainsResolution({
         blockchain: Blockchain.ZIL,
@@ -53,8 +52,7 @@ describe('Resolution service', () => {
     it('should return l2 resolution for uns domain', () => {
       const domain = new Domain({
         name: 'test.blockchain',
-        node:
-          '0x538c042c534bb263cdb433fbb0cdeaef78054682c43bbbb663dc6430fddd5f71',
+        node: '0x538c042c534bb263cdb433fbb0cdeaef78054682c43bbbb663dc6430fddd5f71',
       });
       const l1resolution = new DomainsResolution({
         ownerAddress: Domain.NullAddress,
@@ -87,8 +85,7 @@ describe('Resolution service', () => {
     it('should return l1 resolution for uns domain', () => {
       const domain = new Domain({
         name: 'test.blockchain',
-        node:
-          '0x538c042c534bb263cdb433fbb0cdeaef78054682c43bbbb663dc6430fddd5f71',
+        node: '0x538c042c534bb263cdb433fbb0cdeaef78054682c43bbbb663dc6430fddd5f71',
       });
       const l1resolution = new DomainsResolution({
         ownerAddress: '0x8aad44321a86b170879d7a244c1e8d360c99dda8',

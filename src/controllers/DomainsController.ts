@@ -3,19 +3,24 @@ import {
   Get,
   JsonController,
   Param,
+  Params,
   QueryParams,
   UseBefore,
 } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
-import { Domain } from '../models';
+import { CnsRegistryEvent, Domain } from '../models';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
 import { getDomainResolution } from '../services/Resolution';
+import { eip137Namehash } from '../utils/namehash';
 import {
   DomainResponse,
   DomainsListQuery,
   DomainsListResponse,
+  UnsDomainQuery,
+  DomainLatestTransferResponse,
 } from './dto/Domains';
 import { ConvertArrayQueryParams } from '../middleware/ConvertArrayQueryParams';
+import { In } from 'typeorm';
 
 @OpenAPI({
   security: [{ apiKeyAuth: [] }],
@@ -153,6 +158,61 @@ export class DomainsController {
       sortDirection: query.sortDirection,
       hasMore,
     };
+    return response;
+  }
+
+  @Get('/domains/:domainName/transfers/latest')
+  @OpenAPI({
+    responses: {
+      '200': {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                data: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/DomainLatestTransfer',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getDomainsLastTransfer(
+    @Params() query: UnsDomainQuery,
+  ): Promise<DomainLatestTransferResponse> {
+    const tokenId = eip137Namehash(query.domainName);
+    const domainEvents = await CnsRegistryEvent.createQueryBuilder();
+    domainEvents.select();
+    domainEvents.distinctOn(['blockchain']);
+    domainEvents.where({
+      node: tokenId,
+      blockchain: In(['ETH', 'MATIC']),
+      type: 'Transfer',
+    });
+    domainEvents.orderBy({
+      blockchain: 'ASC',
+      block_number: 'DESC',
+      log_index: 'DESC',
+    });
+    const lastTransferEvents = await domainEvents.getMany();
+
+    const response = new DomainLatestTransferResponse();
+    response.data = lastTransferEvents.map((event) => {
+      return {
+        domain: query.domainName,
+        from: event?.returnValues?.from,
+        to: event?.returnValues?.to,
+        networkId: event.networkId,
+        blockNumber: event.blockNumber,
+        blockchain: event.blockchain,
+      };
+    });
     return response;
   }
 }

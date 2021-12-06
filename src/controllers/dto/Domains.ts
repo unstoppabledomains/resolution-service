@@ -153,3 +153,44 @@ export class DomainsListResponse {
   data: DomainAttributes[];
   meta: DomainsListMeta;
 }
+
+export class UnsDomainQuery {
+  @IsString()
+  @IsNotEmpty()
+  @ValidateWith<UnsDomainQuery>('isNotZilDomain')
+  domainName: string;
+
+  isNotZilDomain(): boolean {
+    return !this.domainName.endsWith('zil');
+  }
+}
+
+export class DomainLatestTransfer {
+  @IsString()
+  domain: string;
+
+  @IsString()
+  @IsNotEmpty()
+  from: string;
+
+  @IsString()
+  @IsNotEmpty()
+  to: string;
+
+  @IsInt()
+  @IsNotEmpty()
+  networkId: number;
+
+  @IsInt()
+  @IsNotEmpty()
+  blockNumber: number;
+
+  @IsString()
+  @IsNotEmpty()
+  blockchain: string;
+}
+
+export class DomainLatestTransferResponse {
+  @ValidateNested()
+  data: DomainLatestTransfer[];
+}
