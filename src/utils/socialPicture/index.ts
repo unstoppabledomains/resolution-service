@@ -137,8 +137,9 @@ export const getSocialPictureUrl = async (
     return { pictureOrUrl: '', nftStandard: '', backgroundColor: '' };
   }
   try {
-    const { nftStandard, contractAddress, tokenId } =
-      parsePictureRecord(avatarRecord);
+    const { nftStandard, contractAddress, tokenId } = parsePictureRecord(
+      avatarRecord,
+    );
     const nftContract = await constructNFTContract(
       contractAddress,
       nftStandard,
@@ -167,7 +168,7 @@ export const getSocialPictureUrl = async (
       tokenId,
     });
     const { imageURL, backgroundColor } = await getImageURLFromTokenURI(
-      tokenURI.replace('0x{id}', '').replace('{id}', '') + tokenId,
+      tokenURI.replace('0x{id}', tokenId).replace('{id}', tokenId),
     );
     return { pictureOrUrl: imageURL, nftStandard, backgroundColor };
   } catch {
