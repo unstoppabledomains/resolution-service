@@ -302,17 +302,23 @@ export class MetaDataController {
     resolution: DomainsResolution,
   ): Promise<string> {
     try {
-      const { pictureOrUrl, nftStandard } = await getSocialPictureUrl(
-        resolution.resolution['social.picture.value'],
-        resolution.ownerAddress || '',
-      );
+      const { pictureOrUrl, nftStandard, backgroundColor } =
+        await getSocialPictureUrl(
+          resolution.resolution['social.picture.value'],
+          resolution.ownerAddress || '',
+        );
 
       if (pictureOrUrl) {
         const [data, mimeType] = await getNFTSocialPicture(
           nftStandard,
           pictureOrUrl,
         );
-        const socialPicture = createSocialPictureImage(domain, data, mimeType);
+        const socialPicture = createSocialPictureImage(
+          domain,
+          data,
+          mimeType,
+          backgroundColor,
+        );
         return socialPicture;
       }
     } catch (error) {
