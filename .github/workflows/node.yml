@@ -65,6 +65,7 @@ jobs:
       POLYGON_NETWORK_ID: 1337
       UNS_REGISTRY_EVENTS_STARTING_BLOCK: 0
       CNS_REGISTRY_EVENTS_STARTING_BLOCK: 0
+      METADATA_BASE_URI: 'https://localhost:3000'
 
     services:
       postgres:
