@@ -55,7 +55,8 @@ RESOLUTION_POSTGRES_PASSWORD=password          # DB password configured in postg
 RESOLUTION_POSTGRES_DATABASE=resolution_service # Name of the resolution service database
 ETHEREUM_JSON_RPC_API_URL=https://alchemy.com  # Address of a JSON RPC provider. This can be a public API (e.g. Alchemy), or a local ethereum node with JSON RPC enabled
 POLYGON_JSON_RPC_API_URL=https://alchemy.com   # Address of a JSON RPC provider. This can be a public API (e.g. Alchemy), or a local ethereum node with JSON RPC enabled
-VIEWBLOCK_API_KEY=apikey                       # key for Viewblock API, required for getting data from Zilliqa blockchain
+VIEWBLOCK_API_KEY=apikey                       # Key for Viewblock API, required for getting data from Zilliqa blockchain
+METADATA_BASE_URI=http://localhost:3000        # Base URL for ERC721 metadata endpoints
 ```
 
 This is the minimum required set of configurations for the service. Additional
@@ -116,6 +117,7 @@ database.
 | BUGSNAG_API_KEY                             | -                                                    | :x:                | API key that will be used to access bugsnag. If the key is not specified, bugsnag will not be enabled.                                                                                                                                                                                                                      |
 | TYPEORM_LOGGING_COLORIZE                    | true                                                 | :x:                | Colorize typeorm logs.                                                                                                                                                                                                                                                                                                      |
 | ZILLIQA_ACCEPTABLE_DELAY_IN_BLOCKS              | 100                                                  | :x:                | How much blocks Zilliqa mirror can lag behind until it's considered as unacceptable and need to be fixed. /status endpoint will return `health: true/false` field depends on number of blocks behind compared with this number.                                                                                             |
+| METADATA_BASE_URI                | -                                   | :heavy_check_mark: | Base URL for ERC721 metadata endpoints                                                                                                                                                                                                                                                                                                  |
 
 ### Running modes
 

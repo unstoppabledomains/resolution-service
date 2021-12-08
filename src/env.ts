@@ -26,6 +26,9 @@ if (!process.env.ETHEREUM_JSON_RPC_API_URL) {
 if (!process.env.POLYGON_JSON_RPC_API_URL) {
   requiredEnvNotSet.push('POLYGON_JSON_RPC_API_URL');
 }
+if (!process.env.METADATA_BASE_URI) {
+  requiredEnvNotSet.push('METADATA_BASE_URI');
+}
 
 if (requiredEnvNotSet.length !== 0) {
   throw new Error(
@@ -124,9 +127,7 @@ export const env = {
     ERC721_METADATA: {
       GOOGLE_CLOUD_STORAGE_BASE_URL:
         'https://storage.googleapis.com/dot-crypto-metadata-api',
-      METADATA_BASE_URI:
-        process.env.METADATA_BASE_URI ||
-        'https://metadata.unstoppabledomains.com',
+      METADATA_BASE_URI: process.env.METADATA_BASE_URI,
     },
     NEW_RELIC_LICENSE_KEY: process.env.NEW_RELIC_LICENSE_KEY || '',
     NEW_RELIC_APP_NAME: process.env.NEW_RELIC_APP_NAME || '',

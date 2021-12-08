@@ -25,6 +25,7 @@ env:
   POLYGON_NETWORK_ID: 137
   POLYGON_UNS_REGISTRY_EVENTS_STARTING_BLOCK: 19345077
   POLYGON_CONFIRMATION_BLOCKS: 200
+  METADATA_BASE_URI: 'https://metadata.unstoppabledomains.com'
 
 jobs:
   build_and_push_docker_image:
