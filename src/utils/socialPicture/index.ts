@@ -8,6 +8,16 @@ import btoa from 'btoa';
 
 const CryptoPunksImageContractAddress =
   '0x16F5A35647D6F03D5D3da7b35409D65ba03aF3B2';
+const CryptoKittyContractAddress = '0x06012c8cf97bead5deae237070f9587f8e7a266d';
+
+const isCryptoKitty = (contractAddress: string) => {
+  return (
+    contractAddress.toLowerCase() === CryptoKittyContractAddress.toLowerCase()
+  );
+};
+
+const getCryptoKittySvgUrl = (tokenId: string) =>
+  `https://img.cryptokitties.co/${CryptoKittyContractAddress}/${tokenId}.svg`;
 
 const parsePictureRecord = (avatarRecord: string) => {
   const regex = /(1)\/(erc721|erc1155|cryptopunks):(0x[a-fA-F0-9]{40})\/(\d+)/;
@@ -137,9 +147,8 @@ export const getSocialPictureUrl = async (
     return { pictureOrUrl: '', nftStandard: '', backgroundColor: '' };
   }
   try {
-    const { nftStandard, contractAddress, tokenId } = parsePictureRecord(
-      avatarRecord,
-    );
+    const { nftStandard, contractAddress, tokenId } =
+      parsePictureRecord(avatarRecord);
     const nftContract = await constructNFTContract(
       contractAddress,
       nftStandard,
@@ -161,6 +170,13 @@ export const getSocialPictureUrl = async (
         tokenId,
       );
       return { pictureOrUrl: svgImage, nftStandard, backgroundColor: '' };
+    }
+    if (isCryptoKitty(contractAddress)) {
+      return {
+        pictureOrUrl: getCryptoKittySvgUrl(tokenId),
+        nftStandard,
+        backgroundColor: '',
+      };
     }
     const tokenURI = await getTokenURI({
       contract: nftContract,
