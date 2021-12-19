@@ -23,7 +23,7 @@ readiness_check:
   timeout_sec: 4
   failure_threshold: 2
   success_threshold: 2
-  app_start_timeout_sec: 450
+  app_start_timeout_sec: 600
 
 env_variables:
   POLYGON_CONFIRMATION_BLOCKS: ${POLYGON_CONFIRMATION_BLOCKS}
