@@ -1,6 +1,6 @@
 #!/bin/bash
 
-[[ $SERVICE_NAME = "workers" ]] && SCALING="manual_scaling:\n  instances: 1" || SCALING="resources:\n  cpu: 1\n  memory_gb: 2\n\nautomatic_scaling:\n  min_num_instances: 4\n  max_num_instances: 50"
+[[ $SERVICE_NAME = "workers" ]] && SCALING="manual_scaling:\n  instances: 1" || SCALING="resources:\n  cpu: 1\n  memory_gb: 2\n\nautomatic_scaling:\n  min_num_instances: 2\n  max_num_instances: 50"
 [[ $BUGSNAG_API_KEY = "" ]] && BUGSNAG_API_KEY_FIELD="" || BUGSNAG_API_KEY_FIELD="BUGSNAG_API_KEY: ${BUGSNAG_API_KEY}"
 [[ $NEW_RELIC_APP_NAME = "" ]] && NEW_RELIC_APP_NAME_FIELD="" || NEW_RELIC_APP_NAME_FIELD="NEW_RELIC_APP_NAME: ${NEW_RELIC_APP_NAME}"
 [[ $NEW_RELIC_LICENSE_KEY = "" ]] && NEW_RELIC_LICENSE_KEY_FIELD="" || NEW_RELIC_LICENSE_KEY_FIELD="NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}"
@@ -23,7 +23,7 @@ readiness_check:
   timeout_sec: 4
   failure_threshold: 2
   success_threshold: 2
-  app_start_timeout_sec: 1200
+  app_start_timeout_sec: 300
 
 env_variables:
   POLYGON_CONFIRMATION_BLOCKS: ${POLYGON_CONFIRMATION_BLOCKS}
