@@ -138,7 +138,9 @@ export const env = {
     username: process.env.RESOLUTION_POSTGRES_USERNAME,
     password: process.env.RESOLUTION_POSTGRES_PASSWORD,
     database: process.env.RESOLUTION_POSTGRES_DATABASE,
-    ssl: undefined,
+    ssl: process.env.RESOLUTION_POSTGRES_SSL ? {
+      rejectUnauthorized: false
+    } : undefined,
     port: Number(process.env.RESOLUTION_POSTGRES_PORT || 5432),
     entities: [
       path.join(__dirname, './models/index.ts'),
@@ -157,9 +159,3 @@ export const env = {
     },
   },
 };
-
-if (process.env.RESOLUTION_POSTGRES_SSL) {
-  env.TYPEORM.ssl = {
-    rejectUnauthorized: false
-  };
-}
