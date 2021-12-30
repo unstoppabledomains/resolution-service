@@ -134,9 +134,6 @@ export const env = {
       colorize: process.env.TYPEORM_LOGGING_COLORIZE == null ? true : process.env.TYPEORM_LOGGING_COLORIZE.toLowerCase() == 'true',
     },
     type: 'postgres' as const,
-    ssl: {
-      rejectUnauthorized: false
-    },
     host: process.env.RESOLUTION_POSTGRES_HOST,
     username: process.env.RESOLUTION_POSTGRES_USERNAME,
     password: process.env.RESOLUTION_POSTGRES_PASSWORD,
@@ -159,3 +156,9 @@ export const env = {
     },
   },
 };
+
+if (process.env.RESOLUTION_POSTGRES_SSL) {
+  env.TYPEORM['ssl'] = {
+    rejectUnauthorized: false
+  };
+}
