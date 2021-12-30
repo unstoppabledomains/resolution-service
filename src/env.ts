@@ -131,9 +131,12 @@ export const env = {
   },
   TYPEORM: {
     LOGGING: {
-      colorize: process.env.TYPEORM_LOGGING_COLORIZE || true,
+      colorize: process.env.TYPEORM_LOGGING_COLORIZE == null ? true || process.env.TYPEORM_LOGGING_COLORIZE == 'true',
     },
     type: 'postgres' as const,
+    ssl: {
+      rejectUnauthorized: false
+    },
     host: process.env.RESOLUTION_POSTGRES_HOST,
     username: process.env.RESOLUTION_POSTGRES_USERNAME,
     password: process.env.RESOLUTION_POSTGRES_PASSWORD,
