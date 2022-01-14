@@ -131,16 +131,21 @@ export const env = {
   },
   TYPEORM: {
     LOGGING: {
-      colorize: process.env.TYPEORM_LOGGING_COLORIZE == null ? true : process.env.TYPEORM_LOGGING_COLORIZE.toLowerCase() == 'true',
+      colorize:
+        process.env.TYPEORM_LOGGING_COLORIZE == null
+          ? true
+          : process.env.TYPEORM_LOGGING_COLORIZE.toLowerCase() == 'true',
     },
     type: 'postgres' as const,
     host: process.env.RESOLUTION_POSTGRES_HOST,
     username: process.env.RESOLUTION_POSTGRES_USERNAME,
     password: process.env.RESOLUTION_POSTGRES_PASSWORD,
     database: process.env.RESOLUTION_POSTGRES_DATABASE,
-    ssl: process.env.RESOLUTION_POSTGRES_SSL ? {
-      rejectUnauthorized: false
-    } : undefined,
+    ssl: process.env.RESOLUTION_POSTGRES_SSL
+      ? {
+          rejectUnauthorized: false,
+        }
+      : undefined,
     port: Number(process.env.RESOLUTION_POSTGRES_PORT || 5432),
     entities: [
       path.join(__dirname, './models/index.ts'),
