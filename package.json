@@ -16,6 +16,7 @@
   "scripts": {
     "test": "dotenv -e local.test.env -- mocha --exit",
     "test:coverage": "NODE_ENV=test nyc --reporter=text yarn test",
+    "test:ci": "NODE_ENV=test nyc --reporter=text yarn test -- --bail --quiet",
     "build": "tsc",
     "start:dev": "ts-node src/index.ts",
     "fix": "yarn prettier:fix && yarn eslint:fix",
