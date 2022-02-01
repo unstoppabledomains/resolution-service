@@ -29,6 +29,11 @@ env:
 jobs:
   build_and_push_container_image:
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - name: Checkout staging branch
         uses: actions/checkout@v2
@@ -75,6 +80,10 @@ jobs:
       SERVICE_NAME: api
       RESOLUTION_RUNNING_MODE: API,MIGRATIONS
 
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - id: auth
         name: Authenticate to GCP
@@ -110,6 +119,10 @@ jobs:
     env:
       SERVICE_NAME: workers
       RESOLUTION_RUNNING_MODE: ETH_WORKER,ZIL_WORKER,MATIC_WORKER
+
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - id: auth
