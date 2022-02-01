@@ -130,6 +130,8 @@ jobs:
         if: ${{ github.actor != 'dependabot[bot]' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_SHARED }}
+
 
 # Temporary disable snapshot feature until we implement chain reorg handling functionality.
 # Check the following story and PR for details:
