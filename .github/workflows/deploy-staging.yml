@@ -70,7 +70,7 @@ jobs:
   deploy_api:
     if: contains(github.event.inputs.deployables, 'api')
     runs-on: ubuntu-latest
-    needs: build_and_push_docker_image
+    needs: build_and_push_container_image
     env:
       SERVICE_NAME: api
       RESOLUTION_RUNNING_MODE: API,MIGRATIONS
@@ -105,7 +105,7 @@ jobs:
 
   deploy_workers:
     runs-on: ubuntu-latest
-    needs: build_and_push_docker_image
+    needs: build_and_push_container_image
     if: contains(github.event.inputs.deployables, 'workers')
     env:
       SERVICE_NAME: workers

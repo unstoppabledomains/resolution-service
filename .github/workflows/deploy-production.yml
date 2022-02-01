@@ -70,7 +70,7 @@ jobs:
   deploy_api:
     name: Deploy API
     if: contains(github.event.inputs.deployables, 'api')
-    needs: build_and_push_docker_image
+    needs: build_and_push_container_image
     runs-on: ubuntu-latest
     env:
       SERVICE_NAME: api
