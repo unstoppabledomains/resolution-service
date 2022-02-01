@@ -8,7 +8,7 @@ on:
         default: 'api workers'
         required: true
 env:
-  DEPLOY_TIMEOUT: 1200
+  BUILD_TIMEOUT: 1200
   IMAGE_NAME: gcr.io/${{ secrets.GCP_STAGING_PROJECT_ID }}/resolution-service:${{ github.sha }}
   RESOLUTION_POSTGRES_HOST: ${{ secrets.RESOLUTION_STAGING_POSTGRES_HOST }}
   RESOLUTION_POSTGRES_USERNAME: ${{ secrets.RESOLUTION_STAGING_POSTGRES_USERNAME }}
@@ -93,8 +93,8 @@ jobs:
             ${{ secrets.WORKLOAD_ID_PROVIDER_STAGING }}
           service_account: ${{ secrets.SERVICE_ACCOUNT_STAGING }}
 
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v0
+      # - name: Set up Google Cloud SDK
+        # uses: google-github-actions/setup-gcloud@v0
 
       - name: Download App Engine configurator
         uses: actions/download-artifact@v2
@@ -106,11 +106,17 @@ jobs:
         shell: bash
         run: bash create-yaml.sh
 
-      - name: Increase deployment timeout
-        run: gcloud config set app/cloud_build_timeout $DEPLOY_TIMEOUT
+      # - name: Increase deployment timeout
+        # run: gcloud config set app/cloud_build_timeout $BUILD_TIMEOUT
 
-      - name: Deploy API
-        run: gcloud app deploy api.yaml --image-url=$IMAGE_NAME
+      - id: deploy
+        name: Deploy to Google App Engine
+        uses: google-github-actions/deploy-appengine@v0
+        with:
+          cloud_build_timeout: $BUILD_TIMEOUT
+          deliverables: api.yaml
+          promote: true
+          image_url: $IMAGE_NAME
 
   deploy_workers:
     runs-on: ubuntu-latest
@@ -133,8 +139,8 @@ jobs:
             ${{ secrets.WORKLOAD_ID_PROVIDER_STAGING }}
           service_account: ${{ secrets.SERVICE_ACCOUNT_STAGING }}
 
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v0
+      # - name: Set up Google Cloud SDK
+      #   uses: google-github-actions/setup-gcloud@v0
 
       - name: Download App Engine configurator
         uses: actions/download-artifact@v2
@@ -146,8 +152,14 @@ jobs:
         shell: bash
         run: bash create-yaml.sh
 
-      - name: Increase deployment timeout
-        run: gcloud config set app/cloud_build_timeout $DEPLOY_TIMEOUT
+      # - name: Increase deployment timeout
+      #   run: gcloud config set app/cloud_build_timeout $BUILD_TIMEOUT
 
-      - name: Deploy workers
-        run: gcloud app deploy workers.yaml --image-url=$IMAGE_NAME
+      - id: deploy
+        name: Deploy to Google App Engine
+        uses: google-github-actions/deploy-appengine@v0
+        with:
+          cloud_build_timeout: $BUILD_TIMEOUT
+          deliverables: workers.yaml
+          promote: true
+          image_url: $IMAGE_NAME
