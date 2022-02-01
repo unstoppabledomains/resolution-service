@@ -42,14 +42,18 @@ jobs:
       - name: Build docker image and cache docker layers
         run: docker build . --file Dockerfile --tag $IMAGE_NAME
 
-      - name: Set up gcloud SDK
-        uses: google-github-actions/setup-gcloud@master
+      - id: auth
+        name: Authenticate to GCP
+        uses: google-github-actions/auth@v0
         with:
-          project_id: ${{ secrets.GCP_STAGING_PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_APP_ENGINE_DEFAULT_SERVICE_ACCOUNT_KEY_STAGING }}
-          export_default_credentials: true
+          workload_identity_provider:
+            ${{ secrets.WORKLOAD_ID_PROVIDER_STAGING }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT_STAGING }}
 
-      - name: Login into Google Cloud Container Registry
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0
+
+      - name: Add Google Cloud Container Registry to Docker
         run: gcloud auth configure-docker -q
 
       - name: Puch docker image into Registry
@@ -71,12 +75,16 @@ jobs:
       RESOLUTION_RUNNING_MODE: API,MIGRATIONS
 
     steps:
-      - name: Set up gcloud SDK
-        uses: google-github-actions/setup-gcloud@master
+      - id: auth
+        name: Authenticate to GCP
+        uses: google-github-actions/auth@v0
         with:
-          project_id: ${{ secrets.GCP_STAGING_PROJECT_ID }}
-          service_account_key:
-            ${{ secrets.GCP_APP_ENGINE_DEFAULT_SERVICE_ACCOUNT_KEY_STAGING }}
+          workload_identity_provider:
+            ${{ secrets.WORKLOAD_ID_PROVIDER_STAGING }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT_STAGING }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0
 
       - name: Download app engine yaml generator
         uses: actions/download-artifact@v2
@@ -103,11 +111,16 @@ jobs:
       RESOLUTION_RUNNING_MODE: ETH_WORKER,ZIL_WORKER,MATIC_WORKER
 
     steps:
-      - name: Set up gcloud SDK
-        uses: google-github-actions/setup-gcloud@master
+      - id: auth
+        name: Authenticate to GCP
+        uses: google-github-actions/auth@v0
         with:
-          project_id: ${{ secrets.GCP_STAGING_PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_APP_ENGINE_DEFAULT_SERVICE_ACCOUNT_KEY_STAGING }}
+          workload_identity_provider:
+            ${{ secrets.WORKLOAD_ID_PROVIDER_STAGING }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT_STAGING }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0
 
       - name: Download app engine yaml generator
         uses: actions/download-artifact@v2
