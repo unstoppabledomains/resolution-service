@@ -123,7 +123,7 @@ jobs:
         run: NODE_ENV=test yarn db:migration:run
 
       - name: Run test
-        run: yarn test
+        run: yarn test:ci
 
       - name: Scan with SonarCloud
         uses: sonarsource/sonarcloud-github-action@master
