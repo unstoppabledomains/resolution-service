@@ -1,7 +1,7 @@
 # This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
 
-name: Node.js CI
+name: Tests and validations
 
 on: [push, pull_request]
 
@@ -13,17 +13,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
       - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v2
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Get yarn cache path
+      - name: Get Yarn cache path
         id: yarn-cache
         run: echo "::set-output name=dir::$(yarn cache dir)"
 
-      - name: Add yarn cache
+      - name: Add Yarn cache
         uses: actions/cache@v2
         with:
           path: |
@@ -39,13 +41,13 @@ jobs:
       - name: Install dependencies
         run: yarn install --freeze-dependencies
 
-      - name: Run prettier check
+      - name: Validate with Prettier
         run: yarn prettier:check
 
-      - name: Run eslint check
+      - name: Validate with ESLint
         run: yarn eslint:check
 
-      - name: Run typescript build check
+      - name: Validate TypeScript
         run: yarn build:check
 
   test:
@@ -78,7 +80,11 @@ jobs:
           POSTGRES_PASSWORD: 'secret'
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
       - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v1
         with:
@@ -104,11 +110,18 @@ jobs:
       - name: Install dependencies
         run: yarn install --freeze-dependencies
 
-      - name: Run typeorm migrations
+      - name: Run TypeORM migrations
         run: NODE_ENV=test yarn db:migration:run
 
       - name: Run test
         run: yarn test
+
+      - name: Scan with SonarCloud
+        uses: sonarsource/sonarcloud-github-action@master
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 # Temporary disable snapshot feature until we implement chain reorg handling functionality.
 # Check the following story and PR for details:
 #  - https://www.pivotaltracker.com/n/projects/2463706/stories/178945048

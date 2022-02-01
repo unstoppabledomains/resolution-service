@@ -8,6 +8,7 @@ on:
         default: 'api workers'
         required: true
 env:
+  DEPLOY_TIMEOUT: 1200
   IMAGE_NAME: gcr.io/${{ secrets.GCP_STAGING_PROJECT_ID }}/resolution-service:${{ github.sha }}
   RESOLUTION_POSTGRES_HOST: ${{ secrets.RESOLUTION_STAGING_POSTGRES_HOST }}
   RESOLUTION_POSTGRES_USERNAME: ${{ secrets.RESOLUTION_STAGING_POSTGRES_USERNAME }}
@@ -26,7 +27,7 @@ env:
   POLYGON_UNS_REGISTRY_EVENTS_STARTING_BLOCK: 18956099
 
 jobs:
-  build_and_push_docker_image:
+  build_and_push_container_image:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout staging branch
@@ -34,12 +35,12 @@ jobs:
         with:
           ref: 'refs/heads/staging'
 
-      - name: Restore cached Docker layers
+      - name: Retrieve cached container image layers
         uses: satackey/action-docker-layer-caching@v0.0.11
         # Ignore the failure of a step and avoid terminating the job.
         continue-on-error: true
 
-      - name: Build docker image and cache docker layers
+      - name: Build container image and cache layers
         run: docker build . --file Dockerfile --tag $IMAGE_NAME
 
       - id: auth
@@ -56,10 +57,10 @@ jobs:
       - name: Add Google Cloud Container Registry to Docker
         run: gcloud auth configure-docker -q
 
-      - name: Puch docker image into Registry
+      - name: Push container image to Google Cotnainer Registry
         run: docker push $IMAGE_NAME
 
-      - name: Save app engine yaml generator to reuse between jobs
+      - name: Save App Engine configurator to reuse between jobs
         uses: actions/upload-artifact@v2
         with:
           name: create-yaml-sh
@@ -86,18 +87,18 @@ jobs:
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v0
 
-      - name: Download app engine yaml generator
+      - name: Download App Engine configurator
         uses: actions/download-artifact@v2
         with:
           name: create-yaml-sh
           path: ./
 
-      - name: Create api.yaml
+      - name: Create `api.yaml`
         shell: bash
         run: bash create-yaml.sh
 
-      - name: Increase deployment timeout up to 20 minutes
-        run: gcloud config set app/cloud_build_timeout 1200
+      - name: Increase deployment timeout
+        run: gcloud config set app/cloud_build_timeout $DEPLOY_TIMEOUT
 
       - name: Deploy API
         run: gcloud app deploy api.yaml --image-url=$IMAGE_NAME
@@ -122,18 +123,18 @@ jobs:
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v0
 
-      - name: Download app engine yaml generator
+      - name: Download App Engine configurator
         uses: actions/download-artifact@v2
         with:
           name: create-yaml-sh
           path: ./
 
-      - name: Create worker.yaml
+      - name: Create `worker.yaml`
         shell: bash
         run: bash create-yaml.sh
 
-      - name: Increase deployment timeout up to 20 minutes
-        run: gcloud config set app/cloud_build_timeout 1200
+      - name: Increase deployment timeout
+        run: gcloud config set app/cloud_build_timeout $DEPLOY_TIMEOUT
 
-      - name: Deploy WORKERS
+      - name: Deploy workers
         run: gcloud app deploy workers.yaml --image-url=$IMAGE_NAME

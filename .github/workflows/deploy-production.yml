@@ -8,6 +8,7 @@ on:
         default: 'api workers'
         required: true
 env:
+  DEPLOY_TIMEOUT: 1200
   IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/resolution-service:${{ github.sha }}
   RESOLUTION_POSTGRES_HOST: ${{ secrets.RESOLUTION_POSTGRES_HOST }}
   RESOLUTION_POSTGRES_USERNAME: ${{ secrets.RESOLUTION_POSTGRES_USERNAME }}
@@ -27,18 +28,19 @@ env:
   POLYGON_CONFIRMATION_BLOCKS: 200
 
 jobs:
-  build_and_push_docker_image:
+  build_and_push_container_image:
+    name: Build and push container image
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout master
+      - name: Checkout master branch
         uses: actions/checkout@v2
 
-      - name: Restore cached Docker layers
+      - name: Restore container image cache
         uses: satackey/action-docker-layer-caching@v0.0.11
         # Ignore the failure of a step and avoid terminating the job.
         continue-on-error: true
 
-      - name: Build docker image and cache docker layers
+      - name: Build container image and cache layers
         run: docker build . --file Dockerfile --tag $IMAGE_NAME
 
       - id: auth
@@ -52,13 +54,13 @@ jobs:
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v0
 
-      - name: Login into Google Cloud Container Registry
+      - name: Add Google Cloud Container Registry to Docker config
         run: gcloud auth configure-docker -q
 
-      - name: Puch docker image into Registry
+      - name: Push container image to Google Container Registry
         run: docker push $IMAGE_NAME
 
-      - name: Save app engine yaml generator to reuse between jobs
+      - name: Save App Engine configuration to reuse between jobs
         uses: actions/upload-artifact@v2
         with:
           name: create-yaml-sh
@@ -66,6 +68,7 @@ jobs:
           retention-days: 1
 
   deploy_api:
+    name: Deploy API
     if: contains(github.event.inputs.deployables, 'api')
     needs: build_and_push_docker_image
     runs-on: ubuntu-latest
@@ -85,25 +88,26 @@ jobs:
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v0
 
-      - name: Download app engine yaml generator
+      - name: Download App Engine config generator
         uses: actions/download-artifact@v2
         with:
           name: create-yaml-sh
           path: ./
 
-      - name: Create api.yaml
+      - name: Create `api.yaml`
         shell: bash
         run: bash create-yaml.sh
 
-      - name: Increase deployment timeout up to 20 minutes
-        run: gcloud config set app/cloud_build_timeout 1200
+      - name: Increase deployment timeout
+        run: gcloud config set app/cloud_build_timeout $DEPLOY_TIMEOUT
 
       - name: Deploy API
         run: gcloud app deploy api.yaml --image-url=$IMAGE_NAME
 
   deploy_workers:
+    name: Deploy workers
     runs-on: ubuntu-latest
-    needs: build_and_push_docker_image
+    needs: build_and_push_container_image
     if: contains(github.event.inputs.deployables, 'workers')
     env:
       SERVICE_NAME: workers
@@ -122,18 +126,18 @@ jobs:
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v0
 
-      - name: Download app engine yaml generator
+      - name: Download App Engine config generator
         uses: actions/download-artifact@v2
         with:
           name: create-yaml-sh
           path: ./
 
-      - name: Create worker.yaml
+      - name: Create `worker.yaml`
         shell: bash
         run: bash create-yaml.sh
 
-      - name: Increase deployment timeout up to 20 minutes
-        run: gcloud config set app/cloud_build_timeout 1200
+      - name: Increase deployment timeout
+        run: gcloud config set app/cloud_build_timeout $DEPLOY_TIMEOUT
 
       - name: Deploy WORKERS
         run: gcloud app deploy workers.yaml --image-url=$IMAGE_NAME
