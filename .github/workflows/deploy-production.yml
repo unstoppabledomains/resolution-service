@@ -8,7 +8,7 @@ on:
         default: 'api workers'
         required: true
 env:
-  BUILD_TIMEOUT: 1200
+  CLOUDSDK_APP_CLOUD_BUILD_TIMEOUT: 1200
   IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/resolution-service:${{ github.sha }}
   RESOLUTION_POSTGRES_HOST: ${{ secrets.RESOLUTION_POSTGRES_HOST }}
   RESOLUTION_POSTGRES_USERNAME: ${{ secrets.RESOLUTION_POSTGRES_USERNAME }}
@@ -115,7 +115,6 @@ jobs:
         uses: google-github-actions/deploy-appengine@v0
         with:
           project_id: unstoppable-domains
-          cloud_build_timeout: ${{ env.BUILD_TIMEOUT }}
           deliverables: api.yaml
           promote: true
           image_url: ${{ env.IMAGE_NAME }}
@@ -164,7 +163,6 @@ jobs:
         uses: google-github-actions/deploy-appengine@v0
         with:
           project_id: unstoppable-domains
-          cloud_build_timeout: ${{ env.BUILD_TIMEOUT }}
           deliverables: workers.yaml
           promote: true
           image_url: ${{ env.IMAGE_NAME }}
