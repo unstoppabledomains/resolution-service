@@ -60,7 +60,7 @@ const constructNFTContract = async (
       env.APPLICATION.ETHEREUM.JSON_RPC_API_URL,
     );
   }
-  if (chainId === '4') {
+  if (chainId === '137') {
     provider = new ethers.providers.JsonRpcProvider(
       env.APPLICATION.POLYGON.JSON_RPC_API_URL,
     );
