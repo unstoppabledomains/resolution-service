@@ -113,7 +113,7 @@ jobs:
         name: Deploy to Google App Engine
         uses: google-github-actions/deploy-appengine@v0
         with:
-          project_id: unstoppable-dmains-staging
+          project_id: unstoppable-domains-staging
           cloud_build_timeout: ${{ env.BUILD_TIMEOUT }}
           deliverables: api.yaml
           promote: true
