@@ -113,14 +113,19 @@ export class MetaDataController {
   async getMetaData(
     @Param('domainOrToken') domainOrToken: string,
   ): Promise<OpenSeaMetadata> {
-    const token = this.normalizeDomainOrToken(domainOrToken);
-    const domain =
-      (await Domain.findByNode(token)) ||
-      (await Domain.findOnChainNoSafe(token));
-    if (!domain) {
-      return this.defaultMetaResponse(domainOrToken);
-    }
-    const resolution = getDomainResolution(domain);
+    const domain: any = {
+      name: 'ryan.crypto',
+      namehash:
+        '0x691f36df38168d9297e784f45a87257a70c58c4040d469c6d0b91d253a837e32',
+      resolution: {},
+    };
+    const resolution: any = {
+      resolution: {
+        'social.picture.value':
+          '137/erc721:0xa5f1ea7df861952863df2e8d1312f7305dabf215/147826',
+      },
+      ownerAddress: '0x58cA45E932a88b2E7D0130712B3AA9fB7c5781e2',
+    };
 
     const { pictureOrUrl, nftStandard, backgroundColor } =
       await getSocialPictureUrl(
