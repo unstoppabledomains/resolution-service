@@ -46,7 +46,7 @@ jobs:
         continue-on-error: true
 
       - name: Build container image and cache layers
-        run: docker build . --file Dockerfile --tag $IMAGE_NAME
+        run: docker build . --file Dockerfile --tag ${{ env.IMAGE_NAME }}
 
       - id: auth
         name: Authenticate to GCP
@@ -63,7 +63,7 @@ jobs:
         run: gcloud auth configure-docker -q
 
       - name: Push container image to Google Container Registry
-        run: docker push $IMAGE_NAME
+        run: docker push ${{ env.IMAGE_NAME }}
 
       - name: Save App Engine configuration to reuse between jobs
         uses: actions/upload-artifact@v2
@@ -114,10 +114,11 @@ jobs:
         name: Deploy to Google App Engine
         uses: google-github-actions/deploy-appengine@v0
         with:
-          cloud_build_timeout: $BUILD_TIMEOUT
+          project_id: unstoppable-domains
+          cloud_build_timeout: ${{ env.BUILD_TIMEOUT }}
           deliverables: api.yaml
           promote: true
-          image_url: $IMAGE_NAME
+          image_url: ${{ env.IMAGE_NAME }}
 
   deploy_workers:
     name: Deploy workers
@@ -162,7 +163,8 @@ jobs:
         name: Deploy to Google App Engine
         uses: google-github-actions/deploy-appengine@v0
         with:
-          cloud_build_timeout: $BUILD_TIMEOUT
+          project_id: unstoppable-domains
+          cloud_build_timeout: ${{ env.BUILD_TIMEOUT }}
           deliverables: workers.yaml
           promote: true
-          image_url: $IMAGE_NAME
+          image_url: ${{ env.IMAGE_NAME }}
