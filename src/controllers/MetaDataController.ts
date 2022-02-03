@@ -34,6 +34,17 @@ const DomainsWithCustomImage: Record<string, string> = {
   'surf.crypto': 'custom/surf.svg',
   'hosting.crypto': 'custom/hosting.svg',
   'india.crypto': 'custom/india.jpg',
+  'gambling.nft': 'custom/gambling.jpg',
+  'hodl.nft': 'custom/hodl.jpg',
+  'win.nft': 'custom/win.jpg',
+  'moon.nft': 'custom/moon.jpg',
+  'football.nft': 'custom/football.jpg',
+  'gaming.nft': 'custom/gaming.jpg',
+  'defi.nft': 'custom/defi.jpg',
+  'sports.nft': 'custom/sports.jpg',
+  'basketball.nft': 'custom/basketball.jpg',
+  'magic.nft': 'custom/magic.jpg',
+  'digital.nft': 'custom/digital.jpg',
 };
 const AnimalHelper: AnimalDomainHelper = new AnimalDomainHelper();
 
