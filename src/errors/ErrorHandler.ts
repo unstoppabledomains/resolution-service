@@ -1,9 +1,10 @@
+import { NextFunction, Request, Response } from 'express';
 import {
-  Middleware,
   ExpressErrorMiddlewareInterface,
   HttpError,
+  Middleware,
 } from 'routing-controllers';
-import { Response, Request, NextFunction } from 'express';
+import { logger } from '../logger';
 
 @Middleware({ type: 'after' })
 export default class ErrorHandler implements ExpressErrorMiddlewareInterface {
@@ -30,6 +31,8 @@ export default class ErrorHandler implements ExpressErrorMiddlewareInterface {
     }
     responseObject.message = error.message ? error.message : '';
     responseObject.errors = error.errors ? error.errors : [error];
+
+    logger.error(error);
     res.json(responseObject);
   }
 }
