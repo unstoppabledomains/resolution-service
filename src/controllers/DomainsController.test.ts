@@ -974,6 +974,7 @@ describe('DomainsController', () => {
           ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
           registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         });
+
       await DomainTestHelper.createTestDomain({
         blockchain: Blockchain.ZIL,
         networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
@@ -982,25 +983,6 @@ describe('DomainsController', () => {
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
       });
-    });
-
-    it('filters domains list by multiple tlds', async () => {
-      const { domain: testDomainOne, resolution: resolutionOne } =
-        await DomainTestHelper.createTestDomain({
-          name: 'test.crypto',
-          node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
-          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        });
-      const { domain: testDomainTwo, resolution: resolutionTwo } =
-        await DomainTestHelper.createTestDomain({
-          blockchain: Blockchain.ZIL,
-          networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
-          name: 'test1.zil',
-          node: '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
-          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
-        });
 
       const res = await supertest(api)
         .get(
@@ -1028,6 +1010,73 @@ describe('DomainsController', () => {
         meta: {
           hasMore: false,
           nextStartingAfter: testDomainOne.id?.toString(),
+          perPage: 100,
+          sortBy: 'id',
+          sortDirection: 'ASC',
+        },
+      });
+      expect(res.status).eq(200);
+    });
+
+    it('filters domains list by multiple tlds', async () => {
+      const { domain: testDomainOne, resolution: resolutionOne } =
+        await DomainTestHelper.createTestDomain({
+          name: 'test.crypto',
+          node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        });
+
+      const { domain: testDomainTwo, resolution: resolutionTwo } =
+        await DomainTestHelper.createTestDomain({
+          blockchain: Blockchain.ZIL,
+          networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
+          name: 'test1.zil',
+          node: '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
+          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        });
+
+      const res = await supertest(api)
+        .get(
+          '/domains?owners=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&tlds=crypto&tlds=zil',
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.body).to.deep.equal({
+        data: [
+          {
+            id: testDomainOne.name,
+            attributes: {
+              meta: {
+                domain: testDomainOne.name,
+                blockchain: resolutionOne.blockchain,
+                networkId: resolutionOne.networkId,
+                owner: resolutionOne.ownerAddress,
+                registry: resolutionOne.registry,
+                resolver: resolutionOne.resolver,
+              },
+              records: {},
+            },
+          },
+          {
+            id: testDomainTwo.name,
+            attributes: {
+              meta: {
+                domain: testDomainTwo.name,
+                blockchain: resolutionTwo.blockchain,
+                networkId: resolutionTwo.networkId,
+                owner: resolutionTwo.ownerAddress,
+                registry: resolutionTwo.registry,
+                resolver: resolutionTwo.resolver,
+              },
+              records: {},
+            },
+          },
+        ],
+        meta: {
+          hasMore: false,
+          nextStartingAfter: testDomainTwo.id?.toString(),
           perPage: 100,
           sortBy: 'id',
           sortDirection: 'ASC',
