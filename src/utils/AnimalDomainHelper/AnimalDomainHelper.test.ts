@@ -7,23 +7,15 @@ describe('AnimalDomainHelper', () => {
   describe('.resellerAnimalAttributes', () => {
     it('non crypto domain', async () => {
       const attributes = helper.getAnimalAttributes('noncrypto.wallet');
-      expect(attributes.length).to.equal(1);
-      expect(attributes[0]).to.deep.equal({
-        trait_type: 'type',
-        value: 'standard',
-      });
+      expect(attributes.length).to.equal(0);
     });
 
     it('animalDomain with no prefix', async () => {
       const attributes = helper.getAnimalAttributes('lemming.crypto');
-      expect(attributes.length).to.equal(2);
+      expect(attributes.length).to.equal(1);
       expect(attributes[0]).to.deep.equal({
         trait_type: 'animal',
         value: 'lemming',
-      });
-      expect(attributes[1]).to.deep.equal({
-        trait_type: 'type',
-        value: 'animal',
       });
     });
 
@@ -31,7 +23,7 @@ describe('AnimalDomainHelper', () => {
       const attributes = helper.getAnimalAttributes(
         'unstoppablelemming.crypto',
       );
-      expect(attributes.length).to.equal(3);
+      expect(attributes.length).to.equal(2);
       expect(attributes[0]).to.deep.equal({
         trait_type: 'adjective',
         value: 'unstoppable',
@@ -40,19 +32,11 @@ describe('AnimalDomainHelper', () => {
         trait_type: 'animal',
         value: 'lemming',
       });
-      expect(attributes[2]).to.deep.equal({
-        trait_type: 'type',
-        value: 'animal',
-      });
     });
 
     it('not animal domain', async () => {
       const attributes = helper.getAnimalAttributes('standard.crypto');
-      expect(attributes.length).to.equal(1);
-      expect(attributes[0]).to.deep.equal({
-        trait_type: 'type',
-        value: 'standard',
-      });
+      expect(attributes.length).to.equal(0);
     });
 
     it('should return correct image url for branded animals', async () => {
@@ -70,7 +54,6 @@ describe('AnimalDomainHelper', () => {
         const attributes = helper.getAnimalAttributes(domainName);
         expect(attributes).to.deep.equal([
           { trait_type: 'animal', value: 'badger' },
-          { trait_type: 'type', value: 'animal' },
         ]);
       });
     });
