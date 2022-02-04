@@ -9,3 +9,7 @@ build
 .sandbox
 .sandboxl2
 coverage
+service.env
+local.dev.env
+local.test.env
+

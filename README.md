@@ -190,9 +190,8 @@ yarn install
 ```
 
 2. Configure environment variables.\
-   The required variables are the same as running the service in docker. To simplify
-   development it's recommended to set additional ENV variables mentioned in `./local.dev.env`
-   file.
+   The required variables are the same as running the service in docker. 
+   Copy `./local.dev.env.sample` to `./local.dev.env` and set variables as necessary.
 
 ```
 RESOLUTION_POSTGRES_HOST=localhost
@@ -213,7 +212,7 @@ yarn start:dev
 ### Running unit tests
 
 Unit tests can be run using `yarn test`. This command will run the tests with
-ENV variables set in `./local.test.env` file. You could redefine any env
+ENV variables set in `./local.test.env` file. You should copy `./local.test.env.sample` to `./local.test.env` and redefine any env
 variable in yours local environment if needed, for example:
 `export RESOLUTION_POSTGRES_PASSWORD=password`. Testing command will take this
 variable first instead of using variable from `./local.test.env` file.
