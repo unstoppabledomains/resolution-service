@@ -5,13 +5,7 @@ import fetch from 'node-fetch';
 import { env } from '../../env';
 
 export type OpenSeaMetadataAttribute =
-  | {
-      value: string | number;
-    }
-  | {
-      trait_type: string;
-      value: string | number;
-    }
+  | { trait_type?: string; value: string | number }
   | {
       display_type:
         | 'number'
@@ -34,16 +28,13 @@ const ImagesEndpoint = `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_B
 
 export default class AnimalDomainHelper {
   getAnimalAttributes(name: string): OpenSeaMetadataAttribute[] {
-    const attributes: { trait_type: string; value: string }[] = [];
+    const attributes: OpenSeaMetadataAttribute[] = [];
     const { prefix, animal } = this.extractPrefixAndAnimal(name);
     if (prefix && AdjectivesDictionary.includes(prefix)) {
       attributes.push({ trait_type: 'adjective', value: prefix });
     }
     if (animal) {
       attributes.push({ trait_type: 'animal', value: animal });
-      attributes.push({ trait_type: 'type', value: 'animal' });
-    } else {
-      attributes.push({ trait_type: 'type', value: 'standard' });
     }
     return attributes;
   }

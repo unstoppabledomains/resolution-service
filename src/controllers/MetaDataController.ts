@@ -20,6 +20,7 @@ import {
 import punycode from 'punycode';
 import btoa from 'btoa';
 import { getDomainResolution } from '../services/Resolution';
+import premiumDomains from '../utils/premium-domains.json';
 
 const DEFAULT_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
@@ -344,10 +345,19 @@ export class MetaDataController {
       verifiedNftPicture?: boolean;
     },
   ): OpenSeaMetadataAttribute[] {
-    return [
+    let domainType = 'standard';
+    const attributes = [
       ...this.getBasicDomainAttributes(name, meta),
       ...this.getAnimalAttributes(name),
     ];
+    if (attributes.find((attribute) => attribute.trait_type === 'animal')) {
+      domainType = 'animal';
+    }
+    if (premiumDomains.includes(name)) {
+      domainType = 'premium';
+    }
+    attributes.push({ trait_type: 'type', value: domainType });
+    return attributes;
   }
 
   private getBasicDomainAttributes(
