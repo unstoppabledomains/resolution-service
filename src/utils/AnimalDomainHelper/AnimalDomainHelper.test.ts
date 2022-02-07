@@ -19,6 +19,16 @@ describe('AnimalDomainHelper', () => {
       });
     });
 
+    it('should return not animal for premium domain with animal prefix', async () => {
+      const attributes = helper.getAnimalAttributes('whale.nft');
+      expect(attributes.length).to.equal(0);
+    });
+
+    it('should return not animal for domain with custom image', async () => {
+      const attributes = helper.getAnimalAttributes('surf.nft');
+      expect(attributes.length).to.equal(0);
+    });
+
     it('animalDomain with prefix', async () => {
       const attributes = helper.getAnimalAttributes(
         'unstoppablelemming.crypto',
