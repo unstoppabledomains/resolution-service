@@ -102,7 +102,7 @@ export default class AnimalDomainHelper {
     return map[prefix] || prefix;
   }
 
-  private excludedDomain(domainName: string) {
+  private isExcludedDomain(domainName: string) {
     if (!domainName || !domainName.includes('.')) {
       return true;
     }
@@ -119,7 +119,7 @@ export default class AnimalDomainHelper {
     let prefix = '';
     let animal = '';
 
-    if (!this.excludedDomain(domainName)) {
+    if (!this.isExcludedDomain(domainName)) {
       const extensionDelimiter = domainName.lastIndexOf('.');
       const label = domainName.slice(0, extensionDelimiter);
       const matches = ResellerAnimalRegex.exec(label);
