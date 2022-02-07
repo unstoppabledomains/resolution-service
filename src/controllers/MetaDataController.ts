@@ -20,7 +20,7 @@ import {
 import punycode from 'punycode';
 import btoa from 'btoa';
 import { getDomainResolution } from '../services/Resolution';
-import premiumDomains from '../utils/premium-domains.json';
+import { PremiumDomains, CustomImageDomains } from '../utils/domainCategories';
 
 const DEFAULT_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
@@ -28,25 +28,7 @@ const BASE_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images` as const;
 const INVALID_DOMAIN_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/invalid-domain.svg` as const;
-const DomainsWithCustomImage: Record<string, string> = {
-  'code.crypto': 'custom/code.svg',
-  'web3.crypto': 'custom/web3.svg',
-  'privacy.crypto': 'custom/privacy.svg',
-  'surf.crypto': 'custom/surf.svg',
-  'hosting.crypto': 'custom/hosting.svg',
-  'india.crypto': 'custom/india.jpg',
-  'gambling.nft': 'custom/gambling.jpg',
-  'hodl.nft': 'custom/hodl.jpg',
-  'win.nft': 'custom/win.jpg',
-  'moon.nft': 'custom/moon.jpg',
-  'football.nft': 'custom/football.jpg',
-  'gaming.nft': 'custom/gaming.jpg',
-  'defi.nft': 'custom/defi.jpg',
-  'sports.nft': 'custom/sports.jpg',
-  'basketball.nft': 'custom/basketball.jpg',
-  'magic.nft': 'custom/magic.jpg',
-  'digital.nft': 'custom/digital.jpg',
-};
+
 const AnimalHelper: AnimalDomainHelper = new AnimalDomainHelper();
 
 type DomainProperties = {
@@ -353,7 +335,7 @@ export class MetaDataController {
     if (attributes.find((attribute) => attribute.trait_type === 'animal')) {
       domainType = 'animal';
     }
-    if (premiumDomains.includes(name)) {
+    if (PremiumDomains.includes(name)) {
       domainType = 'premium';
     }
     attributes.push({ trait_type: 'type', value: domainType });
@@ -400,7 +382,7 @@ export class MetaDataController {
   }
 
   private isDomainWithCustomImage(name: string): boolean {
-    return Boolean(DomainsWithCustomImage[name]);
+    return Boolean(CustomImageDomains[name]);
   }
 
   private isValidDNSDomain(domain: string): boolean {
@@ -471,8 +453,8 @@ export class MetaDataController {
   }
 
   private generateDomainImageUrl(name: string): string | null {
-    if (DomainsWithCustomImage[name]) {
-      return `${BASE_IMAGE_URL}/${DomainsWithCustomImage[name]}`;
+    if (this.isDomainWithCustomImage(name)) {
+      return `${BASE_IMAGE_URL}/${CustomImageDomains[name]}`;
     }
 
     const animalImageUrl = AnimalHelper.getAnimalImageUrl(name);

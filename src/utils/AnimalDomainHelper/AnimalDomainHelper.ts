@@ -3,6 +3,7 @@ import ResellersDictionary from './vocabulary/resellers.json';
 import AdjectivesDictionary from './vocabulary/adjectives.json';
 import fetch from 'node-fetch';
 import { env } from '../../env';
+import { PremiumDomains, CustomImageDomains } from '../domainCategories';
 
 export type OpenSeaMetadataAttribute =
   | { trait_type?: string; value: string | number }
@@ -101,20 +102,30 @@ export default class AnimalDomainHelper {
     return map[prefix] || prefix;
   }
 
+  private excludedDomain(domainName: string) {
+    if (!domainName || !domainName.includes('.')) {
+      return true;
+    }
+    if (PremiumDomains.includes(domainName) || CustomImageDomains[domainName]) {
+      return true;
+    }
+    return false;
+  }
+
   private extractPrefixAndAnimal(domainName: string): {
     prefix: string;
     animal: string;
   } {
     let prefix = '';
     let animal = '';
-    if (domainName && domainName.includes('.')) {
+
+    if (!this.excludedDomain(domainName)) {
       const extensionDelimiter = domainName.lastIndexOf('.');
       const label = domainName.slice(0, extensionDelimiter);
       const matches = ResellerAnimalRegex.exec(label);
       if (matches) {
         prefix = matches[1] ?? '';
         animal = matches[2] ?? '';
-        return { prefix, animal };
       }
     }
     return { prefix, animal };
