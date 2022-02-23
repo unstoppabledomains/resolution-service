@@ -20,7 +20,7 @@ import {
 import punycode from 'punycode';
 import btoa from 'btoa';
 import { getDomainResolution } from '../services/Resolution';
-import { PremiumDomains, CustomImageDomains } from '../utils/domainCategories';
+import { CustomImageDomains } from '../utils/domainCategories';
 
 const DEFAULT_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
@@ -53,10 +53,6 @@ class OpenSeaMetadata extends Erc721Metadata {
   @IsOptional()
   @IsString()
   external_link?: string;
-
-  @IsOptional()
-  @IsString()
-  image_data?: string | null;
 
   @IsObject()
   properties: DomainProperties;
@@ -154,12 +150,7 @@ export class MetaDataController {
       domain.name,
       resolution.resolution,
     );
-    const domainAttributes = this.getDomainAttributes(domain.name, {
-      ipfsContent:
-        resolution.resolution['dweb.ipfs.hash'] ||
-        resolution.resolution['ipfs.html.value'],
-      verifiedNftPicture: socialPicture !== '',
-    });
+    const domainAttributes = this.getDomainAttributes(domain);
 
     const metadata: OpenSeaMetadata = {
       name: domain.name,
@@ -173,10 +164,6 @@ export class MetaDataController {
     };
 
     if (!this.isDomainWithCustomImage(domain.name) && !socialPicture) {
-      metadata.image_data = await this.generateImageData(
-        domain.name,
-        resolution.resolution,
-      );
       metadata.background_color = '4C47F7';
     }
 
@@ -242,9 +229,8 @@ export class MetaDataController {
   ): Promise<OpenSeaMetadata> {
     const name = domainOrToken.includes('.') ? domainOrToken : null;
     const description = name ? this.getDomainDescription(name, {}) : null;
-    const attributes = name ? this.getDomainAttributes(name) : [];
+    const attributes = name ? this.getBasicDomainAttributes(name) : [];
     const image = name ? this.generateDomainImageUrl(name) : null;
-    const image_data = name ? await this.generateImageData(name, {}) : null;
     const external_url = name
       ? `https://unstoppabledomains.com/search?searchTerm=${name}`
       : null;
@@ -257,7 +243,6 @@ export class MetaDataController {
       external_url,
       attributes,
       image,
-      image_data,
     };
   }
 
@@ -320,65 +305,25 @@ export class MetaDataController {
     return '';
   }
 
-  private getDomainAttributes(
-    name: string,
-    meta?: {
-      ipfsContent?: string;
-      verifiedNftPicture?: boolean;
-    },
-  ): OpenSeaMetadataAttribute[] {
-    let domainType = 'standard';
-    const attributes = [
-      ...this.getBasicDomainAttributes(name, meta),
-      ...this.getAnimalAttributes(name),
-    ];
-    if (attributes.find((attribute) => attribute.trait_type === 'animal')) {
-      domainType = 'animal';
-    }
-    if (PremiumDomains.includes(name)) {
-      domainType = 'premium';
-    }
-    attributes.push({ trait_type: 'type', value: domainType });
+  private getDomainAttributes(domain: Domain): OpenSeaMetadataAttribute[] {
+    const attributes = this.getBasicDomainAttributes(domain.name);
+    const resolution = getDomainResolution(domain);
+    attributes.push({ trait_type: 'chain', value: resolution.blockchain });
     return attributes;
   }
 
-  private getBasicDomainAttributes(
-    name: string,
-    meta?: {
-      ipfsContent?: string;
-      verifiedNftPicture?: boolean;
-    },
-  ): OpenSeaMetadataAttribute[] {
-    const attributes: OpenSeaMetadataAttribute[] = [
+  private getBasicDomainAttributes(name: string): OpenSeaMetadataAttribute[] {
+    return [
       {
-        trait_type: 'domain',
-        value: name,
+        trait_type: 'domain ending',
+        value: name.split('.')[1],
       },
       {
-        trait_type: 'level',
-        value: name.split('.').length,
-      },
-      {
+        display_type: 'number',
         trait_type: 'length',
         value: punycode.toUnicode(name).split('.')[0].length,
       },
     ];
-
-    if (meta?.ipfsContent) {
-      attributes.push({ trait_type: 'IPFS Content', value: meta?.ipfsContent });
-    }
-    if (meta?.verifiedNftPicture) {
-      attributes.push({
-        trait_type: 'picture',
-        value: 'verified-nft',
-      });
-    }
-
-    return attributes;
-  }
-
-  private getAnimalAttributes(name: string): OpenSeaMetadataAttribute[] {
-    return AnimalHelper.getAnimalAttributes(name);
   }
 
   private isDomainWithCustomImage(name: string): boolean {
