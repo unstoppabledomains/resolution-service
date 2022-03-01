@@ -20,7 +20,8 @@ const getCryptoKittySvgUrl = (tokenId: string) =>
   `https://img.cryptokitties.co/${CryptoKittyContractAddress}/${tokenId}.svg`;
 
 const parsePictureRecord = (avatarRecord: string) => {
-  const regex = /(1)\/(erc721|erc1155|cryptopunks):(0x[a-fA-F0-9]{40})\/(\d+)/;
+  const regex =
+    /(\d+)\/(erc721|erc1155|cryptopunks):(0x[a-fA-F0-9]{40})\/(\d+)/;
   const matches = regex.exec(avatarRecord);
   if (!matches || matches.length !== 5) {
     throw new Error('Invalid avatar record');
@@ -31,6 +32,7 @@ const parsePictureRecord = (avatarRecord: string) => {
 };
 
 const constructNFTContract = async (
+  chainId: string,
   contractAddress: string,
   nftStandard: string,
 ) => {
@@ -51,9 +53,21 @@ const constructNFTContract = async (
   if (!abis[nftStandard]) {
     throw new Error('Unsupported NFT standard: ' + nftStandard);
   }
-  const provider = new ethers.providers.JsonRpcProvider(
-    env.APPLICATION.ETHEREUM.JSON_RPC_API_URL,
-  );
+  let provider;
+
+  if (chainId === '1') {
+    provider = new ethers.providers.JsonRpcProvider(
+      env.APPLICATION.ETHEREUM.JSON_RPC_API_URL,
+    );
+  }
+  if (chainId === '137') {
+    provider = new ethers.providers.JsonRpcProvider(
+      env.APPLICATION.POLYGON.JSON_RPC_API_URL,
+    );
+  }
+  if (!provider) {
+    throw new Error('Invalid chainID');
+  }
   await provider.ready;
   const nftContract = new ethers.Contract(
     contractAddress,
@@ -147,9 +161,10 @@ export const getSocialPictureUrl = async (
     return { pictureOrUrl: '', nftStandard: '', backgroundColor: '' };
   }
   try {
-    const { nftStandard, contractAddress, tokenId } =
+    const { chainId, nftStandard, contractAddress, tokenId } =
       parsePictureRecord(avatarRecord);
     const nftContract = await constructNFTContract(
+      chainId,
       contractAddress,
       nftStandard,
     );
@@ -163,6 +178,7 @@ export const getSocialPictureUrl = async (
     }
     if (nftStandard === 'cryptopunks') {
       const cryptoPunksImageContract = await constructNFTContract(
+        chainId,
         CryptoPunksImageContractAddress,
         'cryptopunks',
       );
@@ -183,6 +199,7 @@ export const getSocialPictureUrl = async (
       nftStandard,
       tokenId,
     });
+
     const { imageURL, backgroundColor } = await getImageURLFromTokenURI(
       tokenURI.replace('0x{id}', tokenId).replace('{id}', tokenId),
     );
