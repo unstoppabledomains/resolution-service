@@ -138,11 +138,17 @@ const useIpfsGateway = (url: string) => {
 };
 
 const getImageURLFromTokenURI = async (tokenURI: string) => {
-  const resp = await nodeFetch(useIpfsGateway(tokenURI), { timeout: 3000 });
-  if (!resp.ok) {
-    throw new Error('Failed to fetch from tokenURI');
+  let metadata;
+  if (tokenURI.startsWith('data:application/json;base64,')) {
+    const json = Buffer.from(tokenURI.substring(29), 'base64').toString();
+    metadata = JSON.parse(json);
+  } else {
+    const resp = await nodeFetch(useIpfsGateway(tokenURI), { timeout: 3000 });
+    if (!resp.ok) {
+      throw new Error('Failed to fetch from tokenURI');
+    }
+    metadata = await resp.json();
   }
-  const metadata = await resp.json();
   return {
     imageURL: metadata.image || metadata.image_url,
     backgroundColor: metadata.background_color || '',
@@ -199,7 +205,6 @@ export const getSocialPictureUrl = async (
       nftStandard,
       tokenId,
     });
-
     const { imageURL, backgroundColor } = await getImageURLFromTokenURI(
       tokenURI.replace('0x{id}', tokenId).replace('{id}', tokenId),
     );
@@ -210,9 +215,16 @@ export const getSocialPictureUrl = async (
 };
 
 export const getNFTSocialPicture = async (
-  imageUrl: string,
+  pictureOrUrl: string,
 ): Promise<[string, string | null]> => {
-  const resp = await nodeFetch(useIpfsGateway(imageUrl), { timeout: 3000 });
+  if (pictureOrUrl.startsWith('data:')) {
+    const mimeType = pictureOrUrl.substring(
+      pictureOrUrl.indexOf(':') + 1,
+      pictureOrUrl.indexOf(';'),
+    );
+    return [pictureOrUrl, mimeType];
+  }
+  const resp = await nodeFetch(useIpfsGateway(pictureOrUrl), { timeout: 3000 });
   if (!resp.ok) {
     throw new Error('Failed to fetch NFT image');
   }
