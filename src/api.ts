@@ -52,4 +52,17 @@ const swaggerSpec = routingControllersToSpec(
   },
 );
 
-api.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerSpec));
+const options = {
+  swaggerOptions: {
+    url: '/api-docs/swagger.json',
+  },
+};
+
+api.get('/api-docs/swagger.json', (_req: any, res: any) =>
+  res.json(swaggerSpec),
+);
+api.use(
+  '/api-docs',
+  swaggerUI.serveFiles(undefined, options),
+  swaggerUI.setup(undefined, options),
+);
