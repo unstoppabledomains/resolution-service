@@ -222,7 +222,8 @@ export const getNFTSocialPicture = async (
       pictureOrUrl.indexOf(':') + 1,
       pictureOrUrl.indexOf(';'),
     );
-    return [pictureOrUrl, mimeType];
+    const base64 = pictureOrUrl.substring(pictureOrUrl.indexOf('base64,') + 7);
+    return [base64, mimeType];
   }
   const resp = await nodeFetch(useIpfsGateway(pictureOrUrl), { timeout: 3000 });
   if (!resp.ok) {
