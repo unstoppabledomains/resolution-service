@@ -1,0 +1,272 @@
+{
+	"info": {
+		"_postman_id": "ed63828b-2da7-44e4-a118-ede67df8b3cf",
+		"name": "resolution-service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Status",
+			"item": [
+				{
+					"name": "Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://resolve.unstoppabledomains.com/status",
+							"protocol": "https",
+							"host": [
+								"resolve",
+								"unstoppabledomains",
+								"com"
+							],
+							"path": [
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Liveness Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://resolve.unstoppabledomains.com/liveness_check",
+							"protocol": "https",
+							"host": [
+								"resolve",
+								"unstoppabledomains",
+								"com"
+							],
+							"path": [
+								"liveness_check"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Readiness Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://resolve.unstoppabledomains.com/readiness_check",
+							"protocol": "https",
+							"host": [
+								"resolve",
+								"unstoppabledomains",
+								"com"
+							],
+							"path": [
+								"readiness_check"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Meta Data",
+			"item": [
+				{
+					"name": "Dead Data",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://resolve.unstoppabledomains.com/deaddata/brad.crypto",
+							"protocol": "https",
+							"host": [
+								"resolve",
+								"unstoppabledomains",
+								"com"
+							],
+							"path": [
+								"deaddata",
+								"brad.crypto"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Metadata",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://resolve.unstoppabledomains.com/metadata/brad.crypto",
+							"protocol": "https",
+							"host": [
+								"resolve",
+								"unstoppabledomains",
+								"com"
+							],
+							"path": [
+								"metadata",
+								"brad.crypto"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Image",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://resolve.unstoppabledomains.com/image/brad.crypto",
+							"protocol": "https",
+							"host": [
+								"resolve",
+								"unstoppabledomains",
+								"com"
+							],
+							"path": [
+								"image",
+								"brad.crypto"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Image Source",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://resolve.unstoppabledomains.com/image-src/brad.crypto",
+							"protocol": "https",
+							"host": [
+								"resolve",
+								"unstoppabledomains",
+								"com"
+							],
+							"path": [
+								"image-src",
+								"brad.crypto"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Domains",
+			"item": [
+				{
+					"name": "Single Domain",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer ",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://resolve.unstoppabledomains.com/domains/brad.crypto",
+							"protocol": "https",
+							"host": [
+								"resolve",
+								"unstoppabledomains",
+								"com"
+							],
+							"path": [
+								"domains",
+								"brad.crypto"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single Domain Transfer",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer ",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://resolve.unstoppabledomains.com/domains/brad.crypto/transfers/latest",
+							"protocol": "https",
+							"host": [
+								"resolve",
+								"unstoppabledomains",
+								"com"
+							],
+							"path": [
+								"domains",
+								"brad.crypto",
+								"transfers",
+								"latest"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Domains",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://resolve.unstoppabledomains.com/domains?owners=0x8aad44321a86b170879d7a244c1e8d360c99dda8&tlds=crypto&sortBy=name&sortDirection=DESC&perPage=2",
+							"protocol": "https",
+							"host": [
+								"resolve",
+								"unstoppabledomains",
+								"com"
+							],
+							"path": [
+								"domains"
+							],
+							"query": [
+								{
+									"key": "owners",
+									"value": "0x8aad44321a86b170879d7a244c1e8d360c99dda8"
+								},
+								{
+									"key": "tlds",
+									"value": "crypto"
+								},
+								{
+									"key": "sortBy",
+									"value": "name"
+								},
+								{
+									"key": "sortDirection",
+									"value": "DESC"
+								},
+								{
+									"key": "perPage",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
