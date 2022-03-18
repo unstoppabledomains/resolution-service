@@ -6,6 +6,13 @@ import { createCanvas } from 'canvas';
 import createSVGfromTemplate from './svgTemplate';
 import btoa from 'btoa';
 
+export enum Network {
+  Mainnet = '1',
+  Polygon = '137',
+  Binance = '56',
+  Avalanche = '43114',
+  Fantom = '250',
+}
 const CryptoPunksImageContractAddress =
   '0x16F5A35647D6F03D5D3da7b35409D65ba03aF3B2';
 const CryptoKittyContractAddress = '0x06012c8cf97bead5deae237070f9587f8e7a266d';
@@ -55,15 +62,24 @@ const constructNFTContract = async (
   }
   let provider;
 
-  if (chainId === '1') {
-    provider = new ethers.providers.JsonRpcProvider(
-      env.APPLICATION.ETHEREUM.JSON_RPC_API_URL,
-    );
-  }
-  if (chainId === '137') {
-    provider = new ethers.providers.JsonRpcProvider(
-      env.APPLICATION.POLYGON.JSON_RPC_API_URL,
-    );
+  switch (chainId) {
+    case Network.Mainnet:
+      provider = new ethers.providers.JsonRpcProvider(
+        env.APPLICATION.ETHEREUM.JSON_RPC_API_URL,
+      );
+      break;
+
+    case Network.Polygon:
+    case Network.Binance:
+    case Network.Avalanche:
+    case Network.Fantom:
+      provider = new ethers.providers.JsonRpcProvider(
+        env.APPLICATION.POLYGON.JSON_RPC_API_URL,
+      );
+      break;
+
+    default:
+      break;
   }
   if (!provider) {
     throw new Error('Invalid chainID');
