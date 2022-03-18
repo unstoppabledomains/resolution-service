@@ -70,11 +70,26 @@ const constructNFTContract = async (
       break;
 
     case Network.Polygon:
-    case Network.Binance:
-    case Network.Avalanche:
-    case Network.Fantom:
       provider = new ethers.providers.JsonRpcProvider(
         env.APPLICATION.POLYGON.JSON_RPC_API_URL,
+      );
+      break;
+
+    case Network.Binance:
+      provider = new ethers.providers.JsonRpcProvider(
+        env.APPLICATION.BINANCE.JSON_RPC_API_URL,
+      );
+      break;
+
+    case Network.Avalanche:
+      provider = new ethers.providers.JsonRpcProvider(
+        env.APPLICATION.AVALANCHE.JSON_RPC_API_URL,
+      );
+      break;
+
+    case Network.Fantom:
+      provider = new ethers.providers.JsonRpcProvider(
+        env.APPLICATION.FANTOM.JSON_RPC_API_URL,
       );
       break;
 
