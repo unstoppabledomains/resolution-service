@@ -65,18 +65,17 @@ describe('MetaDataController', () => {
       expect(resWithName.image).eq(
         'https://storage.googleapis.com/dot-crypto-metadata-api/images/unstoppabledomains.svg',
       );
-      expect(resWithName.attributes.length).eq(5);
+      expect(resWithName.attributes.length).eq(3);
       const correctAttributes = [
-        { trait_type: 'domain', value: 'testdomain.crypto' },
-        { trait_type: 'level', value: 2 },
-        { trait_type: 'length', value: 10 },
+        { trait_type: 'domain ending', value: domain.extension },
         {
-          trait_type: 'IPFS Content',
-          value: 'QmdyBw5oTgCtTLQ18PbDvPL8iaLoEPhSyzD91q9XmgmAjb',
+          display_type: 'number',
+          trait_type: 'length',
+          value: domain.label.length,
         },
-        { trait_type: 'type', value: 'standard' },
+        { trait_type: 'chain', value: Blockchain.ETH },
       ];
-      expect(resWithName.attributes).to.have.deep.members(correctAttributes);
+      expect(resWithName.attributes).to.deep.equal(correctAttributes);
       const correctProperties = {
         records: {
           'crypto.BTC.address': 'beabbeabbeabeabeabeabeabeabeabeabeabeabeab',
@@ -85,13 +84,6 @@ describe('MetaDataController', () => {
         },
       };
       expect(resWithName.properties).to.deep.eq(correctProperties);
-      expect(resWithName.image_data).eq(
-        DefaultImageData({
-          label: domain.label,
-          tld: domain.extension,
-          fontSize: 24,
-        }),
-      );
       expect(resWithName.background_color).eq(BackgroundColor);
     });
 
@@ -134,28 +126,17 @@ describe('MetaDataController', () => {
 
       const correctAttributes = [
         {
-          trait_type: 'domain',
-          value: 'unstoppablelemming.crypto',
+          trait_type: 'domain ending',
+          value: animalDomain.extension,
         },
         {
-          trait_type: 'level',
-          value: 2,
-        },
-        {
+          display_type: 'number',
           trait_type: 'length',
-          value: 18,
+          value: animalDomain.label.length,
         },
         {
-          trait_type: 'adjective',
-          value: 'unstoppable',
-        },
-        {
-          trait_type: 'animal',
-          value: 'lemming',
-        },
-        {
-          trait_type: 'type',
-          value: 'animal',
+          trait_type: 'chain',
+          value: Blockchain.ETH,
         },
       ];
       expect(response.attributes.length).to.eq(correctAttributes.length);
@@ -168,7 +149,6 @@ describe('MetaDataController', () => {
       };
       expect(response.properties).to.deep.eq(correctProperties);
       expect(response.background_color).to.eq('4C47F7');
-      expect(response.image_data).to.eq('correctImageData');
     });
 
     // it('should return nft image from avatar record', async () => {
@@ -215,11 +195,13 @@ describe('MetaDataController', () => {
         .then((r) => r.body);
       expect(response.image).to.equal(expectedImageUrl);
       expect(response.attributes).to.deep.equal([
-        { trait_type: 'domain', value: 'trustbear.crypto' },
-        { trait_type: 'level', value: 2 },
-        { trait_type: 'length', value: 9 },
-        { trait_type: 'animal', value: 'bear' },
-        { trait_type: 'type', value: 'animal' },
+        { trait_type: 'domain ending', value: animalDomain.extension },
+        {
+          display_type: 'number',
+          trait_type: 'length',
+          value: animalDomain.label.length,
+        },
+        { trait_type: 'chain', value: Blockchain.ETH },
       ]);
     });
 
@@ -239,16 +221,9 @@ describe('MetaDataController', () => {
           'https://unstoppabledomains.com/search?searchTerm=unknown.crypto',
         image:
           'https://storage.googleapis.com/dot-crypto-metadata-api/images/unstoppabledomains.svg',
-        image_data: DefaultImageData({
-          label: 'unknown',
-          tld: 'crypto',
-          fontSize: 24,
-        }),
         attributes: [
-          { trait_type: 'domain', value: 'unknown.crypto' },
-          { trait_type: 'level', value: 2 },
-          { trait_type: 'length', value: 7 },
-          { trait_type: 'type', value: 'standard' },
+          { trait_type: 'domain ending', value: 'crypto' },
+          { display_type: 'number', trait_type: 'length', value: 7 },
         ],
       });
       const token = eip137Namehash('unknown.crypto');
@@ -264,7 +239,6 @@ describe('MetaDataController', () => {
         description: null,
         external_url: null,
         image: null,
-        image_data: null,
         attributes: [],
       });
     });
@@ -289,17 +263,15 @@ describe('MetaDataController', () => {
         external_url: `https://unstoppabledomains.com/search?searchTerm=${uns.name}`,
         image:
           'https://storage.googleapis.com/dot-crypto-metadata-api/images/unstoppabledomains.svg',
-        image_data: DefaultImageData({
-          label: uns.label,
-          tld: uns.tld,
-          fontSize: 16,
-        }),
         background_color: '4C47F7',
         attributes: [
-          { trait_type: 'domain', value: uns.name },
-          { trait_type: 'level', value: 2 },
-          { trait_type: 'length', value: uns.label.length },
-          { trait_type: 'type', value: 'standard' },
+          { trait_type: 'domain ending', value: uns.tld },
+          {
+            display_type: 'number',
+            trait_type: 'length',
+            value: uns.label.length,
+          },
+          { trait_type: 'chain', value: Blockchain.ETH },
         ],
       });
 
@@ -369,28 +341,19 @@ describe('MetaDataController', () => {
         );
         const correctAttributes = [
           {
-            trait_type: 'domain',
-            value: domain.name,
+            trait_type: 'domain ending',
+            value: domain.extension,
           },
           {
-            trait_type: 'level',
-            value: 2,
-          },
-          {
+            display_type: 'number',
             trait_type: 'length',
             value: domain.label.length,
           },
           {
-            trait_type: 'type',
-            value: 'standard',
+            trait_type: 'chain',
+            value: Blockchain.ETH,
           },
         ];
-        if (domain.label === 'india') {
-          correctAttributes.push({
-            trait_type: 'IPFS Content',
-            value: 'QmQq1ydvSmzrZPkr4CJJtetNSb9eSBucqQ4QoNmiRdMHzM',
-          });
-        }
         expect(response.attributes.length).to.eq(correctAttributes.length);
         expect(response.attributes).to.have.deep.members(correctAttributes);
       }
@@ -418,16 +381,6 @@ describe('MetaDataController', () => {
         .send()
         .then((r) => r.body);
 
-      expect(dwebHashResponse.attributes).to.deep.contain({
-        trait_type: 'IPFS Content',
-        value: 'ipfs hash content',
-      });
-
-      expect(htmlValueResponse.attributes).to.deep.contain({
-        trait_type: 'IPFS Content',
-        value: 'ipfs hash content',
-      });
-
       expect(dwebHashResponse.properties).to.deep.equals({
         records: { 'dweb.ipfs.hash': 'ipfs hash content' },
       });
@@ -444,10 +397,6 @@ describe('MetaDataController', () => {
         .get(`/metadata/${domain.name}`)
         .send()
         .then((r) => r.body);
-      expect(response.attributes).to.deep.contain({
-        trait_type: 'IPFS Content',
-        value: 'correct',
-      });
       expect(response.properties).to.deep.eq({
         records: {
           'dweb.ipfs.hash': 'correct',
