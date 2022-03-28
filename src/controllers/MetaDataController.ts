@@ -1,4 +1,11 @@
-import { Controller, Get, Header, Param } from 'routing-controllers';
+import {
+  Controller,
+  Get,
+  Header,
+  Param,
+  QueryParam,
+} from 'routing-controllers';
+import Moralis from 'moralis/node';
 import { ResponseSchema } from 'routing-controllers-openapi';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import fetch from 'node-fetch';
@@ -13,9 +20,9 @@ import { IsArray, IsObject, IsOptional, IsString } from 'class-validator';
 import { env } from '../env';
 import { logger } from '../logger';
 import {
-  getSocialPictureUrl,
   getNFTSocialPicture,
   createSocialPictureImage,
+  parsePictureRecord,
 } from '../utils/socialPicture';
 import punycode from 'punycode';
 import btoa from 'btoa';
@@ -28,6 +35,47 @@ const BASE_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images` as const;
 const INVALID_DOMAIN_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/invalid-domain.svg` as const;
+
+export enum SupportedL2Chain {
+  Polygon = 'polygon',
+  Binance = 'bsc',
+  Avalanche = 'avalanche',
+  Fantom = 'fantom',
+}
+export enum Network {
+  Polygon = '137',
+  Binance = '56',
+  Avalanche = '43114',
+  Fantom = '250',
+}
+
+const getChainName = (chainId: string): SupportedL2Chain | 'eth' => {
+  switch (chainId) {
+    case Network.Polygon:
+      return SupportedL2Chain.Polygon;
+    case Network.Binance:
+      return SupportedL2Chain.Binance;
+    case Network.Avalanche:
+      return SupportedL2Chain.Avalanche;
+    case Network.Fantom:
+      return SupportedL2Chain.Fantom;
+    default:
+      return 'eth';
+  }
+};
+
+let initialized = false;
+const initMoralisSdk = async (): Promise<typeof Moralis> => {
+  if (initialized) {
+    return Moralis;
+  }
+
+  const serverUrl = process.env.MORALIS_API_URL;
+  const appId = process.env.MORALIS_APP_ID;
+  await Moralis.start({ serverUrl, appId });
+  initialized = true;
+  return Moralis;
+};
 
 const AnimalHelper: AnimalDomainHelper = new AnimalDomainHelper();
 
@@ -106,6 +154,7 @@ export class MetaDataController {
   @ResponseSchema(OpenSeaMetadata)
   async getMetaData(
     @Param('domainOrToken') domainOrToken: string,
+    @QueryParam('withOverlay') withOverlay = true,
   ): Promise<OpenSeaMetadata> {
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain =
@@ -116,37 +165,68 @@ export class MetaDataController {
     }
     const resolution = getDomainResolution(domain);
 
-    const { pictureOrUrl, nftStandard, backgroundColor } =
-      await getSocialPictureUrl(
-        resolution.resolution['social.picture.value'],
-        resolution.ownerAddress || '',
-      );
+    const { chainId, nftStandard, contractAddress, tokenId } =
+      parsePictureRecord(resolution.resolution['social.picture.value']);
+
+    const moralis = await initMoralisSdk();
+    const options = {
+      chain: getChainName(chainId),
+      address: contractAddress,
+      token_id: tokenId,
+    };
+    let image = '';
+    let fetchedMetadata;
+
+    const tokenIdMetadata = await moralis.Web3API.token.getTokenIdMetadata(
+      options,
+    );
+
+    if (tokenIdMetadata.metadata) {
+      try {
+        fetchedMetadata = JSON.parse(tokenIdMetadata.metadata);
+        image = fetchedMetadata?.image;
+      } catch (error) {
+        logger.error(error);
+      }
+    }
+
+    if (!image && !!tokenIdMetadata.token_uri) {
+      const response = await fetch(tokenIdMetadata.token_uri, {
+        timeout: 5000,
+      });
+      fetchedMetadata = await response.json();
+      image = fetchedMetadata?.image;
+    }
     let socialPicture = '';
-    if (pictureOrUrl) {
+
+    if (!!image && withOverlay) {
       let data = '',
         mimeType = null;
       if (nftStandard === 'cryptopunks') {
         data = btoa(
-          pictureOrUrl
+          image
             .replace(`data:image/svg+xml;utf8,`, ``)
             .replace(
               `<svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 24 24">`,
               `<svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 24 24"><rect width="100%" height="100%" fill="#648595"/>`,
             ),
         );
+
         mimeType = 'image/svg+xml';
       } else {
-        [data, mimeType] = await getNFTSocialPicture(pictureOrUrl).catch(() => [
+        [data, mimeType] = await getNFTSocialPicture(image).catch(() => [
           '',
           null,
         ]);
       }
+
       if (data) {
+        // adding the overlay
         socialPicture = createSocialPictureImage(
           domain,
           data,
           mimeType,
-          backgroundColor,
+          fetchedMetadata?.background_color || '',
         );
       }
     }
@@ -162,17 +242,23 @@ export class MetaDataController {
     });
 
     const metadata: OpenSeaMetadata = {
-      name: domain.name,
+      name: fetchedMetadata?.name || domain.name,
       description,
       properties: {
         records: resolution.resolution,
       },
       external_url: `https://unstoppabledomains.com/search?searchTerm=${domain.name}`,
-      image: socialPicture || this.generateDomainImageUrl(domain.name),
+      image:
+        (withOverlay ? socialPicture : image) ||
+        this.generateDomainImageUrl(domain.name),
       attributes: domainAttributes,
     };
 
-    if (!this.isDomainWithCustomImage(domain.name) && !socialPicture) {
+    if (
+      !this.isDomainWithCustomImage(domain.name) &&
+      !socialPicture &&
+      !image
+    ) {
       metadata.image_data = await this.generateImageData(
         domain.name,
         resolution.resolution,
