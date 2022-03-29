@@ -710,6 +710,123 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
     });
 
+    it('filters domains list by resolution', async () => {
+      const { domain: testDomainOne, resolution: resolutionOne } =
+        await DomainTestHelper.createTestDomain({
+          name: 'test.crypto',
+          node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+          ownerAddress: '0x319c860967aa2CF464dCc24dDd93f099d956932e',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+          resolution: {
+            'crypto.eth.address': '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          },
+        });
+
+      await DomainTestHelper.createTestDomain({
+        blockchain: Blockchain.ZIL,
+        networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
+        name: 'test1.zil',
+        node: '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
+        ownerAddress: '0x319c860967aa2CF464dCc24dDd93f099d956932e',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        resolution: {
+          'crypto.eth.address': '0x72c5b3865adCa47C3020e4c8C7BcA221b5F195F4',
+        },
+      });
+
+      const res = await supertest(api)
+        .get(
+          '/domains?resolution[crypto.eth.address]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.body).to.deep.equal({
+        data: [
+          {
+            id: testDomainOne.name,
+            attributes: {
+              meta: {
+                domain: testDomainOne.name,
+                blockchain: resolutionOne.blockchain,
+                networkId: resolutionOne.networkId,
+                owner: resolutionOne.ownerAddress,
+                registry: resolutionOne.registry,
+                resolver: resolutionOne.resolver,
+              },
+              records: {},
+            },
+          },
+        ],
+        meta: {
+          hasMore: false,
+          nextStartingAfter: testDomainOne.id?.toString(),
+          perPage: 100,
+          sortBy: 'id',
+          sortDirection: 'ASC',
+        },
+      });
+      expect(res.status).eq(200);
+    });
+
+    it('filters domains list by multiple resolutions', async () => {
+      const { domain: testDomainOne, resolution: resolutionOne } =
+        await DomainTestHelper.createTestDomain({
+          name: 'test.crypto',
+          node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
+          ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+          resolution: {
+            'crypto.eth.address': '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            'ipfs.html.value': '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          },
+        });
+
+      await DomainTestHelper.createTestDomain({
+        blockchain: Blockchain.ZIL,
+        networkId: env.APPLICATION.ZILLIQA.NETWORK_ID,
+        name: 'test1.zil',
+        node: '0xc0cfff0bacee0844926d425ce027c3d05e09afaa285661aca11c5a97639ef001',
+        ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        resolution: {
+          'crypto.eth.address': '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+        },
+      });
+
+      const res = await supertest(api)
+        .get(
+          '/domains?resolution[crypto.eth.address]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&resolution[ipfs.html.value]=QmTiqc12wo2pBsGa9XsbpavkhrjFiyuSWsKyffvZqVGtut',
+        )
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.body).to.deep.equal({
+        data: [
+          {
+            id: testDomainOne.name,
+            attributes: {
+              meta: {
+                domain: testDomainOne.name,
+                blockchain: resolutionOne.blockchain,
+                networkId: resolutionOne.networkId,
+                owner: resolutionOne.ownerAddress,
+                registry: resolutionOne.registry,
+                resolver: resolutionOne.resolver,
+              },
+              records: {},
+            },
+          },
+        ],
+        meta: {
+          hasMore: false,
+          nextStartingAfter: testDomainOne.id?.toString(),
+          perPage: 100,
+          sortBy: 'id',
+          sortDirection: 'ASC',
+        },
+      });
+      expect(res.status).eq(200);
+    });
+
     it('should return no domain from empty startingAfter', async () => {
       const { domain } = await DomainTestHelper.createTestDomain({
         name: 'test.crypto',
