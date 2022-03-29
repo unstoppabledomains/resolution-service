@@ -35,6 +35,7 @@ describe('DomainsController', () => {
       });
       expect(res.status).eq(200);
     });
+
     it('should return true for hasMore', async () => {
       const { domain: testDomain } = await DomainTestHelper.createTestDomain({
         name: 'test1.crypto',
@@ -82,6 +83,7 @@ describe('DomainsController', () => {
       });
       expect(res.status).eq(200);
     });
+
     it('should return false for hasMore', async () => {
       const { domain: testDomain } = await DomainTestHelper.createTestDomain({
         name: 'test1.crypto',
@@ -123,6 +125,7 @@ describe('DomainsController', () => {
       });
       expect(res.status).eq(200);
     });
+
     it('should return list of test domain', async () => {
       const { domain: testDomain, resolution } =
         await DomainTestHelper.createTestDomain({
@@ -163,6 +166,7 @@ describe('DomainsController', () => {
       });
       expect(res.status).eq(200);
     });
+
     it('should lowercase ownerAddress', async () => {
       const { domain: testDomain, resolution } =
         await DomainTestHelper.createTestDomain({
@@ -205,6 +209,7 @@ describe('DomainsController', () => {
       });
       expect(res.status).eq(200);
     });
+
     it('should return list of test domains', async () => {
       const { domain: testDomainOne, resolution: resolutionOne } =
         await DomainTestHelper.createTestDomain({
@@ -257,6 +262,7 @@ describe('DomainsController', () => {
       ]);
       expect(res.status).eq(200);
     });
+
     it('should return domains for multiple owners', async () => {
       const testDomains = await Promise.all([
         await DomainTestHelper.createTestDomain({
@@ -303,6 +309,7 @@ describe('DomainsController', () => {
       expect(res.body.data).to.have.deep.members(expectedDomains);
       expect(res.status).eq(200);
     });
+
     it('should return one domain perPage', async () => {
       const { domain: testDomainOne, resolution: resolutionOne } =
         await DomainTestHelper.createTestDomain({
@@ -353,6 +360,7 @@ describe('DomainsController', () => {
       });
       expect(res.status).eq(200);
     });
+
     it('should return single MATIC resolution for each domain with multiple resolutions', async () => {
       const { domain: domainOne } =
         await DomainTestHelper.createTestDomainWithMultipleResolutions(
@@ -523,6 +531,7 @@ describe('DomainsController', () => {
       });
       expect(res.status).eq(200);
     });
+
     it('should return MATIC resolution for domain with multiple resolutions', async () => {
       const { domain } =
         await DomainTestHelper.createTestDomainWithMultipleResolutions(
@@ -579,7 +588,9 @@ describe('DomainsController', () => {
       });
       expect(res.status).eq(200);
     });
+  });
 
+  describe('GET /domains filtering', () => {
     it('filters domains list by tld', async () => {
       const { domain: testDomainOne, resolution: resolutionOne } =
         await DomainTestHelper.createTestDomain({
@@ -727,28 +738,33 @@ describe('DomainsController', () => {
       expect(res.status).eq(200);
     });
 
-    it('should return error on missing owners param', async () => {
+    it('should return error for incorrect tlds', async () => {
       const res = await supertest(api)
-        .get('/domains?awef[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2')
+        .get(
+          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&tlds=crypto&tlds=test',
+        )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
-      expect(res.body).containSubset({
+
+      expect(res.status).eq(400);
+      expect(res.body.code).to.exist;
+      expect(res.body.message).to.exist;
+      expect(res.body).to.containSubset({
+        code: 'BadRequestError',
+        message: "Invalid queries, check 'errors' property for more info.",
         errors: [
           {
+            property: 'tlds',
             constraints: {
-              arrayNotEmpty: 'owners should not be empty',
-              isArray: 'owners must be an array',
-              isNotEmpty: 'each value in owners should not be empty',
-              isString: 'each value in owners must be a string',
+              'validate tlds with validTlds': 'Invalid TLD list provided',
             },
           },
         ],
       });
-      expect(res.status).eq(400);
     });
   });
 
-  describe('GET /domains sorting and filtration', () => {
+  describe('GET /domains sorting', () => {
     let testDomains: {
       domain: Domain;
       resolutions: DomainsResolution[];
@@ -929,6 +945,7 @@ describe('DomainsController', () => {
         sortDirection: 'DESC',
       });
     });
+
     it('should sort by domain id ascending by default', async () => {
       const { domains, expectedData } = getSortedTestDomains(
         (a, b) => (a.domain.id || 0) - (b.domain.id || 0),
@@ -1090,10 +1107,8 @@ describe('DomainsController', () => {
         ],
       });
     });
-  });
 
-  describe('Errors handling', () => {
-    it('should return appropriate error for incorrect input', async () => {
+    it('should return error for invalid perPage', async () => {
       const res = await supertest(api)
         .get(
           '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&perPage=0',
@@ -1112,31 +1127,6 @@ describe('DomainsController', () => {
             property: 'perPage',
             constraints: {
               min: 'perPage must not be less than 1',
-            },
-          },
-        ],
-      });
-    });
-
-    it('should return error for incorrect tlds', async () => {
-      const res = await supertest(api)
-        .get(
-          '/domains?owners[]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&tlds=crypto&tlds=test',
-        )
-        .auth(testApiKey.apiKey, { type: 'bearer' })
-        .send();
-
-      expect(res.status).eq(400);
-      expect(res.body.code).to.exist;
-      expect(res.body.message).to.exist;
-      expect(res.body).to.containSubset({
-        code: 'BadRequestError',
-        message: "Invalid queries, check 'errors' property for more info.",
-        errors: [
-          {
-            property: 'tlds',
-            constraints: {
-              'validate tlds with validTlds': 'Invalid TLD list provided',
             },
           },
         ],
