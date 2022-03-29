@@ -200,25 +200,10 @@ export class MetaDataController {
     let socialPicture = '';
 
     if (!!image && withOverlay) {
-      let data = '',
-        mimeType = null;
-      if (nftStandard === 'cryptopunks') {
-        data = btoa(
-          image
-            .replace(`data:image/svg+xml;utf8,`, ``)
-            .replace(
-              `<svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 24 24">`,
-              `<svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 24 24"><rect width="100%" height="100%" fill="#648595"/>`,
-            ),
-        );
-
-        mimeType = 'image/svg+xml';
-      } else {
-        [data, mimeType] = await getNFTSocialPicture(image).catch(() => [
-          '',
-          null,
-        ]);
-      }
+      const [data, mimeType] = await getNFTSocialPicture(image).catch(() => [
+        '',
+        null,
+      ]);
 
       if (data) {
         // adding the overlay
