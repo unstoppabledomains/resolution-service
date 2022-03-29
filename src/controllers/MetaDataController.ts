@@ -163,10 +163,21 @@ export class MetaDataController {
       return this.defaultMetaResponse(domainOrToken);
     }
     const resolution = getDomainResolution(domain);
+    let chainId = '',
+      contractAddress = '',
+      tokenId = '';
 
-    const { chainId, contractAddress, tokenId } = parsePictureRecord(
-      resolution.resolution['social.picture.value'],
-    );
+    try {
+      const parsedPicture = parsePictureRecord(
+        resolution.resolution['social.picture.value'],
+      );
+
+      chainId = parsedPicture.chainId;
+      contractAddress = parsedPicture.contractAddress;
+      tokenId = parsedPicture.tokenId;
+    } catch (error) {
+      logger.error(error);
+    }
 
     const moralis = await initMoralisSdk();
     const options = {

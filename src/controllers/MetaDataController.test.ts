@@ -55,7 +55,7 @@ describe('MetaDataController', () => {
         .then((r) => r.body);
 
       expect(resWithName).to.be.deep.equal(resWithToken);
-      // expect(resWithName.name).eq(domain.name);
+      expect(resWithName.name).eq(domain.name);
       expect(resWithName.description).eq(
         'A CNS or UNS blockchain domain. Use it to resolve your cryptocurrency addresses and decentralized websites.\nhttps://gateway.pinata.cloud/ipfs/QmdyBw5oTgCtTLQ18PbDvPL8iaLoEPhSyzD91q9XmgmAjb',
       );
