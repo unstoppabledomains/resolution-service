@@ -25,7 +25,6 @@ import {
   parsePictureRecord,
 } from '../utils/socialPicture';
 import punycode from 'punycode';
-import btoa from 'btoa';
 import { getDomainResolution } from '../services/Resolution';
 import { PremiumDomains, CustomImageDomains } from '../utils/domainCategories';
 
@@ -165,8 +164,9 @@ export class MetaDataController {
     }
     const resolution = getDomainResolution(domain);
 
-    const { chainId, nftStandard, contractAddress, tokenId } =
-      parsePictureRecord(resolution.resolution['social.picture.value']);
+    const { chainId, contractAddress, tokenId } = parsePictureRecord(
+      resolution.resolution['social.picture.value'],
+    );
 
     const moralis = await initMoralisSdk();
     const options = {
@@ -176,12 +176,15 @@ export class MetaDataController {
     };
     let image = '';
     let fetchedMetadata;
+    let tokenIdMetadata;
 
-    const tokenIdMetadata = await moralis.Web3API.token.getTokenIdMetadata(
-      options,
-    );
+    try {
+      tokenIdMetadata = await moralis.Web3API.token.getTokenIdMetadata(options);
+    } catch (error) {
+      logger.error(error);
+    }
 
-    if (tokenIdMetadata.metadata) {
+    if (tokenIdMetadata?.metadata) {
       try {
         fetchedMetadata = JSON.parse(tokenIdMetadata.metadata);
         image = fetchedMetadata?.image;
@@ -190,7 +193,7 @@ export class MetaDataController {
       }
     }
 
-    if (!image && !!tokenIdMetadata.token_uri) {
+    if (!image && !!tokenIdMetadata?.token_uri) {
       const response = await fetch(tokenIdMetadata.token_uri, {
         timeout: 5000,
       });
