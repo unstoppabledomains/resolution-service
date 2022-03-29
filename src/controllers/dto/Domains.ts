@@ -1,5 +1,4 @@
 import {
-  ArrayNotEmpty,
   IsArray,
   IsBoolean,
   IsInt,
@@ -61,10 +60,16 @@ export class DomainsListQuery {
   static SortFieldsMap: Record<string, string> = {
     id: 'domain.id',
     name: 'domain.name',
+    created_at: 'domain.created_at',
   };
 
+  @IsOptional()
+  @IsObject()
+  @ValidateWith<DomainsListQuery>('verifyRecords')
+  resolution: Record<string, string> | null;
+
   @IsArray()
-  @ArrayNotEmpty()
+  @IsOptional()
   @IsString({ each: true })
   @IsNotEmpty({ each: true })
   owners: string[];
@@ -75,7 +80,7 @@ export class DomainsListQuery {
   @ValidateWith<DomainsListQuery>('validTlds', {
     message: 'Invalid TLD list provided',
   })
-  tlds: string[] | undefined = undefined;
+  tlds: string[] | null = null;
 
   @IsOptional()
   @IsIn(Object.keys(DomainsListQuery.SortFieldsMap))
@@ -102,7 +107,7 @@ export class DomainsListQuery {
   }
 
   async validTlds(): Promise<boolean> {
-    if (this.tlds === undefined) {
+    if (this.tlds === null) {
       return true;
     }
     let val = true;
@@ -114,6 +119,22 @@ export class DomainsListQuery {
       val = val && parent !== undefined && parent.parent === null;
     }
     return val;
+  }
+
+  verifyRecords(): boolean {
+    for (const property in this.resolution) {
+      if (
+        !Object.prototype.hasOwnProperty.call(this.resolution, property) ||
+        !(property != null && typeof property.valueOf() === 'string') ||
+        !(
+          this.resolution[property] != null &&
+          typeof this.resolution[property].valueOf() === 'string'
+        )
+      ) {
+        return false;
+      }
+    }
+    return true;
   }
 }
 

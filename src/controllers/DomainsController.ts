@@ -92,8 +92,6 @@ export class DomainsController {
   async getDomainsList(
     @QueryParams() query: DomainsListQuery,
   ): Promise<DomainsListResponse> {
-    const ownersQuery = query.owners.map((owner) => owner.toLowerCase());
-
     // Use raw query becaues typeorm doesn't seem to handle multiple nested relations (e.g. resolution.domain.parent.name)
     const where = [];
     if (query.tlds) {
@@ -101,6 +99,15 @@ export class DomainsController {
         query: `"parent"."name" in (:...tlds)`,
         parameters: { tlds: query.tlds },
       });
+    }
+
+    if (query.resolution) {
+      for (const key of Object.keys(query.resolution)) {
+        where.push({
+          query: `"resolution"."resolution"->>'${key}' = :val`,
+          parameters: { val: query.resolution[key] },
+        });
+      }
     }
 
     if (query.startingAfter.length !== 0) {
@@ -112,12 +119,20 @@ export class DomainsController {
       });
     }
 
+    if (query.owners) {
+      const ownersQuery = query.owners?.map((owner) => owner.toLowerCase());
+      where.push({
+        query: `"resolution"."owner_address" in (:...owners)`,
+        parameters: {
+          owners: ownersQuery,
+        },
+      });
+    }
+
     const qb = Domain.createQueryBuilder('domain');
     qb.leftJoinAndSelect('domain.resolutions', 'resolution');
     qb.leftJoinAndSelect('domain.parent', 'parent');
-    qb.where(`"resolution"."owner_address" in (:...owners)`, {
-      owners: ownersQuery,
-    });
+    qb.where(`1 = 1`);
     for (const q of where) {
       qb.andWhere(q.query, q.parameters);
     }
