@@ -27,6 +27,7 @@ import {
 import punycode from 'punycode';
 import { getDomainResolution } from '../services/Resolution';
 import { PremiumDomains, CustomImageDomains } from '../utils/domainCategories';
+import { DomainsResolution } from '../models';
 
 const DEFAULT_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
@@ -124,6 +125,17 @@ class OpenSeaMetadata extends Erc721Metadata {
   youtube_url?: string;
 }
 
+class TokenMetadata {
+  @IsObject()
+  fetchedMetadata: any;
+
+  @IsString()
+  socialPicture: string;
+
+  @IsString()
+  image: string;
+}
+
 class ImageResponse {
   @IsString()
   image_data: string;
@@ -163,72 +175,10 @@ export class MetaDataController {
       return this.defaultMetaResponse(domainOrToken);
     }
     const resolution = getDomainResolution(domain);
-    let chainId = '',
-      contractAddress = '',
-      tokenId = '';
 
-    try {
-      const parsedPicture = parsePictureRecord(
-        resolution.resolution['social.picture.value'],
-      );
+    const { fetchedMetadata, socialPicture, image } =
+      await this.fetchTokenMetadata(domain, resolution, withOverlay);
 
-      chainId = parsedPicture.chainId;
-      contractAddress = parsedPicture.contractAddress;
-      tokenId = parsedPicture.tokenId;
-    } catch (error) {
-      logger.error(error);
-    }
-
-    const moralis = await initMoralisSdk();
-    const options = {
-      chain: getChainName(chainId),
-      address: contractAddress,
-      token_id: tokenId,
-    };
-    let image = '';
-    let fetchedMetadata;
-    let tokenIdMetadata;
-
-    try {
-      tokenIdMetadata = await moralis.Web3API.token.getTokenIdMetadata(options);
-    } catch (error) {
-      logger.error(error);
-    }
-
-    if (tokenIdMetadata?.metadata) {
-      try {
-        fetchedMetadata = JSON.parse(tokenIdMetadata.metadata);
-        image = fetchedMetadata?.image;
-      } catch (error) {
-        logger.error(error);
-      }
-    }
-
-    if (!image && !!tokenIdMetadata?.token_uri) {
-      const response = await fetch(tokenIdMetadata.token_uri, {
-        timeout: 5000,
-      });
-      fetchedMetadata = await response.json();
-      image = fetchedMetadata?.image;
-    }
-    let socialPicture = '';
-
-    if (!!image && withOverlay) {
-      const [data, mimeType] = await getNFTSocialPicture(image).catch(() => [
-        '',
-        null,
-      ]);
-
-      if (data) {
-        // adding the overlay
-        socialPicture = createSocialPictureImage(
-          domain,
-          data,
-          mimeType,
-          fetchedMetadata?.background_color || '',
-        );
-      }
-    }
     const description = this.getDomainDescription(
       domain.name,
       resolution.resolution,
@@ -320,6 +270,81 @@ export class MetaDataController {
 
     const imageData = await this.generateImageData(name, resolution);
     return await pathThatSvg(imageData);
+  }
+
+  private async fetchTokenMetadata(
+    domain: Domain,
+    resolution: DomainsResolution,
+    withOverlay: boolean,
+  ): Promise<TokenMetadata> {
+    let chainId = '';
+    let contractAddress = '';
+    let tokenId = '';
+
+    try {
+      const parsedPicture = parsePictureRecord(
+        resolution.resolution['social.picture.value'],
+      );
+
+      chainId = parsedPicture.chainId;
+      contractAddress = parsedPicture.contractAddress;
+      tokenId = parsedPicture.tokenId;
+    } catch (error) {
+      logger.error(error);
+    }
+
+    const moralis = await initMoralisSdk();
+    const options = {
+      chain: getChainName(chainId),
+      address: contractAddress,
+      token_id: tokenId,
+    };
+    let image = '';
+    let fetchedMetadata;
+    let tokenIdMetadata;
+
+    try {
+      tokenIdMetadata = await moralis.Web3API.token.getTokenIdMetadata(options);
+    } catch (error) {
+      logger.error(error);
+    }
+
+    if (tokenIdMetadata?.metadata) {
+      try {
+        fetchedMetadata = JSON.parse(tokenIdMetadata.metadata);
+        image = fetchedMetadata?.image;
+      } catch (error) {
+        logger.error(error);
+      }
+    }
+
+    if (!image && !!tokenIdMetadata?.token_uri) {
+      const response = await fetch(tokenIdMetadata.token_uri, {
+        timeout: 5000,
+      });
+      fetchedMetadata = await response.json();
+      image = fetchedMetadata?.image;
+    }
+    let socialPicture = '';
+
+    if (!!image && withOverlay) {
+      const [data, mimeType] = await getNFTSocialPicture(image).catch(() => [
+        '',
+        null,
+      ]);
+
+      if (data) {
+        // adding the overlay
+        socialPicture = createSocialPictureImage(
+          domain,
+          data,
+          mimeType,
+          fetchedMetadata?.background_color || '',
+        );
+      }
+    }
+
+    return { fetchedMetadata, socialPicture, image };
   }
 
   private async defaultMetaResponse(
