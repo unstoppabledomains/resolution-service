@@ -127,7 +127,13 @@ class OpenSeaMetadata extends Erc721Metadata {
 
 class TokenMetadata {
   @IsObject()
-  fetchedMetadata: any;
+  fetchedMetadata: {
+    name: string;
+    token_uri?: string;
+    metadata?: string;
+    image?: string;
+    background_color?: string;
+  };
 
   @IsString()
   socialPicture: string;
@@ -137,6 +143,10 @@ class TokenMetadata {
 }
 
 class ImageResponse {
+  @IsOptional()
+  @IsString()
+  image?: string | null;
+
   @IsString()
   image_data: string;
 }
@@ -232,21 +242,39 @@ export class MetaDataController {
   @ResponseSchema(ImageResponse)
   async getImage(
     @Param('domainOrToken') domainOrToken: string,
+    @QueryParam('withOverlay') withOverlay = true,
   ): Promise<ImageResponse> {
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain =
       (await Domain.findByNode(token)) ||
       (await Domain.findOnChainNoSafe(token));
-
+    const resolution = domain ? getDomainResolution(domain) : undefined;
     const name = domain ? domain.name : domainOrToken;
-    const resolution = domain ? getDomainResolution(domain).resolution : {};
 
     if (!name.includes('.')) {
       return { image_data: '' };
     }
 
+    if (domain && resolution) {
+      const { socialPicture, image } = await this.fetchTokenMetadata(
+        domain,
+        resolution,
+        withOverlay,
+      );
+
+      return {
+        image:
+          (withOverlay ? socialPicture : image) ||
+          this.generateDomainImageUrl(domain.name),
+        image_data: '',
+      };
+    }
+
     return {
-      image_data: await this.generateImageData(name, resolution),
+      image_data: await this.generateImageData(
+        name,
+        resolution?.resolution || {},
+      ),
     };
   }
 
@@ -255,20 +283,51 @@ export class MetaDataController {
   @Header('Content-Type', 'image/svg+xml')
   async getImageSrc(
     @Param('domainOrToken') domainOrToken: string,
+    @QueryParam('withOverlay') withOverlay = true,
   ): Promise<string> {
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain =
       (await Domain.findByNode(token)) ||
       (await Domain.findOnChainNoSafe(token));
-
+    const resolution = domain ? getDomainResolution(domain) : undefined;
     const name = domain ? domain.name : domainOrToken;
-    const resolution = domain ? getDomainResolution(domain).resolution : {};
 
     if (!name.includes('.')) {
       return '';
     }
 
-    const imageData = await this.generateImageData(name, resolution);
+    if (domain && resolution) {
+      const { socialPicture, image } = await this.fetchTokenMetadata(
+        domain,
+        resolution,
+        withOverlay,
+        true,
+      );
+      const svgFromImage = `<svg
+        width="300"
+        height="300"
+        viewBox="0 0 300 300"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <image
+          href="${image}"
+          width="300"
+          height="300"
+        />
+      </svg>`;
+
+      return (
+        (withOverlay ? socialPicture : svgFromImage) ||
+        this.generateDomainImageUrl(domain.name) ||
+        ''
+      );
+    }
+
+    const imageData = await this.generateImageData(
+      name,
+      resolution?.resolution || {},
+    );
     return await pathThatSvg(imageData);
   }
 
@@ -276,6 +335,7 @@ export class MetaDataController {
     domain: Domain,
     resolution: DomainsResolution,
     withOverlay: boolean,
+    raw = false,
   ): Promise<TokenMetadata> {
     let chainId = '';
     let contractAddress = '';
@@ -340,6 +400,7 @@ export class MetaDataController {
           data,
           mimeType,
           fetchedMetadata?.background_color || '',
+          raw,
         );
       }
     }

@@ -76,6 +76,7 @@ export const createSocialPictureImage = (
   data: string,
   mimeType: string | null,
   backgroundColor: string,
+  raw = false,
 ): string => {
   let name = domain.name;
   if (name.length > 30) {
@@ -89,6 +90,10 @@ export const createSocialPictureImage = (
     fontSize,
     mimeType: mimeType || undefined,
   });
+
+  if (raw) {
+    return svg;
+  }
 
   try {
     return (
