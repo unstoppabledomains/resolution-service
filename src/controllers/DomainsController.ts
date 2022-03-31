@@ -94,7 +94,7 @@ export class DomainsController {
   ): Promise<DomainsListResponse> {
     // Use raw query becaues typeorm doesn't seem to handle multiple nested relations (e.g. resolution.domain.parent.name)
     const where = [];
-    if (query.tlds.length !== 0) {
+    if (query.tlds) {
       where.push({
         query: `"parent"."name" in (:...tlds)`,
         parameters: { tlds: query.tlds },
@@ -113,16 +113,22 @@ export class DomainsController {
     }
 
     if (query.startingAfter.length !== 0) {
-      where.push({
-        query: `${query.sort.startingAfter} ${
-          query.sort.direction === 'ASC' ? '>' : '<'
-        } :startingAfter`,
-        parameters: { startingAfter: query.startingAfter },
-      });
+      const startingVals = query.startingAfter.split('|');
+      if (startingVals.length !== query.sort.columns.length) {
+        throw new Error('Invalid startingAfter value ' + query.startingAfter);
+      }
+      for (let i = 0; i < query.sort.columns.length; i++) {
+        where.push({
+          query: `${query.sort.columns[i]} ${
+            query.sort.direction === 'ASC' ? '>' : '<'
+          } :startingAfter${i}`,
+          parameters: { [`startingAfter${i}`]: startingVals[i] },
+        });
+      }
     }
 
-    if (query.owners.length !== 0) {
-      const ownersQuery = query.owners?.map((owner) => owner.toLowerCase());
+    if (query.owners) {
+      const ownersQuery = query.owners.map((owner) => owner.toLowerCase());
       where.push({
         query: `"resolution"."owner_address" in (:...owners)`,
         parameters: {
@@ -138,9 +144,8 @@ export class DomainsController {
     for (const q of where) {
       qb.andWhere(q.query, q.parameters);
     }
-    qb.orderBy(query.sort.column, query.sort.direction);
-    if (query.sortBy !== 'id') {
-      qb.addOrderBy('domain.id', 'ASC');
+    for (const c of query.sort.columns) {
+      qb.addOrderBy(c, query.sort.direction);
     }
     qb.take(query.perPage + 1);
     const domains = await qb.getMany();

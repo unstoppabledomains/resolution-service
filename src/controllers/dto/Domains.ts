@@ -58,25 +58,24 @@ export class DomainResponse {
 }
 
 export interface SortField {
-  fieldName: string;
-  startingAfterFieldName?: string;
+  sortBy: string[];
   getNextStartingAfterValue: (t: Domain) => string | undefined;
 }
 
 export class DomainsListQuery {
   static SortFieldsMap: Record<string, SortField> = {
     id: {
-      fieldName: 'domain.id',
+      sortBy: ['domain.id'],
       getNextStartingAfterValue: (t) => t.id?.toString(),
     },
     name: {
-      fieldName: 'domain.name',
+      sortBy: ['domain.name'],
       getNextStartingAfterValue: (t) => t.name?.toString(),
     },
     created_at: {
-      fieldName: 'domain.createdAt',
-      startingAfterFieldName: 'domain.id',
-      getNextStartingAfterValue: (t) => t.id?.toString(),
+      sortBy: ['domain.createdAt', 'domain.id'],
+      getNextStartingAfterValue: (t) =>
+        `${t.createdAt?.toISOString()}|${t.id?.toString()}`,
     },
   };
 
@@ -92,7 +91,7 @@ export class DomainsListQuery {
   @IsOptional()
   @IsString({ each: true })
   @IsNotEmpty({ each: true })
-  owners: string[];
+  owners: string[] | null;
 
   @IsArray()
   @IsOptional()
@@ -103,7 +102,7 @@ export class DomainsListQuery {
   @JSONSchema({
     $ref: '', // custom validators mess with the schema generator so we have to set an empty ref to avoid errors
   })
-  tlds: string[];
+  tlds: string[] | null;
 
   @IsOptional()
   @IsIn(Object.keys(DomainsListQuery.SortFieldsMap))
@@ -124,10 +123,7 @@ export class DomainsListQuery {
 
   get sort() {
     return {
-      column: DomainsListQuery.SortFieldsMap[this.sortBy].fieldName,
-      startingAfter:
-        DomainsListQuery.SortFieldsMap[this.sortBy].startingAfterFieldName ||
-        DomainsListQuery.SortFieldsMap[this.sortBy].fieldName,
+      columns: DomainsListQuery.SortFieldsMap[this.sortBy].sortBy,
       direction: this.sortDirection,
     };
   }
@@ -141,7 +137,7 @@ export class DomainsListQuery {
   }
 
   async validTlds(): Promise<boolean> {
-    if (this.tlds.length == 0) {
+    if (!this.tlds || this.tlds.length == 0) {
       return true;
     }
     let val = true;

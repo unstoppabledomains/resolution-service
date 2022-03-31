@@ -5,7 +5,7 @@ export function ConvertArrayQueryParams(
 ): (request: Request, response: Response, next: NextFunction) => any {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!Array.isArray(req.query[param])) {
-      const arr = req.query[param] ? [req.query[param]] : [];
+      const arr = req.query[param] ? [req.query[param]] : undefined;
       req.query[param] = arr as any; // TS gets confused by req.query[param]
     }
     next();
