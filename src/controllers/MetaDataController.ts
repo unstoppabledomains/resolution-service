@@ -70,8 +70,8 @@ const initMoralisSdk = async (): Promise<typeof Moralis> => {
     return Moralis;
   }
 
-  const serverUrl = process.env.MORALIS_API_URL;
-  const appId = process.env.MORALIS_APP_ID;
+  const serverUrl = env.MORALIS.API_URL;
+  const appId = env.MORALIS.APP_ID;
   await Moralis.start({ serverUrl, appId });
   initialized = true;
   return Moralis;

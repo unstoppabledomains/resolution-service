@@ -172,4 +172,8 @@ export const env = {
       domainsCount: Number(process.env.SNAPSHOT_DOMAINS_COUNT || 269650),
     },
   },
+  MORALIS: {
+    API_URL: process.env.MORALIS_API_URL,
+    APP_ID: process.env.MORALIS_APP_ID,
+  },
 };
