@@ -17,7 +17,7 @@ export const parsePictureRecord = (avatarRecord: string) => {
 };
 
 const makeImageLink = (imageUrl: string) => {
-  const PENATA_URL = 'https://gateway.pinata.cloud/ipfs/';
+  const PINATA_URL = 'https://gateway.pinata.cloud/ipfs/';
   const IPFS_REGEX = /^ipfs:\/\/(ipfs\/)?(.*$)/i;
   const [_url, _prefix, cid] = imageUrl.match(IPFS_REGEX) ?? [];
 
@@ -25,8 +25,8 @@ const makeImageLink = (imageUrl: string) => {
     return `https://ipfs.io/ipfs/${cid}`;
   }
 
-  if (imageUrl.startsWith(PENATA_URL)) {
-    return `https://ipfs.io/ipfs/${imageUrl.split(PENATA_URL)[1]}`;
+  if (imageUrl.startsWith(PINATA_URL)) {
+    return `https://ipfs.io/ipfs/${imageUrl.split(PINATA_URL)[1]}`;
   }
 
   if (
