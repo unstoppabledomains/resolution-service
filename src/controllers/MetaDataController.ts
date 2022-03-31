@@ -365,10 +365,14 @@ export class MetaDataController {
     let fetchedMetadata;
     let tokenIdMetadata;
 
-    try {
-      tokenIdMetadata = await moralis.Web3API.token.getTokenIdMetadata(options);
-    } catch (error) {
-      console.log(error);
+    if (options.chain && options.address && options.token_id) {
+      try {
+        tokenIdMetadata = await moralis.Web3API.token.getTokenIdMetadata(
+          options,
+        );
+      } catch (error) {
+        logger.error(error);
+      }
     }
 
     if (tokenIdMetadata?.metadata) {
