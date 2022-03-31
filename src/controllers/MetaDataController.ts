@@ -341,16 +341,18 @@ export class MetaDataController {
     let contractAddress = '';
     let tokenId = '';
 
-    try {
-      const parsedPicture = parsePictureRecord(
-        resolution.resolution['social.picture.value'],
-      );
+    if (resolution.resolution['social.picture.value']) {
+      try {
+        const parsedPicture = parsePictureRecord(
+          resolution.resolution['social.picture.value'],
+        );
 
-      chainId = parsedPicture.chainId;
-      contractAddress = parsedPicture.contractAddress;
-      tokenId = parsedPicture.tokenId;
-    } catch (error) {
-      logger.error(error);
+        chainId = parsedPicture.chainId;
+        contractAddress = parsedPicture.contractAddress;
+        tokenId = parsedPicture.tokenId;
+      } catch (error) {
+        console.log(error);
+      }
     }
 
     const moralis = await initMoralisSdk();
@@ -366,7 +368,7 @@ export class MetaDataController {
     try {
       tokenIdMetadata = await moralis.Web3API.token.getTokenIdMetadata(options);
     } catch (error) {
-      logger.error(error);
+      console.log(error);
     }
 
     if (tokenIdMetadata?.metadata) {
@@ -374,7 +376,7 @@ export class MetaDataController {
         fetchedMetadata = JSON.parse(tokenIdMetadata.metadata);
         image = fetchedMetadata?.image;
       } catch (error) {
-        logger.error(error);
+        console.log(error);
       }
     }
 
