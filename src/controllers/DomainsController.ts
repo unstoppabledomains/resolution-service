@@ -94,7 +94,7 @@ export class DomainsController {
   ): Promise<DomainsListResponse> {
     // Use raw query becaues typeorm doesn't seem to handle multiple nested relations (e.g. resolution.domain.parent.name)
     const where = [];
-    if (query.tlds) {
+    if (query.tlds.length !== 0) {
       where.push({
         query: `"parent"."name" in (:...tlds)`,
         parameters: { tlds: query.tlds },
@@ -102,24 +102,26 @@ export class DomainsController {
     }
 
     if (query.resolution) {
-      for (const key of Object.keys(query.resolution)) {
+      const resolutionKeys = Object.keys(query.resolution);
+      for (let i = 0; i < resolutionKeys.length; i++) {
+        const key = Object.keys(query.resolution)[i];
         where.push({
-          query: `"resolution"."resolution"->>'${key}' = :val`,
-          parameters: { val: query.resolution[key] },
+          query: `"resolution"."resolution"->>'${key}' = :val${i}`,
+          parameters: { [`val${i}`]: query.resolution[key] },
         });
       }
     }
 
     if (query.startingAfter.length !== 0) {
       where.push({
-        query: `${query.sort.column} ${
+        query: `${query.sort.startingAfter} ${
           query.sort.direction === 'ASC' ? '>' : '<'
         } :startingAfter`,
         parameters: { startingAfter: query.startingAfter },
       });
     }
 
-    if (query.owners) {
+    if (query.owners.length !== 0) {
       const ownersQuery = query.owners?.map((owner) => owner.toLowerCase());
       where.push({
         query: `"resolution"."owner_address" in (:...owners)`,
@@ -137,6 +139,9 @@ export class DomainsController {
       qb.andWhere(q.query, q.parameters);
     }
     qb.orderBy(query.sort.column, query.sort.direction);
+    if (query.sortBy !== 'id') {
+      qb.addOrderBy('domain.id', 'ASC');
+    }
     qb.take(query.perPage + 1);
     const domains = await qb.getMany();
     const hasMore = domains.length > query.perPage;
@@ -165,10 +170,11 @@ export class DomainsController {
         },
       });
     }
+
     response.meta = {
       perPage: query.perPage,
       nextStartingAfter:
-        lastDomain?.[query.sortBy]?.toString() || query.startingAfter || '',
+        query.nextStargingAfter(lastDomain) || query.startingAfter || '',
       sortBy: query.sortBy,
       sortDirection: query.sortDirection,
       hasMore,

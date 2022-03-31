@@ -52,6 +52,11 @@ const swaggerSpec = routingControllersToSpec(
   },
 );
 
+// There's no way to set a custom attribute for a specific parameter in routing-controllers-openapi
+// We could add a custom decorator for attributes in the future if we need to set more attributes
+// But it's easier to just hard-code it for now
+swaggerSpec.paths['/domains'].get.parameters[0].style = 'deepObject';
+
 const options = {
   swaggerOptions: {
     url: '/api-docs/swagger.json',

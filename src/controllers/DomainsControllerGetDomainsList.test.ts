@@ -753,7 +753,7 @@ describe('DomainsController', () => {
                 registry: resolutionOne.registry,
                 resolver: resolutionOne.resolver,
               },
-              records: {},
+              records: resolutionOne.resolution,
             },
           },
         ],
@@ -812,7 +812,7 @@ describe('DomainsController', () => {
                 registry: resolutionOne.registry,
                 resolver: resolutionOne.resolver,
               },
-              records: {},
+              records: resolutionOne.resolution,
             },
           },
         ],
@@ -1198,7 +1198,7 @@ describe('DomainsController', () => {
         errors: [
           {
             constraints: {
-              isIn: 'sortBy must be one of the following values: id, name',
+              isIn: 'sortBy must be one of the following values: id, name, created_at',
             },
           },
         ],

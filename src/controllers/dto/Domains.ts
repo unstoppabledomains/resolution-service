@@ -17,6 +17,7 @@ import { Blockchain } from '../../types/common';
 import { toNumber } from 'lodash';
 import NetworkConfig from 'uns/uns-config.json';
 import ValidateWith from '../../services/ValidateWith';
+import { JSONSchema } from 'class-validator-jsonschema';
 
 // Need to specity types explicitly because routing-controllers gets easily confused
 /* eslint-disable @typescript-eslint/no-inferrable-types */
@@ -56,16 +57,35 @@ export class DomainResponse {
   records: Record<string, string> = {};
 }
 
+export interface SortField {
+  fieldName: string;
+  startingAfterFieldName?: string;
+  getNextStartingAfterValue: (t: Domain) => string | undefined;
+}
+
 export class DomainsListQuery {
-  static SortFieldsMap: Record<string, string> = {
-    id: 'domain.id',
-    name: 'domain.name',
-    created_at: 'domain.created_at',
+  static SortFieldsMap: Record<string, SortField> = {
+    id: {
+      fieldName: 'domain.id',
+      getNextStartingAfterValue: (t) => t.id?.toString(),
+    },
+    name: {
+      fieldName: 'domain.name',
+      getNextStartingAfterValue: (t) => t.name?.toString(),
+    },
+    created_at: {
+      fieldName: 'domain.createdAt',
+      startingAfterFieldName: 'domain.id',
+      getNextStartingAfterValue: (t) => t.id?.toString(),
+    },
   };
 
   @IsOptional()
   @IsObject()
   @ValidateWith<DomainsListQuery>('verifyRecords')
+  @JSONSchema({
+    $ref: '', // custom validators mess with the schema generator so we have to set an empty ref to avoid errors
+  })
   resolution: Record<string, string> | null;
 
   @IsArray()
@@ -80,11 +100,14 @@ export class DomainsListQuery {
   @ValidateWith<DomainsListQuery>('validTlds', {
     message: 'Invalid TLD list provided',
   })
-  tlds: string[] | null = null;
+  @JSONSchema({
+    $ref: '', // custom validators mess with the schema generator so we have to set an empty ref to avoid errors
+  })
+  tlds: string[];
 
   @IsOptional()
   @IsIn(Object.keys(DomainsListQuery.SortFieldsMap))
-  sortBy: 'id' | 'name' = 'id';
+  sortBy: 'id' | 'name' | 'created_at' = 'id';
 
   @IsOptional()
   @IsIn(['ASC', 'DESC'])
@@ -101,13 +124,24 @@ export class DomainsListQuery {
 
   get sort() {
     return {
-      column: DomainsListQuery.SortFieldsMap[this.sortBy],
+      column: DomainsListQuery.SortFieldsMap[this.sortBy].fieldName,
+      startingAfter:
+        DomainsListQuery.SortFieldsMap[this.sortBy].startingAfterFieldName ||
+        DomainsListQuery.SortFieldsMap[this.sortBy].fieldName,
       direction: this.sortDirection,
     };
   }
 
+  nextStargingAfter(domain: Domain | undefined) {
+    return domain
+      ? DomainsListQuery.SortFieldsMap[this.sortBy].getNextStartingAfterValue(
+          domain,
+        )
+      : undefined;
+  }
+
   async validTlds(): Promise<boolean> {
-    if (this.tlds === null) {
+    if (this.tlds.length == 0) {
       return true;
     }
     let val = true;
