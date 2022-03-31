@@ -255,7 +255,7 @@ export class MetaDataController {
       return { image_data: '' };
     }
 
-    if (domain && resolution) {
+    if (domain && resolution && this.isDomainWithCustomImage(domain.name)) {
       const { socialPicture, image } = await this.fetchTokenMetadata(
         domain,
         resolution,
@@ -296,7 +296,7 @@ export class MetaDataController {
       return '';
     }
 
-    if (domain && resolution) {
+    if (domain && resolution && this.isDomainWithCustomImage(domain.name)) {
       const { socialPicture, image } = await this.fetchTokenMetadata(
         domain,
         resolution,
