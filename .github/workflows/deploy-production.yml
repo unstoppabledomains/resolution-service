@@ -9,7 +9,8 @@ on:
         required: true
 env:
   CLOUDSDK_APP_CLOUD_BUILD_TIMEOUT: 1200
-  IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/resolution-service:${{ github.sha }}
+  IMAGE_NAME:
+    gcr.io/${{ secrets.GCP_PROJECT_ID }}/resolution-service:${{ github.sha }}
   RESOLUTION_POSTGRES_HOST: ${{ secrets.RESOLUTION_POSTGRES_HOST }}
   RESOLUTION_POSTGRES_USERNAME: ${{ secrets.RESOLUTION_POSTGRES_USERNAME }}
   RESOLUTION_POSTGRES_PASSWORD: ${{ secrets.RESOLUTION_POSTGRES_PASSWORD }}
@@ -26,6 +27,8 @@ env:
   POLYGON_NETWORK_ID: 137
   POLYGON_UNS_REGISTRY_EVENTS_STARTING_BLOCK: 19345077
   POLYGON_CONFIRMATION_BLOCKS: 200
+  MORALIS_API_URL: ${{ secrets.MORALIS_API_URL}}
+  MORALIS_APP_ID: ${{ secrets.MORALIS_APP_ID}}
 
 jobs:
   build_and_push_container_image:
@@ -95,7 +98,7 @@ jobs:
           service_account: ${{ secrets.SERVICE_ACCOUNT_PRODUCTION }}
 
       # - name: Set up Google Cloud SDK
-        # uses: google-github-actions/setup-gcloud@v0
+      # uses: google-github-actions/setup-gcloud@v0
 
       - name: Download App Engine configurator
         uses: actions/download-artifact@v2
@@ -108,7 +111,7 @@ jobs:
         run: bash create-yaml.sh
 
       # - name: Increase deployment timeout
-        # run: gcloud config set app/cloud_build_timeout $BUILD_TIMEOUT
+      # run: gcloud config set app/cloud_build_timeout $BUILD_TIMEOUT
 
       - id: deploy
         name: Deploy to Google App Engine
