@@ -777,7 +777,7 @@ describe('DomainsController', () => {
           registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
           resolution: {
             'crypto.eth.address': '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
-            'ipfs.html.value': '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            'ipfs.html.value': 'QmTiqc12wo2pBsGa9XsbpavkhrjFiyuSWsKyffvZqVGtut',
           },
         });
 
@@ -1110,11 +1110,13 @@ describe('DomainsController', () => {
     });
 
     it('should sort by created_at ascending', async () => {
-      const { domains, expectedData } = getSortedTestDomains(
-        (a, b) =>
-          (a.domain.createdAt?.getDate() || 0) -
-          (b.domain.createdAt?.getDate() || 0),
-      );
+      const { domains, expectedData } = getSortedTestDomains((a, b) => {
+        const timeDiff =
+          (a.domain.createdAt?.getUTCMilliseconds() || 0) -
+          (b.domain.createdAt?.getUTCMilliseconds() || 0);
+        const idIdff = (a.domain.id || 0) - (b.domain.id || 0);
+        return timeDiff != 0 ? timeDiff : idIdff;
+      });
 
       const res = await supertest(api)
         .get(
@@ -1128,7 +1130,11 @@ describe('DomainsController', () => {
       expect(res.body.data).to.deep.equal(expectedData);
       expect(res.body.meta).to.deep.equal({
         hasMore: false,
-        nextStartingAfter: domains[domains.length - 1].createdAt?.toString(),
+        nextStartingAfter: `${domains[
+          domains.length - 1
+        ].createdAt?.toISOString()}|${domains[
+          domains.length - 1
+        ].id?.toString()}`,
         perPage: 100,
         sortBy: 'created_at',
         sortDirection: 'ASC',
@@ -1136,11 +1142,13 @@ describe('DomainsController', () => {
     });
 
     it('should sort by created_at descending', async () => {
-      const { domains, expectedData } = getSortedTestDomains(
-        (a, b) =>
-          (b.domain.createdAt?.getDate() || 0) -
-          (a.domain.createdAt?.getDate() || 0),
-      );
+      const { domains, expectedData } = getSortedTestDomains((a, b) => {
+        const timeDiff =
+          (b.domain.createdAt?.getUTCMilliseconds() || 0) -
+          (a.domain.createdAt?.getUTCMilliseconds() || 0);
+        const idIdff = (b.domain.id || 0) - (a.domain.id || 0);
+        return timeDiff != 0 ? timeDiff : idIdff;
+      });
 
       const res = await supertest(api)
         .get(
@@ -1154,7 +1162,11 @@ describe('DomainsController', () => {
       expect(res.body.data).to.deep.equal(expectedData);
       expect(res.body.meta).to.deep.equal({
         hasMore: false,
-        nextStartingAfter: domains[domains.length - 1].createdAt?.toString(),
+        nextStartingAfter: `${domains[
+          domains.length - 1
+        ].createdAt?.toISOString()}|${domains[
+          domains.length - 1
+        ].id?.toString()}`,
         perPage: 100,
         sortBy: 'created_at',
         sortDirection: 'DESC',
