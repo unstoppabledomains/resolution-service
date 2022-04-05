@@ -1,4 +1,5 @@
 import { writeFile } from 'fs';
+// @ts-ignore
 import { Client } from 'pg';
 
 const {

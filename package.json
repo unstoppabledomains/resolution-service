@@ -90,7 +90,6 @@
     "@types/newrelic": "^7.0.1",
     "@types/node": "^15.0.2",
     "@types/node-fetch": "^2.5.10",
-    "@types/pg": "^8.6.5",
     "@types/set-interval-async": "^1.0.0",
     "@types/sinon": "^10.0.0",
     "@types/sinon-chai": "^3.2.5",
