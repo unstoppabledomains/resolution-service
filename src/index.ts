@@ -4,6 +4,7 @@ import { env } from './env';
 import { logger } from './logger';
 import('newrelic');
 
+// test comment
 const runningMode = env.APPLICATION.RUNNING_MODE;
 import connect from './database/connect';
 import { startWorker as startEthWorker } from './workers/eth/EthUpdater';
