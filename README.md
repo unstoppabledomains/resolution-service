@@ -1,4 +1,4 @@
-# Resolution service
+#  Resolution service
 
 [![Tests](https://github.com/unstoppabledomains/resolution-service/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/unstoppabledomains/resolution-service/actions/workflows/tests.yml)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=unstoppabledomains_resolution_service&metric=security_rating&token=f23a522e7a9ee324e58e27e84651e8c731871d43)](https://sonarcloud.io/summary/new_code?id=unstoppabledomains_resolution_service)
