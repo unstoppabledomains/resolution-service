@@ -35,7 +35,8 @@
     "db:migration:pending": "yarn typeorm migration:show | (! grep -E '\\[ \\]' )",
     "db:snapshot:create": "./tools/create-snapshot",
     "db:snapshot:load": "RESOLUTION_RUNNING_MODE=LOAD_SNAPSHOT yarn start:dev",
-    "db:snapshot:check": "yarn typeorm schema:drop && yarn db:migration:run && yarn db:snapshot:load"
+    "db:snapshot:check": "yarn typeorm schema:drop && yarn db:migration:run && yarn db:snapshot:load",
+    "export:domains": "dotenv -e ./local.dev.env --  ts-node src/scripts/exportDomains.ts"
   },
   "dependencies": {
     "@bugsnag/js": "^7.9.2",
