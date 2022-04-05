@@ -18,6 +18,7 @@ import { toNumber } from 'lodash';
 import NetworkConfig from 'uns/uns-config.json';
 import ValidateWith from '../../services/ValidateWith';
 import { JSONSchema } from 'class-validator-jsonschema';
+import SupportedKeysJson from 'uns/resolver-keys.json';
 
 // Need to specity types explicitly because routing-controllers gets easily confused
 /* eslint-disable @typescript-eslint/no-inferrable-types */
@@ -81,7 +82,9 @@ export class DomainsListQuery {
 
   @IsOptional()
   @IsObject()
-  @ValidateWith<DomainsListQuery>('verifyRecords')
+  @ValidateWith<DomainsListQuery>('verifyRecords', {
+    message: 'Invalid resolution records provided',
+  })
   @JSONSchema({
     $ref: '', // custom validators mess with the schema generator so we have to set an empty ref to avoid errors
   })
@@ -155,7 +158,11 @@ export class DomainsListQuery {
     for (const property in this.resolution) {
       if (
         !Object.prototype.hasOwnProperty.call(this.resolution, property) ||
-        !(property != null && typeof property.valueOf() === 'string') ||
+        !(
+          property != null &&
+          typeof property.valueOf() === 'string' &&
+          Object.prototype.hasOwnProperty.call(SupportedKeysJson.keys, property)
+        ) ||
         !(
           this.resolution[property] != null &&
           typeof this.resolution[property].valueOf() === 'string'
