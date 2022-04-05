@@ -12,4 +12,4 @@ coverage
 service.env
 local.dev.env
 local.test.env
-
+domains.json

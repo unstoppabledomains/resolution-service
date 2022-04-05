@@ -35,7 +35,8 @@
     "db:migration:pending": "yarn typeorm migration:show | (! grep -E '\\[ \\]' )",
     "db:snapshot:create": "./tools/create-snapshot",
     "db:snapshot:load": "RESOLUTION_RUNNING_MODE=LOAD_SNAPSHOT yarn start:dev",
-    "db:snapshot:check": "yarn typeorm schema:drop && yarn db:migration:run && yarn db:snapshot:load"
+    "db:snapshot:check": "yarn typeorm schema:drop && yarn db:migration:run && yarn db:snapshot:load",
+    "export:domains": "dotenv -e ./local.dev.env --  ts-node src/scripts/exportDomains.ts"
   },
   "dependencies": {
     "@bugsnag/js": "^7.9.2",
@@ -89,6 +90,7 @@
     "@types/newrelic": "^7.0.1",
     "@types/node": "^15.0.2",
     "@types/node-fetch": "^2.5.10",
+    "@types/pg": "^8.6.5",
     "@types/set-interval-async": "^1.0.0",
     "@types/sinon": "^10.0.0",
     "@types/sinon-chai": "^3.2.5",
