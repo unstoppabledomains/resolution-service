@@ -1,4 +1,11 @@
-import { Controller, Get, Header, Param } from 'routing-controllers';
+import {
+  Controller,
+  Get,
+  Header,
+  Param,
+  QueryParam,
+} from 'routing-controllers';
+import Moralis from 'moralis/node';
 import { ResponseSchema } from 'routing-controllers-openapi';
 import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import fetch from 'node-fetch';
@@ -13,14 +20,14 @@ import { IsArray, IsObject, IsOptional, IsString } from 'class-validator';
 import { env } from '../env';
 import { logger } from '../logger';
 import {
-  getSocialPictureUrl,
   getNFTSocialPicture,
   createSocialPictureImage,
+  parsePictureRecord,
 } from '../utils/socialPicture';
 import punycode from 'punycode';
-import btoa from 'btoa';
 import { getDomainResolution } from '../services/Resolution';
 import { PremiumDomains, CustomImageDomains } from '../utils/domainCategories';
+import { DomainsResolution } from '../models';
 
 const DEFAULT_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
@@ -28,6 +35,47 @@ const BASE_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images` as const;
 const INVALID_DOMAIN_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/invalid-domain.svg` as const;
+
+export enum SupportedL2Chain {
+  Polygon = 'polygon',
+  Binance = 'bsc',
+  Avalanche = 'avalanche',
+  Fantom = 'fantom',
+}
+export enum Network {
+  Polygon = '137',
+  Binance = '56',
+  Avalanche = '43114',
+  Fantom = '250',
+}
+
+const getChainName = (chainId: string): SupportedL2Chain | 'eth' => {
+  switch (chainId) {
+    case Network.Polygon:
+      return SupportedL2Chain.Polygon;
+    case Network.Binance:
+      return SupportedL2Chain.Binance;
+    case Network.Avalanche:
+      return SupportedL2Chain.Avalanche;
+    case Network.Fantom:
+      return SupportedL2Chain.Fantom;
+    default:
+      return 'eth';
+  }
+};
+
+let initialized = false;
+const initMoralisSdk = async (): Promise<typeof Moralis> => {
+  if (initialized) {
+    return Moralis;
+  }
+
+  const serverUrl = env.MORALIS.API_URL;
+  const appId = env.MORALIS.APP_ID;
+  await Moralis.start({ serverUrl, appId });
+  initialized = true;
+  return Moralis;
+};
 
 const AnimalHelper: AnimalDomainHelper = new AnimalDomainHelper();
 
@@ -77,7 +125,28 @@ class OpenSeaMetadata extends Erc721Metadata {
   youtube_url?: string;
 }
 
+class TokenMetadata {
+  @IsObject()
+  fetchedMetadata: {
+    name: string;
+    token_uri?: string;
+    metadata?: string;
+    image?: string;
+    background_color?: string;
+  };
+
+  @IsString()
+  socialPicture: string;
+
+  @IsString()
+  image: string;
+}
+
 class ImageResponse {
+  @IsOptional()
+  @IsString()
+  image?: string | null;
+
   @IsString()
   image_data: string;
 }
@@ -106,6 +175,7 @@ export class MetaDataController {
   @ResponseSchema(OpenSeaMetadata)
   async getMetaData(
     @Param('domainOrToken') domainOrToken: string,
+    @QueryParam('withOverlay') withOverlay = true,
   ): Promise<OpenSeaMetadata> {
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain =
@@ -116,40 +186,9 @@ export class MetaDataController {
     }
     const resolution = getDomainResolution(domain);
 
-    const { pictureOrUrl, nftStandard, backgroundColor } =
-      await getSocialPictureUrl(
-        resolution.resolution['social.picture.value'],
-        resolution.ownerAddress || '',
-      );
-    let socialPicture = '';
-    if (pictureOrUrl) {
-      let data = '',
-        mimeType = null;
-      if (nftStandard === 'cryptopunks') {
-        data = btoa(
-          pictureOrUrl
-            .replace(`data:image/svg+xml;utf8,`, ``)
-            .replace(
-              `<svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 24 24">`,
-              `<svg xmlns="http://www.w3.org/2000/svg" version="1.2" viewBox="0 0 24 24"><rect width="100%" height="100%" fill="#648595"/>`,
-            ),
-        );
-        mimeType = 'image/svg+xml';
-      } else {
-        [data, mimeType] = await getNFTSocialPicture(pictureOrUrl).catch(() => [
-          '',
-          null,
-        ]);
-      }
-      if (data) {
-        socialPicture = createSocialPictureImage(
-          domain,
-          data,
-          mimeType,
-          backgroundColor,
-        );
-      }
-    }
+    const { fetchedMetadata, socialPicture, image } =
+      await this.fetchTokenMetadata(domain, resolution, withOverlay);
+
     const description = this.getDomainDescription(
       domain.name,
       resolution.resolution,
@@ -162,17 +201,23 @@ export class MetaDataController {
     });
 
     const metadata: OpenSeaMetadata = {
-      name: domain.name,
+      name: fetchedMetadata?.name || domain.name,
       description,
       properties: {
         records: resolution.resolution,
       },
       external_url: `https://unstoppabledomains.com/search?searchTerm=${domain.name}`,
-      image: socialPicture || this.generateDomainImageUrl(domain.name),
+      image:
+        (withOverlay ? socialPicture : image) ||
+        this.generateDomainImageUrl(domain.name),
       attributes: domainAttributes,
     };
 
-    if (!this.isDomainWithCustomImage(domain.name) && !socialPicture) {
+    if (
+      !this.isDomainWithCustomImage(domain.name) &&
+      !socialPicture &&
+      !image
+    ) {
       metadata.image_data = await this.generateImageData(
         domain.name,
         resolution.resolution,
@@ -197,21 +242,39 @@ export class MetaDataController {
   @ResponseSchema(ImageResponse)
   async getImage(
     @Param('domainOrToken') domainOrToken: string,
+    @QueryParam('withOverlay') withOverlay = true,
   ): Promise<ImageResponse> {
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain =
       (await Domain.findByNode(token)) ||
       (await Domain.findOnChainNoSafe(token));
-
+    const resolution = domain ? getDomainResolution(domain) : undefined;
     const name = domain ? domain.name : domainOrToken;
-    const resolution = domain ? getDomainResolution(domain).resolution : {};
 
     if (!name.includes('.')) {
       return { image_data: '' };
     }
 
+    if (domain && resolution && this.isDomainWithCustomImage(domain.name)) {
+      const { socialPicture, image } = await this.fetchTokenMetadata(
+        domain,
+        resolution,
+        withOverlay,
+      );
+
+      return {
+        image:
+          (withOverlay ? socialPicture : image) ||
+          this.generateDomainImageUrl(domain.name),
+        image_data: '',
+      };
+    }
+
     return {
-      image_data: await this.generateImageData(name, resolution),
+      image_data: await this.generateImageData(
+        name,
+        resolution?.resolution || {},
+      ),
     };
   }
 
@@ -220,21 +283,135 @@ export class MetaDataController {
   @Header('Content-Type', 'image/svg+xml')
   async getImageSrc(
     @Param('domainOrToken') domainOrToken: string,
+    @QueryParam('withOverlay') withOverlay = true,
   ): Promise<string> {
     const token = this.normalizeDomainOrToken(domainOrToken);
     const domain =
       (await Domain.findByNode(token)) ||
       (await Domain.findOnChainNoSafe(token));
-
+    const resolution = domain ? getDomainResolution(domain) : undefined;
     const name = domain ? domain.name : domainOrToken;
-    const resolution = domain ? getDomainResolution(domain).resolution : {};
 
     if (!name.includes('.')) {
       return '';
     }
 
-    const imageData = await this.generateImageData(name, resolution);
+    if (domain && resolution && this.isDomainWithCustomImage(domain.name)) {
+      const { socialPicture, image } = await this.fetchTokenMetadata(
+        domain,
+        resolution,
+        withOverlay,
+        true,
+      );
+      const svgFromImage = `<svg
+        width="300"
+        height="300"
+        viewBox="0 0 300 300"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <image
+          href="${image}"
+          width="300"
+          height="300"
+        />
+      </svg>`;
+
+      return (
+        (withOverlay ? socialPicture : svgFromImage) ||
+        this.generateDomainImageUrl(domain.name) ||
+        ''
+      );
+    }
+
+    const imageData = await this.generateImageData(
+      name,
+      resolution?.resolution || {},
+    );
     return await pathThatSvg(imageData);
+  }
+
+  private async fetchTokenMetadata(
+    domain: Domain,
+    resolution: DomainsResolution,
+    withOverlay: boolean,
+    raw = false,
+  ): Promise<TokenMetadata> {
+    let chainId = '';
+    let contractAddress = '';
+    let tokenId = '';
+
+    if (resolution.resolution['social.picture.value']) {
+      try {
+        const parsedPicture = parsePictureRecord(
+          resolution.resolution['social.picture.value'],
+        );
+
+        chainId = parsedPicture.chainId;
+        contractAddress = parsedPicture.contractAddress;
+        tokenId = parsedPicture.tokenId;
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    const moralis = await initMoralisSdk();
+    const options = {
+      chain: getChainName(chainId),
+      address: contractAddress,
+      token_id: tokenId,
+    };
+    let image = '';
+    let fetchedMetadata;
+    let tokenIdMetadata;
+
+    if (options.chain && options.address && options.token_id) {
+      try {
+        tokenIdMetadata = await moralis.Web3API.token.getTokenIdMetadata(
+          options,
+        );
+      } catch (error) {
+        logger.error(error);
+      }
+    }
+
+    if (tokenIdMetadata?.metadata) {
+      try {
+        fetchedMetadata = JSON.parse(tokenIdMetadata.metadata);
+        image = fetchedMetadata?.image;
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    if (!image && !!tokenIdMetadata?.token_uri) {
+      const response = await fetch(tokenIdMetadata.token_uri, {
+        timeout: 5000,
+      });
+      fetchedMetadata = await response.json();
+      image = fetchedMetadata?.image;
+    }
+    let socialPicture = '';
+
+    if (!!image && withOverlay) {
+      const [data, mimeType] = await getNFTSocialPicture(image).catch(() => [
+        '',
+        null,
+      ]);
+
+      if (data) {
+        // adding the overlay
+        socialPicture = createSocialPictureImage(
+          domain,
+          data,
+          mimeType,
+          fetchedMetadata?.background_color || '',
+          raw,
+        );
+      }
+    }
+
+    return { fetchedMetadata, socialPicture, image };
   }
 
   private async defaultMetaResponse(

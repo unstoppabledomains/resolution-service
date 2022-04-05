@@ -26,6 +26,12 @@ if (!process.env.ETHEREUM_JSON_RPC_API_URL) {
 if (!process.env.POLYGON_JSON_RPC_API_URL) {
   requiredEnvNotSet.push('POLYGON_JSON_RPC_API_URL');
 }
+if (!process.env.MORALIS_API_URL) {
+  requiredEnvNotSet.push('MORALIS_API_URL');
+}
+if (!process.env.MORALIS_APP_ID) {
+  requiredEnvNotSet.push('MORALIS_APP_ID');
+}
 
 if (requiredEnvNotSet.length !== 0) {
   throw new Error(
@@ -171,5 +177,9 @@ export const env = {
       ),
       domainsCount: Number(process.env.SNAPSHOT_DOMAINS_COUNT || 269650),
     },
+  },
+  MORALIS: {
+    API_URL: process.env.MORALIS_API_URL,
+    APP_ID: process.env.MORALIS_APP_ID,
   },
 };

@@ -1,32 +1,10 @@
-import { ethers } from 'ethers';
-import { env } from '../../env';
 import nodeFetch from 'node-fetch';
 import { Domain } from '../../models';
 import { createCanvas } from 'canvas';
 import createSVGfromTemplate from './svgTemplate';
 import btoa from 'btoa';
 
-export enum Network {
-  Mainnet = '1',
-  Polygon = '137',
-  Binance = '56',
-  Avalanche = '43114',
-  Fantom = '250',
-}
-const CryptoPunksImageContractAddress =
-  '0x16F5A35647D6F03D5D3da7b35409D65ba03aF3B2';
-const CryptoKittyContractAddress = '0x06012c8cf97bead5deae237070f9587f8e7a266d';
-
-const isCryptoKitty = (contractAddress: string) => {
-  return (
-    contractAddress.toLowerCase() === CryptoKittyContractAddress.toLowerCase()
-  );
-};
-
-const getCryptoKittySvgUrl = (tokenId: string) =>
-  `https://img.cryptokitties.co/${CryptoKittyContractAddress}/${tokenId}.svg`;
-
-const parsePictureRecord = (avatarRecord: string) => {
+export const parsePictureRecord = (avatarRecord: string) => {
   const regex =
     /(\d+)\/(erc721|erc1155|cryptopunks):(0x[a-fA-F0-9]{40})\/(\d+)/;
   const matches = regex.exec(avatarRecord);
@@ -38,211 +16,27 @@ const parsePictureRecord = (avatarRecord: string) => {
   return { chainId, nftStandard, contractAddress, tokenId };
 };
 
-const constructNFTContract = async (
-  chainId: string,
-  contractAddress: string,
-  nftStandard: string,
-) => {
-  const abis: Record<string, string[]> = {
-    erc721: [
-      'function tokenURI(uint256 _tokenId) external view returns (string)',
-      'function ownerOf(uint256 _tokenId) external view returns (address)',
-    ],
-    erc1155: [
-      'function uri(uint256 _id) external view returns (string memory)',
-      'function balanceOf(address _owner, uint256 _id) external view returns (uint256)',
-    ],
-    cryptopunks: [
-      'function punkIndexToAddress(uint256 _tokenId) public view returns (address)',
-      'function punkImageSvg(uint16 index) external view returns (string memory)',
-    ],
-  };
-  if (!abis[nftStandard]) {
-    throw new Error('Unsupported NFT standard: ' + nftStandard);
-  }
-  let provider;
+const makeImageLink = (imageUrl: string) => {
+  const PINATA_URL = 'https://gateway.pinata.cloud/ipfs/';
+  const IPFS_REGEX = /^ipfs:\/\/(ipfs\/)?(.*$)/i;
+  const [_url, _prefix, cid] = imageUrl.match(IPFS_REGEX) ?? [];
 
-  switch (chainId) {
-    case Network.Mainnet:
-      provider = new ethers.providers.JsonRpcProvider(
-        env.APPLICATION.ETHEREUM.JSON_RPC_API_URL,
-      );
-      break;
+  if (cid) {
+    return `https://ipfs.io/ipfs/${cid}`;
+  }
 
-    case Network.Polygon:
-      provider = new ethers.providers.JsonRpcProvider(
-        env.APPLICATION.POLYGON.JSON_RPC_API_URL,
-      );
-      break;
+  if (imageUrl.startsWith(PINATA_URL)) {
+    return `https://ipfs.io/ipfs/${imageUrl.split(PINATA_URL)[1]}`;
+  }
 
-    case Network.Binance:
-      provider = new ethers.providers.JsonRpcProvider(
-        env.APPLICATION.BINANCE.JSON_RPC_API_URL,
-      );
-      break;
+  if (
+    imageUrl.includes('api.pudgypenguins.io/penguin/image') &&
+    !imageUrl.endsWith('.svg')
+  ) {
+    return `${imageUrl}.svg`; // Fixes Pudgy Penguins bug, images missing .svg at the end
+  }
 
-    case Network.Avalanche:
-      provider = new ethers.providers.JsonRpcProvider(
-        env.APPLICATION.AVALANCHE.JSON_RPC_API_URL,
-      );
-      break;
-
-    case Network.Fantom:
-      provider = new ethers.providers.JsonRpcProvider(
-        env.APPLICATION.FANTOM.JSON_RPC_API_URL,
-      );
-      break;
-
-    default:
-      break;
-  }
-  if (!provider) {
-    throw new Error('Invalid chainID');
-  }
-  await provider.ready;
-  const nftContract = new ethers.Contract(
-    contractAddress,
-    abis[nftStandard],
-    provider,
-  );
-  return nftContract;
-};
-
-const isOwnedByAddress = (
-  ownerAddress: string,
-  {
-    contract,
-    nftStandard,
-    tokenId,
-  }: {
-    contract: ethers.Contract;
-    nftStandard: string;
-    tokenId: string;
-  },
-) => {
-  if (nftStandard === 'erc721') {
-    return contract.functions
-      .ownerOf(tokenId)
-      .then(([owner]) => owner.toLowerCase() === ownerAddress.toLowerCase());
-  }
-  if (nftStandard === 'erc1155') {
-    return contract.functions
-      .balanceOf(ownerAddress, tokenId)
-      .then((balance) => balance > 0);
-  }
-  if (nftStandard === 'cryptopunks') {
-    return contract.functions
-      .punkIndexToAddress(tokenId)
-      .then(
-        ([address]) => address.toLowerCase() === ownerAddress.toLowerCase(),
-      );
-  }
-  return '';
-};
-
-const getTokenURI = ({
-  contract,
-  nftStandard,
-  tokenId,
-}: {
-  contract: ethers.Contract;
-  nftStandard: string;
-  tokenId: string;
-}) => {
-  if (nftStandard === 'erc721') {
-    return contract.functions.tokenURI(tokenId).then(([tokenURI]) => tokenURI);
-  }
-  if (nftStandard === 'erc1155') {
-    return contract.functions.uri(tokenId).then(([tokenURI]) => tokenURI);
-  }
-  return '';
-};
-
-const useIpfsGateway = (url: string) => {
-  if (url.startsWith('ipfs://ipfs/')) {
-    return url.replace('ipfs://ipfs/', 'https://ipfs.io/ipfs/');
-  }
-  if (url.startsWith('ipfs://')) {
-    return url.replace('ipfs://', 'https://ipfs.io/ipfs/');
-  }
-  return url;
-};
-
-const getImageURLFromTokenURI = async (tokenURI: string) => {
-  let metadata;
-  if (tokenURI.startsWith('data:application/json;base64,')) {
-    const json = Buffer.from(tokenURI.substring(29), 'base64').toString();
-    metadata = JSON.parse(json);
-  } else {
-    const resp = await nodeFetch(useIpfsGateway(tokenURI), { timeout: 3000 });
-    if (!resp.ok) {
-      throw new Error('Failed to fetch from tokenURI');
-    }
-    metadata = await resp.json();
-  }
-  return {
-    imageURL: metadata.image || metadata.image_url,
-    backgroundColor: metadata.background_color || '',
-  };
-};
-
-export const getSocialPictureUrl = async (
-  avatarRecord: string,
-  ownerAddress: string,
-): Promise<{
-  pictureOrUrl: string;
-  nftStandard: string;
-  backgroundColor: string;
-}> => {
-  if (!avatarRecord || !ownerAddress) {
-    return { pictureOrUrl: '', nftStandard: '', backgroundColor: '' };
-  }
-  try {
-    const { chainId, nftStandard, contractAddress, tokenId } =
-      parsePictureRecord(avatarRecord);
-    const nftContract = await constructNFTContract(
-      chainId,
-      contractAddress,
-      nftStandard,
-    );
-    const isOwner = await isOwnedByAddress(ownerAddress, {
-      contract: nftContract,
-      nftStandard,
-      tokenId,
-    });
-    if (!isOwner) {
-      throw new Error('User does not own NFT');
-    }
-    if (nftStandard === 'cryptopunks') {
-      const cryptoPunksImageContract = await constructNFTContract(
-        chainId,
-        CryptoPunksImageContractAddress,
-        'cryptopunks',
-      );
-      const [svgImage] = await cryptoPunksImageContract.functions.punkImageSvg(
-        tokenId,
-      );
-      return { pictureOrUrl: svgImage, nftStandard, backgroundColor: '' };
-    }
-    if (isCryptoKitty(contractAddress)) {
-      return {
-        pictureOrUrl: getCryptoKittySvgUrl(tokenId),
-        nftStandard,
-        backgroundColor: '',
-      };
-    }
-    const tokenURI = await getTokenURI({
-      contract: nftContract,
-      nftStandard,
-      tokenId,
-    });
-    const { imageURL, backgroundColor } = await getImageURLFromTokenURI(
-      tokenURI.replace('0x{id}', tokenId).replace('{id}', tokenId),
-    );
-    return { pictureOrUrl: imageURL, nftStandard, backgroundColor };
-  } catch {
-    return { pictureOrUrl: '', nftStandard: '', backgroundColor: '' };
-  }
+  return imageUrl;
 };
 
 export const getNFTSocialPicture = async (
@@ -256,7 +50,7 @@ export const getNFTSocialPicture = async (
     const base64 = pictureOrUrl.substring(pictureOrUrl.indexOf('base64,') + 7);
     return [base64, mimeType];
   }
-  const resp = await nodeFetch(useIpfsGateway(pictureOrUrl), { timeout: 3000 });
+  const resp = await nodeFetch(makeImageLink(pictureOrUrl), { timeout: 5000 });
   if (!resp.ok) {
     throw new Error('Failed to fetch NFT image');
   }
@@ -282,6 +76,7 @@ export const createSocialPictureImage = (
   data: string,
   mimeType: string | null,
   backgroundColor: string,
+  raw = false,
 ): string => {
   let name = domain.name;
   if (name.length > 30) {
@@ -295,6 +90,10 @@ export const createSocialPictureImage = (
     fontSize,
     mimeType: mimeType || undefined,
   });
+
+  if (raw) {
+    return svg;
+  }
 
   try {
     return (
