@@ -146,6 +146,20 @@ export class EthUpdater {
         resolution.ownerAddress = event.args?.to.toLowerCase();
         await domainRepository.save(domain);
       }
+    } else if (domain) {
+      // domain exists, so it's probably a bridge
+      const resolution = domain.getResolution(this.blockchain, this.networkId);
+
+      resolution.ownerAddress = event.args?.to.toLowerCase();
+      resolution.registry = this.cnsRegistry.address;
+
+      const contractAddress = event.address.toLowerCase();
+      if (contractAddress === this.unsRegistry.address.toLowerCase()) {
+        resolution.resolver = contractAddress;
+        resolution.registry = this.unsRegistry.address.toLowerCase();
+      }
+      domain.setResolution(resolution); // create resolution for L2
+      await domainRepository.save(domain);
     }
   }
 
