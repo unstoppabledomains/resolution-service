@@ -32,6 +32,7 @@ env:
   POLYGON_UNS_REGISTRY_EVENTS_STARTING_BLOCK: 18956099
   MORALIS_API_URL: ${{ secrets.MORALIS_API_URL}}
   MORALIS_APP_ID: ${{ secrets.MORALIS_APP_ID}}
+  OPENSEA_API_KEY: ${{ secrets.OPENSEA_API_KEY}}
 
 jobs:
   build_and_push_container_image:

@@ -62,6 +62,7 @@
     "negotiator": "^0.6.2",
     "newrelic": "latest",
     "node-fetch": "^2.6.1",
+    "opensea-js": "1.2.8",
     "path-that-svg": "^1.2.4",
     "pg": "^8.6.0",
     "punycode": "^2.1.1",
