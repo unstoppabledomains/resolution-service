@@ -186,8 +186,11 @@ export class MetaDataController {
     }
     const resolution = getDomainResolution(domain);
 
-    const { fetchedMetadata, socialPicture, image } =
-      await this.fetchTokenMetadata(domain, resolution, withOverlay);
+    const { socialPicture, image } = await this.fetchTokenMetadata(
+      domain,
+      resolution,
+      withOverlay,
+    );
 
     const description = this.getDomainDescription(
       domain.name,
@@ -201,7 +204,7 @@ export class MetaDataController {
     });
 
     const metadata: OpenSeaMetadata = {
-      name: fetchedMetadata?.name || domain.name,
+      name: domain.name,
       description,
       properties: {
         records: resolution.resolution,
