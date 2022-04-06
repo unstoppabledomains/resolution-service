@@ -1,6 +1,8 @@
 import supertest from 'supertest';
 import { api } from '../api';
 import { expect } from 'chai';
+import Moralis from 'moralis/node';
+import sinon from 'sinon';
 import { DomainTestHelper } from '../utils/testing/DomainTestHelper';
 import { eip137Namehash } from '../utils/namehash';
 import { DefaultImageData, BackgroundColor } from '../utils/generalImage';
@@ -28,6 +30,7 @@ describe('MetaDataController', () => {
         dbPath: './.sandboxl2',
       },
     });
+    sinon.stub(Moralis, 'start').resolves();
   });
 
   after(async () => {

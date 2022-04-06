@@ -9,11 +9,16 @@ on:
         required: true
 env:
   CLOUDSDK_APP_CLOUD_BUILD_TIMEOUT: 1200
-  IMAGE_NAME: gcr.io/${{ secrets.GCP_STAGING_PROJECT_ID }}/resolution-service:${{ github.sha }}
+  IMAGE_NAME:
+    gcr.io/${{ secrets.GCP_STAGING_PROJECT_ID }}/resolution-service:${{
+    github.sha }}
   RESOLUTION_POSTGRES_HOST: ${{ secrets.RESOLUTION_STAGING_POSTGRES_HOST }}
-  RESOLUTION_POSTGRES_USERNAME: ${{ secrets.RESOLUTION_STAGING_POSTGRES_USERNAME }}
-  RESOLUTION_POSTGRES_PASSWORD: ${{ secrets.RESOLUTION_STAGING_POSTGRES_PASSWORD }}
-  RESOLUTION_POSTGRES_DATABASE: ${{ secrets.RESOLUTION_STAGING_POSTGRES_DATABASE}}
+  RESOLUTION_POSTGRES_USERNAME:
+    ${{ secrets.RESOLUTION_STAGING_POSTGRES_USERNAME }}
+  RESOLUTION_POSTGRES_PASSWORD:
+    ${{ secrets.RESOLUTION_STAGING_POSTGRES_PASSWORD }}
+  RESOLUTION_POSTGRES_DATABASE:
+    ${{ secrets.RESOLUTION_STAGING_POSTGRES_DATABASE}}
   ETHEREUM_JSON_RPC_API_URL: ${{ secrets.ETHEREUM_TESTNET_JSON_RPC_API_URL}}
   VIEWBLOCK_API_KEY: ${{ secrets.VIEWBLOCK_API_KEY }}
   GCP_SQL_INSTANCE: ${{ secrets.GCP_STAGING_SQL_INSTANCE }}
@@ -25,6 +30,9 @@ env:
   POLYGON_JSON_RPC_API_URL: ${{ secrets.POLYGON_TESTNET_JSON_RPC_API_URL}}
   POLYGON_NETWORK_ID: 80001
   POLYGON_UNS_REGISTRY_EVENTS_STARTING_BLOCK: 18956099
+  POLYGON_CONFIRMATION_BLOCKS: 200
+  MORALIS_API_URL: ${{ secrets.MORALIS_API_URL}}
+  MORALIS_APP_ID: ${{ secrets.MORALIS_APP_ID}}
 
 jobs:
   build_and_push_container_image:
@@ -94,7 +102,7 @@ jobs:
           service_account: ${{ secrets.SERVICE_ACCOUNT_STAGING }}
 
       # - name: Set up Google Cloud SDK
-        # uses: google-github-actions/setup-gcloud@v0
+      # uses: google-github-actions/setup-gcloud@v0
 
       - name: Download App Engine configurator
         uses: actions/download-artifact@v2
@@ -107,7 +115,7 @@ jobs:
         run: bash create-yaml.sh
 
       # - name: Increase deployment timeout
-        # run: gcloud config set app/cloud_build_timeout $BUILD_TIMEOUT
+      # run: gcloud config set app/cloud_build_timeout $BUILD_TIMEOUT
 
       - id: deploy
         name: Deploy to Google App Engine
