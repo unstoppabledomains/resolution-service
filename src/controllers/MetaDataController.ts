@@ -28,6 +28,8 @@ import punycode from 'punycode';
 import { getDomainResolution } from '../services/Resolution';
 import { PremiumDomains, CustomImageDomains } from '../utils/domainCategories';
 import { DomainsResolution } from '../models';
+import { OpenSeaPort, Network } from 'opensea-js';
+import { EthereumProvider } from '../workers/EthereumProvider';
 
 const DEFAULT_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
@@ -42,7 +44,7 @@ export enum SupportedL2Chain {
   Avalanche = 'avalanche',
   Fantom = 'fantom',
 }
-export enum Network {
+export enum NetworkId {
   Polygon = '137',
   Binance = '56',
   Avalanche = '43114',
@@ -51,30 +53,44 @@ export enum Network {
 
 const getChainName = (chainId: string): SupportedL2Chain | 'eth' => {
   switch (chainId) {
-    case Network.Polygon:
+    case NetworkId.Polygon:
       return SupportedL2Chain.Polygon;
-    case Network.Binance:
+    case NetworkId.Binance:
       return SupportedL2Chain.Binance;
-    case Network.Avalanche:
+    case NetworkId.Avalanche:
       return SupportedL2Chain.Avalanche;
-    case Network.Fantom:
+    case NetworkId.Fantom:
       return SupportedL2Chain.Fantom;
     default:
       return 'eth';
   }
 };
 
-let initialized = false;
+let isMoralisInitialized = false;
 const initMoralisSdk = async (): Promise<typeof Moralis> => {
-  if (initialized) {
+  if (isMoralisInitialized) {
     return Moralis;
   }
 
   const serverUrl = env.MORALIS.API_URL;
   const appId = env.MORALIS.APP_ID;
   await Moralis.start({ serverUrl, appId });
-  initialized = true;
+  isMoralisInitialized = true;
   return Moralis;
+};
+
+let openSeaSDK: OpenSeaPort | undefined;
+const initOpenSeaSdk = (): OpenSeaPort => {
+  if (openSeaSDK) {
+    return openSeaSDK;
+  }
+
+  openSeaSDK = new OpenSeaPort(EthereumProvider, {
+    networkName: Network.Main,
+    apiKey: env.OPENSEA.API_KEY,
+  });
+
+  return openSeaSDK;
 };
 
 const AnimalHelper: AnimalDomainHelper = new AnimalDomainHelper();
@@ -358,7 +374,6 @@ export class MetaDataController {
       }
     }
 
-    const moralis = await initMoralisSdk();
     const options = {
       chain: getChainName(chainId),
       address: contractAddress,
@@ -368,13 +383,29 @@ export class MetaDataController {
     let fetchedMetadata;
     let tokenIdMetadata;
 
-    if (options.chain && options.address && options.token_id) {
+    if (options.address && options.token_id) {
       try {
-        tokenIdMetadata = await moralis.Web3API.token.getTokenIdMetadata(
-          options,
-        );
-      } catch (error) {
-        logger.error(error);
+        if (options.chain === 'eth') {
+          const openSea = initOpenSeaSdk();
+          const response = await openSea.api.getAsset({
+            tokenAddress: contractAddress,
+            tokenId: tokenId,
+          });
+          fetchedMetadata = {
+            image: response.imageUrl,
+            background_color: response.backgroundColor,
+          };
+          image = fetchedMetadata.image;
+        } else {
+          const moralis = await initMoralisSdk();
+          tokenIdMetadata = await moralis.Web3API.token.getTokenIdMetadata(
+            options,
+          );
+        }
+      } catch (error: any) {
+        if (!error.message.includes('No metadata found')) {
+          logger.error(error);
+        }
       }
     }
 

@@ -108,15 +108,6 @@ export const env = {
         process.env.POLYGON_ACCEPTABLE_DELAY_IN_BLOCKS || 100,
       ),
     } as EthUpdaterConfig,
-    BINANCE: {
-      JSON_RPC_API_URL: process.env.BINANCE_JSON_RPC_API_URL,
-    },
-    AVALANCHE: {
-      JSON_RPC_API_URL: process.env.AVALANCHE_JSON_RPC_API_URL,
-    },
-    FANTOM: {
-      JSON_RPC_API_URL: process.env.FANTOM_JSON_RPC_API_URL,
-    },
     ZILLIQA: {
       NETWORK: ZnsNetwork,
       NETWORK_ID: Number(ZnsNetwork === 'mainnet' ? 1 : 333),
@@ -181,5 +172,8 @@ export const env = {
   MORALIS: {
     API_URL: process.env.MORALIS_API_URL,
     APP_ID: process.env.MORALIS_APP_ID,
+  },
+  OPENSEA: {
+    API_KEY: process.env.OPENSEA_API_KEY,
   },
 };
