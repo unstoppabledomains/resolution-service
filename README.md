@@ -25,7 +25,8 @@ The resolution service is provided as a docker image so it can be launched on a
 variety of platforms and in the cloud.
 
 ## Resolution service endpoints
-- Production: http://resolve.unstoppabledomains.com/api-docs/
+- Production Mainnet: http://resolve.unstoppabledomains.com/api-docs/
+- Staging Testnet (Ethereum Goerly, Polygon Mumbai): https://resolve.staging.unstoppabledomains.com/api-docs/
 
 ## Installation
 
