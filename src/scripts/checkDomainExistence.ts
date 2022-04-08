@@ -20,7 +20,7 @@ const run = async () => {
   );
 
   const domainsToStore = domains.map((domain: Domain, i: number) => {
-    domain.exists = existenceList[i];
+    domain.exists = existenceList[i] as boolean;
     return domain;
   });
 
