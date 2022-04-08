@@ -25,7 +25,8 @@ The resolution service is provided as a docker image so it can be launched on a
 variety of platforms and in the cloud.
 
 ## Resolution service endpoints
-- Production: http://resolve.unstoppabledomains.com/api-docs/
+- Production Mainnet: http://resolve.unstoppabledomains.com/api-docs/
+- Staging Testnet (Ethereum Goerly, Polygon Mumbai): https://resolve.staging.unstoppabledomains.com/api-docs/
 
 ## Installation
 
@@ -278,3 +279,8 @@ Additionally, if the appropriate keys are provided in the environment
 configuration, the service will report errors to monitoring tools. The
 resolution service has integrations with [bugsnag](https://www.bugsnag.com/) and
 [newrelic](https://newrelic.com/).
+
+### Adding new env vars
+
+1. Add it to Github repository Secrets (https://github.com/unstoppabledomains/resolution-service/settings/secrets/actions)
+2. Add it to such files: env.ts, deploy-production.yml, deploy-staging.yml, tests.yml, create-yaml.sh
