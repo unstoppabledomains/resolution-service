@@ -718,7 +718,7 @@ describe('DomainsController', () => {
           ownerAddress: '0x319c860967aa2CF464dCc24dDd93f099d956932e',
           registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
           resolution: {
-            'crypto.eth.address': '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            'crypto.ETH.address': '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
           },
         });
 
@@ -730,13 +730,13 @@ describe('DomainsController', () => {
         ownerAddress: '0x319c860967aa2CF464dCc24dDd93f099d956932e',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         resolution: {
-          'crypto.eth.address': '0x72c5b3865adCa47C3020e4c8C7BcA221b5F195F4',
+          'crypto.ETH.address': '0x72c5b3865adCa47C3020e4c8C7BcA221b5F195F4',
         },
       });
 
       const res = await supertest(api)
         .get(
-          '/domains?resolution[crypto.eth.address]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          '/domains?resolution[crypto.ETH.address]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
