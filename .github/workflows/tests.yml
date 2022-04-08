@@ -62,23 +62,16 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
 
-      - name: Get Yarn cache path
-        id: yarn-cache
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-
-      - name: Add Yarn cache
+      - name: Cache Node modules
         uses: actions/cache@v2
         with:
-          path: |
-            ${{ steps.yarn-cache.outputs.dir }}
-            backend/node_modules
+          path: node_modules
           key:
             ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-${{
             hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-${{ hashFiles('**/yarn.lock') }}
-            ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-
+          restore-keys: ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-
 
       - name: Install dependencies
         run: yarn install --freeze-dependencies
