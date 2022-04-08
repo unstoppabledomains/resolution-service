@@ -36,7 +36,10 @@
     "db:snapshot:create": "./tools/create-snapshot",
     "db:snapshot:load": "RESOLUTION_RUNNING_MODE=LOAD_SNAPSHOT yarn start:dev",
     "db:snapshot:check": "yarn typeorm schema:drop && yarn db:migration:run && yarn db:snapshot:load",
-    "export:domains": "dotenv -e ./local.dev.env --  ts-node src/scripts/exportDomains.ts"
+    "domains:export": "dotenv -e ./local.dev.env --  ts-node src/scripts/exportDomains.ts",
+    "domains:check": "dotenv -e ./local.dev.env --  ts-node src/scripts/checkDomainExistence.ts",
+    "domains:filter": "ts-node src/scripts/filterDomainsToMint.ts",
+    "domains:prepare": "yarn domains:export && yarn domains:check && yarn domains:filter"
   },
   "dependencies": {
     "@bugsnag/js": "^7.9.2",
