@@ -65,6 +65,7 @@ jobs:
           cache: yarn
 
       - name: Cache Node modules
+        id: cache
         uses: actions/cache@v2
         with:
           path: node_modules
@@ -74,6 +75,7 @@ jobs:
           restore-keys: ${{ runner.os }}-${{ env.NODE_VERSION }}-yarn-dev-
 
       - name: Install dependencies
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         run: yarn install --freeze-dependencies
 
       - name: Validate with Prettier
