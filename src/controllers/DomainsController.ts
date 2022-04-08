@@ -92,8 +92,6 @@ export class DomainsController {
   async getDomainsList(
     @QueryParams() query: DomainsListQuery,
   ): Promise<DomainsListResponse> {
-    const ownersQuery = query.owners.map((owner) => owner.toLowerCase());
-
     // Use raw query becaues typeorm doesn't seem to handle multiple nested relations (e.g. resolution.domain.parent.name)
     const where = [];
     if (query.tlds) {
@@ -103,25 +101,52 @@ export class DomainsController {
       });
     }
 
+    if (query.resolution) {
+      const resolutionKeys = Object.keys(query.resolution);
+      for (let i = 0; i < resolutionKeys.length; i++) {
+        const key = Object.keys(query.resolution)[i];
+        where.push({
+          query: `"resolution"."resolution"->>'${key}' = :val${i}`,
+          parameters: { [`val${i}`]: query.resolution[key] },
+        });
+      }
+    }
+
     if (query.startingAfter.length !== 0) {
+      const startingVals = query.startingAfter.split('|');
+      if (startingVals.length !== query.sort.columns.length) {
+        throw new Error('Invalid startingAfter value ' + query.startingAfter);
+      }
+      for (let i = 0; i < query.sort.columns.length; i++) {
+        where.push({
+          query: `${query.sort.columns[i]} ${
+            query.sort.direction === 'ASC' ? '>' : '<'
+          } :startingAfter${i}`,
+          parameters: { [`startingAfter${i}`]: startingVals[i] },
+        });
+      }
+    }
+
+    if (query.owners) {
+      const ownersQuery = query.owners.map((owner) => owner.toLowerCase());
       where.push({
-        query: `${query.sort.column} ${
-          query.sort.direction === 'ASC' ? '>' : '<'
-        } :startingAfter`,
-        parameters: { startingAfter: query.startingAfter },
+        query: `"resolution"."owner_address" in (:...owners)`,
+        parameters: {
+          owners: ownersQuery,
+        },
       });
     }
 
     const qb = Domain.createQueryBuilder('domain');
     qb.leftJoinAndSelect('domain.resolutions', 'resolution');
     qb.leftJoinAndSelect('domain.parent', 'parent');
-    qb.where(`"resolution"."owner_address" in (:...owners)`, {
-      owners: ownersQuery,
-    });
+    qb.where(`1 = 1`);
     for (const q of where) {
       qb.andWhere(q.query, q.parameters);
     }
-    qb.orderBy(query.sort.column, query.sort.direction);
+    for (const c of query.sort.columns) {
+      qb.addOrderBy(c, query.sort.direction);
+    }
     qb.take(query.perPage + 1);
     const domains = await qb.getMany();
     const hasMore = domains.length > query.perPage;
@@ -150,10 +175,11 @@ export class DomainsController {
         },
       });
     }
+
     response.meta = {
       perPage: query.perPage,
       nextStartingAfter:
-        lastDomain?.[query.sortBy]?.toString() || query.startingAfter || '',
+        query.nextStargingAfter(lastDomain) || query.startingAfter || '',
       sortBy: query.sortBy,
       sortDirection: query.sortDirection,
       hasMore,

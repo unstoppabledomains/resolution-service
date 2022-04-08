@@ -1,5 +1,4 @@
 import {
-  ArrayNotEmpty,
   IsArray,
   IsBoolean,
   IsInt,
@@ -18,6 +17,8 @@ import { Blockchain } from '../../types/common';
 import { toNumber } from 'lodash';
 import NetworkConfig from 'uns/uns-config.json';
 import ValidateWith from '../../services/ValidateWith';
+import { JSONSchema } from 'class-validator-jsonschema';
+import SupportedKeysJson from 'uns/resolver-keys.json';
 
 // Need to specity types explicitly because routing-controllers gets easily confused
 /* eslint-disable @typescript-eslint/no-inferrable-types */
@@ -57,17 +58,43 @@ export class DomainResponse {
   records: Record<string, string> = {};
 }
 
+export interface SortField {
+  sortBy: string[];
+  getNextStartingAfterValue: (t: Domain) => string | undefined;
+}
+
 export class DomainsListQuery {
-  static SortFieldsMap: Record<string, string> = {
-    id: 'domain.id',
-    name: 'domain.name',
+  static SortFieldsMap: Record<string, SortField> = {
+    id: {
+      sortBy: ['domain.id'],
+      getNextStartingAfterValue: (t) => t.id?.toString(),
+    },
+    name: {
+      sortBy: ['domain.name'],
+      getNextStartingAfterValue: (t) => t.name?.toString(),
+    },
+    created_at: {
+      sortBy: ['domain.createdAt', 'domain.id'],
+      getNextStartingAfterValue: (t) =>
+        `${t.createdAt?.toISOString()}|${t.id?.toString()}`,
+    },
   };
 
+  @IsOptional()
+  @IsObject()
+  @ValidateWith<DomainsListQuery>('verifyRecords', {
+    message: 'Invalid resolution records provided',
+  })
+  @JSONSchema({
+    $ref: '', // custom validators mess with the schema generator so we have to set an empty ref to avoid errors
+  })
+  resolution: Record<string, string> | null;
+
   @IsArray()
-  @ArrayNotEmpty()
+  @IsOptional()
   @IsString({ each: true })
   @IsNotEmpty({ each: true })
-  owners: string[];
+  owners: string[] | null;
 
   @IsArray()
   @IsOptional()
@@ -75,11 +102,14 @@ export class DomainsListQuery {
   @ValidateWith<DomainsListQuery>('validTlds', {
     message: 'Invalid TLD list provided',
   })
-  tlds: string[] | undefined = undefined;
+  @JSONSchema({
+    $ref: '', // custom validators mess with the schema generator so we have to set an empty ref to avoid errors
+  })
+  tlds: string[] | null;
 
   @IsOptional()
   @IsIn(Object.keys(DomainsListQuery.SortFieldsMap))
-  sortBy: 'id' | 'name' = 'id';
+  sortBy: 'id' | 'name' | 'created_at' = 'id';
 
   @IsOptional()
   @IsIn(['ASC', 'DESC'])
@@ -96,13 +126,21 @@ export class DomainsListQuery {
 
   get sort() {
     return {
-      column: DomainsListQuery.SortFieldsMap[this.sortBy],
+      columns: DomainsListQuery.SortFieldsMap[this.sortBy].sortBy,
       direction: this.sortDirection,
     };
   }
 
+  nextStargingAfter(domain: Domain | undefined) {
+    return domain
+      ? DomainsListQuery.SortFieldsMap[this.sortBy].getNextStartingAfterValue(
+          domain,
+        )
+      : undefined;
+  }
+
   async validTlds(): Promise<boolean> {
-    if (this.tlds === undefined) {
+    if (!this.tlds || this.tlds.length == 0) {
       return true;
     }
     let val = true;
@@ -114,6 +152,26 @@ export class DomainsListQuery {
       val = val && parent !== undefined && parent.parent === null;
     }
     return val;
+  }
+
+  verifyRecords(): boolean {
+    for (const property in this.resolution) {
+      if (
+        !Object.prototype.hasOwnProperty.call(this.resolution, property) ||
+        !(
+          property != null &&
+          typeof property.valueOf() === 'string' &&
+          Object.prototype.hasOwnProperty.call(SupportedKeysJson.keys, property)
+        ) ||
+        !(
+          this.resolution[property] != null &&
+          typeof this.resolution[property].valueOf() === 'string'
+        )
+      ) {
+        return false;
+      }
+    }
+    return true;
   }
 }
 
