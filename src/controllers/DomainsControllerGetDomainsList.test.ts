@@ -776,7 +776,7 @@ describe('DomainsController', () => {
           ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
           registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
           resolution: {
-            'crypto.eth.address': '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+            'crypto.ETH.address': '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
             'ipfs.html.value': 'QmTiqc12wo2pBsGa9XsbpavkhrjFiyuSWsKyffvZqVGtut',
           },
         });
@@ -789,13 +789,13 @@ describe('DomainsController', () => {
         ownerAddress: '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
         resolution: {
-          'crypto.eth.address': '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
+          'crypto.ETH.address': '0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2',
         },
       });
 
       const res = await supertest(api)
         .get(
-          '/domains?resolution[crypto.eth.address]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&resolution[ipfs.html.value]=QmTiqc12wo2pBsGa9XsbpavkhrjFiyuSWsKyffvZqVGtut',
+          '/domains?resolution[crypto.ETH.address]=0x58ca45e932a88b2e7d0130712b3aa9fb7c5781e2&resolution[ipfs.html.value]=QmTiqc12wo2pBsGa9XsbpavkhrjFiyuSWsKyffvZqVGtut',
         )
         .auth(testApiKey.apiKey, { type: 'bearer' })
         .send();
