@@ -18,6 +18,10 @@ on:
 env:
   NODE_VERSION: 14.16.1
 
+concurrency:
+  group: resolution_tests_${{ github.sha }}
+  cancel-in-progress: true
+
 jobs:
   build_and_test:
     name: Build and test
