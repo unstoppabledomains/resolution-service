@@ -367,6 +367,7 @@ export class MetaDataController {
     let image = '';
     let fetchedMetadata;
     let tokenIdMetadata;
+    let validNftPfp = false;
 
     if (options.chain && options.address && options.token_id) {
       try {
@@ -377,8 +378,15 @@ export class MetaDataController {
         logger.error(error);
       }
     }
-
-    if (tokenIdMetadata?.metadata) {
+    if (
+      resolution?.ownerAddress &&
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (tokenIdMetadata as any)?.owner_of.toLowerCase() ===
+        resolution.ownerAddress.toLowerCase()
+    ) {
+      validNftPfp = true;
+    }
+    if (validNftPfp && tokenIdMetadata?.metadata) {
       try {
         fetchedMetadata = JSON.parse(tokenIdMetadata.metadata);
         image = fetchedMetadata?.image;
@@ -387,26 +395,31 @@ export class MetaDataController {
       }
     }
 
-    if (!image && !!tokenIdMetadata?.token_uri) {
+    if (validNftPfp && !image && !!tokenIdMetadata?.token_uri) {
       const response = await fetch(tokenIdMetadata.token_uri, {
         timeout: 5000,
       });
       fetchedMetadata = await response.json();
-      image = fetchedMetadata?.image;
+      image = fetchedMetadata?.image || fetchedMetadata?.image_url;
     }
     let socialPicture = '';
+    if (validNftPfp && !!image && withOverlay) {
+      const {
+        base64: backgroundImageData,
+        imageUrl: backgroundImageUrl,
+        mimeType,
+      } = await getNFTSocialPicture(image).catch(() => ({
+        base64: '',
+        imageUrl: '',
+        mimeType: null,
+      }));
 
-    if (!!image && withOverlay) {
-      const [data, mimeType] = await getNFTSocialPicture(image).catch(() => [
-        '',
-        null,
-      ]);
-
-      if (data) {
+      if (backgroundImageData || backgroundImageUrl) {
         // adding the overlay
         socialPicture = createSocialPictureImage(
           domain,
-          data,
+          backgroundImageData,
+          backgroundImageUrl,
           mimeType,
           fetchedMetadata?.background_color || '',
           raw,

@@ -1,6 +1,7 @@
 interface SvgFields {
   background_color: string;
-  background_image: string;
+  background_image_url?: string;
+  background_image_data: string;
   domain: string;
   fontSize: number;
   mimeType?: string;
@@ -11,7 +12,8 @@ const FontFamily =
 
 export default function createSocialPictureSvg({
   background_color,
-  background_image,
+  background_image_url,
+  background_image_data,
   domain,
   fontSize,
   mimeType,
@@ -25,7 +27,10 @@ export default function createSocialPictureSvg({
                 ? `<rect fill="${background_color}" width="300" height="300"/>`
                 : ''
             }
-            <image href="data:${mimeType};base64,${background_image}" width="300" height="300" />
+            <image href="${
+              background_image_url ||
+              `data:${mimeType};base64,${background_image_data}`
+            }" width="300" height="300" />
           </pattern>
           <filter id="shadowy">
             <feDiffuseLighting in="SourceGraphic" result="light"
