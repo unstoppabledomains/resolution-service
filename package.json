@@ -26,7 +26,7 @@
     "prettier:fix": "prettier --write -l \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "eslint:check": "eslint --ext .ts,.js src",
     "eslint:fix": "eslint --ext .ts,.js src --fix",
-    "prepare": "husky install",
+    "prepare": "yarn run snyk-protect && husky install",
     "typeorm": "ts-node -T node_modules/.bin/typeorm",
     "db:migration:sync": "yarn db:migration:pending && yarn typeorm migration:generate -n",
     "db:migration:new": "yarn typeorm migration:create -n",
@@ -36,7 +36,8 @@
     "db:snapshot:create": "./tools/create-snapshot",
     "db:snapshot:load": "RESOLUTION_RUNNING_MODE=LOAD_SNAPSHOT yarn start:dev",
     "db:snapshot:check": "yarn typeorm schema:drop && yarn db:migration:run && yarn db:snapshot:load",
-    "export:domains": "dotenv -e ./local.dev.env --  ts-node src/scripts/exportDomains.ts"
+    "export:domains": "dotenv -e ./local.dev.env --  ts-node src/scripts/exportDomains.ts",
+    "snyk-protect": "snyk-protect"
   },
   "dependencies": {
     "@bugsnag/js": "^7.9.2",
@@ -76,7 +77,8 @@
     "uns": "https://github.com/unstoppabledomains/uns.git#9f659eb26c3fefd65d91cae3804b7de21747c212",
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
-    "winston-3-bugsnag-transport": "^1.0.2"
+    "winston-3-bugsnag-transport": "^1.0.2",
+    "@snyk/protect": "latest"
   },
   "devDependencies": {
     "@tsconfig/node14": "^1.0.0",
@@ -121,5 +123,6 @@
     "typechain": "^4.0.3",
     "typeorm-factory": "^0.0.14",
     "typescript": "^4.2.4"
-  }
+  },
+  "snyk": true
 }

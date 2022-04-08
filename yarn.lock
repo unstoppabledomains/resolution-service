@@ -1355,6 +1355,11 @@
   resolved "https://registry.yarnpkg.com/@sinonjs/text-encoding/-/text-encoding-0.7.1.tgz#8da5c6530915653f3a1f38fd5f101d8c3f8079c5"
   integrity sha512-+iTbntw2IZPb/anVDbypzfQa+ay64MW0Zo8aJ8gZPWMMK6/OubMVb6lUPMagqjOPnmtauXnFCACVl3O7ogjeqQ==
 
+"@snyk/protect@^1.897.0":
+  version "1.897.0"
+  resolved "https://registry.yarnpkg.com/@snyk/protect/-/protect-1.897.0.tgz#b6445517def164ef1669e1426483426ffbb6b474"
+  integrity sha512-NIwRQHDqq1qoZMS1rGpCUtk0Ho1YChF0fryfzg63wb4BbXJTu5fo6MrwsMLNy5JvV5mVQXKTCPCjoYhPpccrow==
+
 "@sqltools/formatter@^1.2.2":
   version "1.2.3"
   resolved "https://registry.yarnpkg.com/@sqltools/formatter/-/formatter-1.2.3.tgz#1185726610acc37317ddab11c3c7f9066966bd20"
