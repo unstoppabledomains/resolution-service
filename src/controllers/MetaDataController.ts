@@ -395,6 +395,7 @@ export class MetaDataController {
           fetchedMetadata = {
             image: response.imageUrl,
             background_color: response.backgroundColor,
+            owner_of: response.owner.address,
           };
           image = fetchedMetadata.image;
         } else {
@@ -409,10 +410,11 @@ export class MetaDataController {
         }
       }
     }
+    const fetchedOwnerAddress =
+      (tokenIdMetadata as any)?.owner_of || fetchedMetadata?.owner_of || '';
     if (
       resolution?.ownerAddress &&
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (tokenIdMetadata as any)?.owner_of.toLowerCase() ===
+      fetchedOwnerAddress.toLowerCase() ===
         resolution.ownerAddress.toLowerCase()
     ) {
       validNftPfp = true;
