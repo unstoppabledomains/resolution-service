@@ -120,6 +120,8 @@ database.
 | BUGSNAG_API_KEY                             | -                                                    | :x:                | API key that will be used to access bugsnag. If the key is not specified, bugsnag will not be enabled.                                                                                                                                                                                                                      |
 | TYPEORM_LOGGING_COLORIZE                    | true                                                 | :x:                | Colorize typeorm logs.                                                                                                                                                                                                                                                                                                      |
 | ZILLIQA_ACCEPTABLE_DELAY_IN_BLOCKS              | 100                                                  | :x:                | How much blocks Zilliqa mirror can lag behind until it's considered as unacceptable and need to be fixed. /status endpoint will return `health: true/false` field depends on number of blocks behind compared with this number.                                                                                             |
+| MORALIS_API_URL | - | :x: | URL for the Moralis API. Required by the metadata API endpoints (`METADATA_API` running mode). |
+| MORALIS_APP_ID | - | :x: | App ID for the Moralis API. Required by the metadata API endpoints (`METADATA_API` running mode). |
 
 ### Running modes
 
@@ -127,7 +129,9 @@ The service provides several running modes. By default it will run all of them.
 However, the modes that will be used can be selected during startup using the
 RESOLUTION_RUNNING_MODE environment variable. Available running modes:
 
-- **API** - Runs the service API.
+- **API** - Runs all APIs
+- **SERVICE_API** - Runs the service API (see "Service endpoints" in [API reference](README.md#api-reference))
+- **METADATA_API** - Runs the metadata API (see "Metadata endpoints" in [API reference](README.md#api-reference))
 - **ETH_WORKER** - Runs the ETH worker to sync data from the Ethereum CNS and
   UNS registry
 - **MATIC_WORKER** - Runs the MATIC worker to sync data from the Polygon UNS registry
@@ -156,16 +160,19 @@ The `/domains` API requires an API key which is simply a version 4 UUID. Current
 
 The full api reference
 [OpenAPI specification](http://resolve.unstoppabledomains.com/api-docs/)
+By default all API endpoints are enabled. Use the `RUNNING_MODE` env variable to enable specific sets of endpoints.
 
 | Endpoint                      | Description                                                      |
 | ----------------------------- | -----------------------------------------------------------------|
+| **Service endpoints:** | |
 | GET /domains                  | Gets the list of domains.                                        |
 | GET /domains/:domainName      | Gets the resolution of the specified domain.                     |
+| GET /status                   | Gets the synchronization status.                                 |
+| GET /api-docs                 | Returns a swagger documentation page.                            |
+| **Metadata endpoints:** | |
 | GET /metadata/:domainOrToken  | Retrieve erc721 metadata information of the specified domain     |
 | GET /image/:domainOrToken     | Retrieve image_data as a svg string                              |
 | GET /image-src/:domainOrToken | Retrieve image_data as 'image/svg+xml'                           |
-| GET /status                   | Gets the synchronization status.                                 |
-| GET /api-docs                 | Returns a swagger documentation page.                            |
 
 > Note: The `/domains` endpoints require an API key. The key must be provided as `Bearer` authentication header for requests. New keys must be added manually to the database (see [API keys](#api-keys) for more info).
 
@@ -235,7 +242,7 @@ The API component is a basic HTTP API that allows reading domain data from the
 database. The OpenAPI specification:
 [OpenAPI specification](http://resolve.unstoppabledomains.com/api-docs/).
 
-Currently there are two workers in the resolution service:
+Currently there are three workers in the resolution service:
 
 - ETH worker\
   Contains a scheduled job that connects to the Ethereum blockchain using JSON RPC
