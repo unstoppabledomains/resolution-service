@@ -274,7 +274,7 @@ export class MetaDataController {
       return { image_data: '' };
     }
 
-    if (domain && resolution && this.isDomainWithCustomImage(domain.name)) {
+    if (domain && resolution) {
       const { socialPicture, image } = await this.fetchTokenMetadata(
         domain,
         resolution,
@@ -285,7 +285,10 @@ export class MetaDataController {
         image:
           (withOverlay ? socialPicture : image) ||
           this.generateDomainImageUrl(domain.name),
-        image_data: '',
+        image_data: await this.generateImageData(
+          name,
+          resolution?.resolution || {},
+        ),
       };
     }
 
@@ -315,7 +318,7 @@ export class MetaDataController {
       return '';
     }
 
-    if (domain && resolution && this.isDomainWithCustomImage(domain.name)) {
+    if (domain && resolution) {
       const { socialPicture, image } = await this.fetchTokenMetadata(
         domain,
         resolution,
@@ -433,26 +436,20 @@ export class MetaDataController {
         timeout: 5000,
       });
       fetchedMetadata = await response.json();
-      image = fetchedMetadata?.image || fetchedMetadata?.image_url;
+      image = fetchedMetadata?.image;
     }
     let socialPicture = '';
     if (validNftPfp && !!image && withOverlay) {
-      const {
-        base64: backgroundImageData,
-        imageUrl: backgroundImageUrl,
-        mimeType,
-      } = await getNFTSocialPicture(image).catch(() => ({
-        base64: '',
-        imageUrl: '',
-        mimeType: null,
-      }));
+      const [data, mimeType] = await getNFTSocialPicture(image).catch(() => [
+        '',
+        null,
+      ]);
 
-      if (backgroundImageData || backgroundImageUrl) {
+      if (data) {
         // adding the overlay
         socialPicture = createSocialPictureImage(
           domain,
-          backgroundImageData,
-          backgroundImageUrl,
+          data,
           mimeType,
           fetchedMetadata?.background_color || '',
           raw,
