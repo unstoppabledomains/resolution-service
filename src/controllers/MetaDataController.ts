@@ -280,15 +280,30 @@ export class MetaDataController {
         resolution,
         withOverlay,
       );
+      const [imageData, mimeType] = await getNFTSocialPicture(image).catch(
+        () => ['', null],
+      );
+      const svgFromImage = `<svg
+        width="300"
+        height="300"
+        viewBox="0 0 300 300"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <image
+          href="${
+            withOverlay ? socialPicture : `data:${mimeType};base64,${imageData}`
+          }"
+          width="300"
+          height="300"
+        />
+      </svg>`;
 
       return {
-        image:
-          (withOverlay ? socialPicture : image) ||
-          this.generateDomainImageUrl(domain.name),
-        image_data: await this.generateImageData(
-          name,
-          resolution?.resolution || {},
-        ),
+        image_data:
+          socialPicture || imageData
+            ? svgFromImage
+            : await this.generateImageData(name, resolution?.resolution || {}),
       };
     }
 
@@ -325,7 +340,11 @@ export class MetaDataController {
         withOverlay,
         true,
       );
-      const svgFromImage = `<svg
+      const [imageData, mimeType] = await getNFTSocialPicture(image).catch(
+        () => ['', null],
+      );
+      const svgFromImage = imageData
+        ? `<svg
         width="300"
         height="300"
         viewBox="0 0 300 300"
@@ -333,11 +352,12 @@ export class MetaDataController {
         xmlns="http://www.w3.org/2000/svg"
       >
         <image
-          href="${image}"
+          href="data:${mimeType};base64,${imageData}"
           width="300"
           height="300"
         />
-      </svg>`;
+      </svg>`
+        : '';
 
       return (
         (withOverlay ? socialPicture : svgFromImage) ||
