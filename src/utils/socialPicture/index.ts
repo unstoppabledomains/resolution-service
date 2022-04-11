@@ -41,21 +41,25 @@ const makeImageLink = (imageUrl: string) => {
 
 export const getNFTSocialPicture = async (
   pictureOrUrl: string,
-): Promise<{ base64: string; imageUrl: string; mimeType: string | null }> => {
+): Promise<[string, string | null]> => {
   if (pictureOrUrl.startsWith('data:')) {
     const mimeType = pictureOrUrl.substring(
       pictureOrUrl.indexOf(':') + 1,
       pictureOrUrl.indexOf(';'),
     );
     const base64 = pictureOrUrl.substring(pictureOrUrl.indexOf('base64,') + 7);
-    return { base64, imageUrl: '', mimeType };
+    return [base64, mimeType];
   }
-  // Optional fetch to see if NFT image url is responsive
+
   const resp = await nodeFetch(makeImageLink(pictureOrUrl), { timeout: 5000 });
   if (!resp.ok) {
     throw new Error('Failed to fetch NFT image');
   }
-  return { base64: '', imageUrl: pictureOrUrl, mimeType: null };
+  const data = await resp.buffer();
+  const mimeType = resp.headers.get('Content-Type');
+  const base64 = data.toString('base64');
+
+  return [base64, mimeType];
 };
 
 const getFontSize = (name: string): number => {
@@ -70,8 +74,7 @@ const getFontSize = (name: string): number => {
 
 export const createSocialPictureImage = (
   domain: Domain,
-  backgroundImageData: string,
-  backgroundImageUrl: string,
+  data: string,
   mimeType: string | null,
   backgroundColor: string,
   raw = false,
@@ -83,8 +86,7 @@ export const createSocialPictureImage = (
   const fontSize = getFontSize(name);
   const svg = createSVGfromTemplate({
     background_color: backgroundColor,
-    background_image_url: backgroundImageUrl,
-    background_image_data: backgroundImageData,
+    background_image: data,
     domain: name,
     fontSize,
     mimeType: mimeType || undefined,
