@@ -410,12 +410,12 @@ export class MetaDataController {
         }
       }
     }
+    const fetchedOwnerAddress =
+      (tokenIdMetadata as any)?.owner_of || fetchedMetadata?.owner_of || '';
     if (
       resolution?.ownerAddress &&
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (
-        (tokenIdMetadata as any)?.owner_of || fetchedMetadata?.owner_of
-      ).toLowerCase() === resolution.ownerAddress.toLowerCase()
+      fetchedOwnerAddress.toLowerCase() ===
+        resolution.ownerAddress.toLowerCase()
     ) {
       validNftPfp = true;
     }
