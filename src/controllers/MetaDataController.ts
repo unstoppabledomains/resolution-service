@@ -30,6 +30,7 @@ import { PremiumDomains, CustomImageDomains } from '../utils/domainCategories';
 import { DomainsResolution } from '../models';
 import { OpenSeaPort, Network } from 'opensea-js';
 import { EthereumProvider } from '../workers/EthereumProvider';
+import { simpleSVGTemplate } from '../utils/socialPicture/svgTemplate';
 
 const DEFAULT_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
@@ -283,21 +284,9 @@ export class MetaDataController {
       const [imageData, mimeType] = await getNFTSocialPicture(image).catch(
         () => ['', null],
       );
-      const svgFromImage = `<svg
-        width="300"
-        height="300"
-        viewBox="0 0 300 300"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <image
-          href="${
-            withOverlay ? socialPicture : `data:${mimeType};base64,${imageData}`
-          }"
-          width="300"
-          height="300"
-        />
-      </svg>`;
+      const svgFromImage = simpleSVGTemplate(
+        withOverlay ? socialPicture : `data:${mimeType};base64,${imageData}`,
+      );
 
       return {
         image_data:
@@ -344,19 +333,7 @@ export class MetaDataController {
         () => ['', null],
       );
       const svgFromImage = imageData
-        ? `<svg
-        width="300"
-        height="300"
-        viewBox="0 0 300 300"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <image
-          href="data:${mimeType};base64,${imageData}"
-          width="300"
-          height="300"
-        />
-      </svg>`
+        ? simpleSVGTemplate(`data:${mimeType};base64,${imageData}`)
         : '';
 
       return (
@@ -416,7 +393,9 @@ export class MetaDataController {
             tokenId: tokenId,
           });
           fetchedMetadata = {
-            image: response.imageUrl,
+            image: response.imageUrl.endsWith('=s250')
+              ? response.imageUrl.split('=s250')[0]
+              : response.imageUrl,
             background_color: response.backgroundColor,
             owner_of: response.owner.address,
           };
