@@ -64,7 +64,8 @@ jobs:
           username: _json_key
           password: ${{ env.GOOGLE_GHA_CREDS_PATH }}
           registry: gcr.io
-          image_name: ${{ env.IMAGE_NAME }}
+          image_name: ${{ secrets.GCP_PROJECT_ID }}/resolution-service
+          image_tag: ${{ github.sha }}
 
       - name: Push container image to Google Container Registry
         run: docker push ${{ env.IMAGE_NAME }}
