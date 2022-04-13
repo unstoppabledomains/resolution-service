@@ -64,12 +64,21 @@ export const getNFTSocialPicture = async (
 
 const getFontSize = (name: string): number => {
   const [label] = name.split('.');
-  const canvas = createCanvas(300, 300);
+  const canvas = createCanvas(512, 512);
   const ctx = canvas.getContext('2d');
   ctx.font = '18px Arial';
   const text = ctx.measureText(label);
-  const fontSize = Math.floor(20 * ((200 - label.length) / text.width));
-  return fontSize < 34 ? fontSize : 32;
+  const fontSize = Math.floor(20 * ((360 - label.length) / text.width));
+
+  if (fontSize > 58) {
+    return 54;
+  }
+
+  if (fontSize < 21) {
+    return 21;
+  }
+
+  return fontSize;
 };
 
 export const createSocialPictureImage = (
@@ -79,15 +88,15 @@ export const createSocialPictureImage = (
   backgroundColor: string,
   raw = false,
 ): string => {
-  let name = domain.name;
-  if (name.length > 30) {
-    name = name.substring(0, 30 - 3) + '...';
-  }
-  const fontSize = getFontSize(name);
+  const fontSize = getFontSize(
+    domain.name.split('.')[0].length > 45
+      ? domain.name.substring(0, 45)
+      : domain.name,
+  );
   const svg = createSVGfromTemplate({
     background_color: backgroundColor,
     background_image: data,
-    domain: name,
+    domain: domain.name,
     fontSize,
     mimeType: mimeType || undefined,
   });
