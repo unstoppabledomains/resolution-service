@@ -52,17 +52,11 @@ jobs:
             ${{ secrets.WORKLOAD_ID_PROVIDER_PRODUCTION }}
           service_account: ${{ secrets.SERVICE_ACCOUNT_PRODUCTION }}
 
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v0
-
-      - name: Add Google Cloud Container Registry to Docker config
-        run: gcloud auth configure-docker -q
-
       - name: Docker build and cache
         uses: whoan/docker-build-with-cache-action@v5
         with:
           username: _json_key
-          password: ${{ env.GOOGLE_GHA_CREDS_PATH }}
+          password: ${{ steps.auth.outputs.credentials_file_path }}
           registry: gcr.io
           image_name: ${{ secrets.GCP_PROJECT_ID }}/resolution-service
           image_tag: ${{ github.sha }}
