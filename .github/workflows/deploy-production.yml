@@ -60,7 +60,7 @@ jobs:
             const { promisify } = require('util');
             const readFileAsync = promisify(readFile);
 
-            const token = (await readFileAsync(${{ steps.auth.outputs.credentials_file_path }}, 'utf8')).toString();
+            const token = (await readFileAsync('${{ steps.auth.outputs.credentials_file_path }}', 'utf8')).toString();
             core.exportVariable('GH_TOKEN', token);
             core.setSecret('GH_TOKEN');
 
