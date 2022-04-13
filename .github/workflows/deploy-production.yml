@@ -52,11 +52,23 @@ jobs:
             ${{ secrets.WORKLOAD_ID_PROVIDER_PRODUCTION }}
           service_account: ${{ secrets.SERVICE_ACCOUNT_PRODUCTION }}
 
+      - name: Output Google auth token
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { readFile } = require('fs');
+            const { promisify } = require('util');
+            const readFileAsync = promisify(readFile);
+
+            const token = (await readFileAsync(${{ steps.auth.outputs.credentials_file_path }}, 'utf8')).toString();
+            core.exportVariable('GH_TOKEN', token);
+            core.setSecret('GH_TOKEN');
+
       - name: Docker build and cache
         uses: whoan/docker-build-with-cache-action@v5
         with:
           username: _json_key
-          password: ${{ steps.auth.outputs.credentials_file_path }}
+          password: ${{ env.GH_TOKEN }}
           registry: gcr.io
           image_name: ${{ secrets.GCP_PROJECT_ID }}/resolution-service
           image_tag: ${{ github.sha }}
