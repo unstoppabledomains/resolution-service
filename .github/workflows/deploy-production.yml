@@ -44,6 +44,14 @@ jobs:
       - name: Checkout master branch
         uses: actions/checkout@v2
 
+      # - name: Restore container image cache
+      #   uses: satackey/action-docker-layer-caching@v0.0.11
+      #   # Ignore the failure of a step and avoid terminating the job.
+      #   continue-on-error: true
+
+      - name: Build container image
+        run: docker build . --file Dockerfile --tag ${{ env.IMAGE_NAME }}
+
       - id: auth
         name: Authenticate to GCP
         uses: google-github-actions/auth@v0
@@ -52,26 +60,11 @@ jobs:
             ${{ secrets.WORKLOAD_ID_PROVIDER_PRODUCTION }}
           service_account: ${{ secrets.SERVICE_ACCOUNT_PRODUCTION }}
 
-      - name: Output Google auth token
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const { readFile } = require('fs');
-            const { promisify } = require('util');
-            const readFileAsync = promisify(readFile);
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0
 
-            const token = (await readFileAsync('${{ steps.auth.outputs.credentials_file_path }}', 'utf8')).toString();
-            core.exportVariable('GCP_TOKEN', token);
-            core.setSecret('GCP_TOKEN');
-
-      - name: Docker build and cache
-        uses: whoan/docker-build-with-cache-action@v5
-        with:
-          username: _json_key
-          password: ${{ env.GCP_TOKEN }}
-          registry: gcr.io
-          image_name: ${{ secrets.GCP_PROJECT_ID }}/resolution-service
-          image_tag: ${{ github.sha }}
+      - name: Add Google Cloud Container Registry to Docker config
+        run: gcloud auth configure-docker -q
 
       - name: Push container image to Google Container Registry
         run: docker push ${{ env.IMAGE_NAME }}
