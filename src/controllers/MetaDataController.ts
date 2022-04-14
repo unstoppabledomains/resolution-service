@@ -338,16 +338,15 @@ export class MetaDataController {
 
       return (
         (withOverlay ? socialPicture : svgFromImage) ||
-        this.generateDomainImageUrl(domain.name) ||
-        ''
+        (await pathThatSvg(
+          await this.generateImageData(name, resolution?.resolution || {}),
+        ))
       );
     }
 
-    const imageData = await this.generateImageData(
-      name,
-      resolution?.resolution || {},
+    return await pathThatSvg(
+      await this.generateImageData(name, resolution?.resolution || {}),
     );
-    return await pathThatSvg(imageData);
   }
 
   private async fetchTokenMetadata(
