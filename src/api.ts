@@ -28,9 +28,9 @@ if (
   env.APPLICATION.RUNNING_MODE.includes('API') ||
   env.APPLICATION.RUNNING_MODE.includes('METADATA_API')
 ) {
-  if (!(env.MORALIS.API_URL && env.MORALIS.APP_ID)) {
+  if (!(env.MORALIS.API_URL && env.MORALIS.APP_ID && env.OPENSEA.API_KEY)) {
     throw new Error(
-      `Environment variables are not defined for METADATA_API: MORALIS_API_URL && MORALIS_APP_ID`,
+      `Environment variables are not defined for METADATA_API: MORALIS_API_URL, MORALIS_APP_ID, OPENSEA_API_KEY`,
     );
   }
   enabledControllers.push(MetaDataController);
