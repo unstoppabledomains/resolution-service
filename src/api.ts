@@ -14,11 +14,33 @@ import BugsnagPluginExpress from '@bugsnag/plugin-express';
 import { env } from './env';
 import ErrorHandler from './errors/ErrorHandler';
 
+const enabledControllers = [];
+
+if (
+  env.APPLICATION.RUNNING_MODE.includes('API') ||
+  env.APPLICATION.RUNNING_MODE.includes('SERVICE_API')
+) {
+  enabledControllers.push(DomainsController);
+  enabledControllers.push(StatusController);
+}
+
+if (
+  env.APPLICATION.RUNNING_MODE.includes('API') ||
+  env.APPLICATION.RUNNING_MODE.includes('METADATA_API')
+) {
+  if (!(env.MORALIS.API_URL && env.MORALIS.APP_ID && env.OPENSEA.API_KEY)) {
+    throw new Error(
+      `Environment variables are not defined for METADATA_API: MORALIS_API_URL, MORALIS_APP_ID, OPENSEA_API_KEY`,
+    );
+  }
+  enabledControllers.push(MetaDataController);
+}
+
 export const api = createExpressServer({
   classTransformer: true,
   defaultErrorHandler: false,
   cors: true,
-  controllers: [DomainsController, StatusController, MetaDataController],
+  controllers: enabledControllers,
   middlewares: [ErrorHandler],
 });
 

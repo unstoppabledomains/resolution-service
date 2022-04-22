@@ -26,12 +26,6 @@ if (!process.env.ETHEREUM_JSON_RPC_API_URL) {
 if (!process.env.POLYGON_JSON_RPC_API_URL) {
   requiredEnvNotSet.push('POLYGON_JSON_RPC_API_URL');
 }
-if (!process.env.MORALIS_API_URL) {
-  requiredEnvNotSet.push('MORALIS_API_URL');
-}
-if (!process.env.MORALIS_APP_ID) {
-  requiredEnvNotSet.push('MORALIS_APP_ID');
-}
 
 if (requiredEnvNotSet.length !== 0) {
   throw new Error(
@@ -59,12 +53,27 @@ export type EthUpdaterConfig = {
   ACCEPTABLE_DELAY_IN_BLOCKS: number;
 };
 
+type RunningMode =
+  | 'MIGRATIONS'
+  | 'API'
+  | 'SERVICE_API'
+  | 'METADATA_API'
+  | 'ETH_WORKER'
+  | 'MATIC_WORKER'
+  | 'ZIL_WORKER';
+
 export const env = {
   APPLICATION: {
     PORT: process.env.RESOLUTION_API_PORT || process.env.PORT || 3000,
-    RUNNING_MODE: process.env.RESOLUTION_RUNNING_MODE
+    RUNNING_MODE: (process.env.RESOLUTION_RUNNING_MODE
       ? process.env.RESOLUTION_RUNNING_MODE.split(',')
-      : ['MIGRATIONS', 'API', 'ETH_WORKER', 'MATIC_WORKER', 'ZIL_WORKER'],
+      : [
+          'MIGRATIONS',
+          'API',
+          'ETH_WORKER',
+          'MATIC_WORKER',
+          'ZIL_WORKER',
+        ]) as RunningMode[],
     ETHEREUM: {
       CNS_REGISTRY_EVENTS_STARTING_BLOCK: parseNumberFromEnv(
         process.env.CNS_REGISTRY_EVENTS_STARTING_BLOCK,
