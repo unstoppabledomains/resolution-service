@@ -18,6 +18,7 @@ import { Blockchain } from '../types/common';
 import { queryNewURIEvent } from '../utils/ethersUtils';
 import CnsRegistryEvent from './CnsRegistryEvent';
 import { logger } from '../logger';
+import DomainsReverseResolution from './DomainsReverseResolution';
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
@@ -54,6 +55,11 @@ export default class Domain extends Model {
     },
   )
   resolutions: DomainsResolution[];
+
+  @OneToMany(() => DomainsReverseResolution, (reverse) => reverse.domain, {
+    cascade: ['insert', 'update', 'remove'],
+  })
+  reverseResolutions: DomainsReverseResolution[];
 
   constructor(attributes?: Attributes<Domain>) {
     super();
@@ -96,7 +102,7 @@ export default class Domain extends Model {
     return node
       ? await repository.findOne({
           where: { node },
-          relations: ['resolutions', 'parent'],
+          relations: ['resolutions', 'reverseResolutions', 'parent'],
         })
       : undefined;
   }
@@ -108,7 +114,7 @@ export default class Domain extends Model {
     return (
       (await repository.findOne({
         where: { node },
-        relations: ['resolutions', 'parent'],
+        relations: ['resolutions', 'reverseResolutions', 'parent'],
       })) || new Domain({ node })
     );
   }
@@ -198,7 +204,7 @@ export default class Domain extends Model {
   ): Promise<Domain> {
     const domain = await repository.findOne({
       where: { name },
-      relations: ['resolutions', 'parent'],
+      relations: ['resolutions', 'reverseResolutions', 'parent'],
     });
     if (domain) {
       return domain;
