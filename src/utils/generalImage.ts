@@ -4,6 +4,8 @@ export const BackgroundColor = '4C47F7';
 export const FontFamily =
   "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu, 'Helvetica Neue', Oxygen, Cantarell, sans-serif";
 
+const smallFontSizeTlds = ['blockchain', 'unstoppable'];
+
 export function DefaultImageData(args: {
   label: string;
   tld: string;
@@ -17,8 +19,10 @@ export function DefaultImageData(args: {
       <rect fill="#${BackgroundColor}" x="0" y="0" width="100%" height="100%"/>
       <g id="Group-6" transform="translate(70.000000, 154.000000)">
           <g id="Group" transform="translate(5.000000, 43.000000)">
-          <rect x="${args.tld === 'blockchain' ? -26 : 0}" y="0" width="${
-    args.tld === 'blockchain' ? 150 : 100
+          <rect x="${
+            smallFontSizeTlds.includes(args.tld) ? -26 : 0
+          }" y="0" width="${
+    smallFontSizeTlds.includes(args.tld) ? 150 : 100
   }" height="34" stroke="#2FE9FF" stroke-width="2.112px" rx="17"/>
               <text  dominant-baseline="middle" text-anchor="middle" font-size="16" font-weight="bold" fill="#FFFFFF" font-family="${FontFamily}"> <tspan x="19%" y="20">.${args.tld.toUpperCase()}</tspan></text>
           </g>
