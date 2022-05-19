@@ -11,12 +11,12 @@ export function DefaultImageData(args: {
   tld: string;
   fontSize: MetadataImageFontSize;
 }): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="250px" height="250px" viewBox="0 0 250 250" version="1.1" style="background-color:#4C47F7">
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="250px" height="250px" viewBox="0 0 250 250" version="1.1" fill="none">
   <!-- Generator: Sketch 61 (89581) - https://sketch.com -->
   <title>unstoppabledomains_dot_crypto-</title>
   <desc>Created with Sketch.</desc>
   <g id="unstoppabledomains" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-      <rect fill="#${BackgroundColor}" x="0" y="0" width="100%" height="100%"/>
+      <rect fill="#${BackgroundColor}" x="0" y="0" width="250" height="250"/>
       <g id="Group-6" transform="translate(70.000000, 154.000000)">
           <g id="Group" transform="translate(5.000000, 43.000000)">
           <rect x="${
