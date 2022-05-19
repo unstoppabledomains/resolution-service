@@ -66,7 +66,7 @@ describe('MetaDataController', () => {
         'https://unstoppabledomains.com/search?searchTerm=testdomain.crypto',
       );
       expect(resWithName.image).eq(
-        'https://storage.googleapis.com/dot-crypto-metadata-api/images/unstoppabledomains.svg',
+        'https://metadata.unstoppabledomains.com/image-src/testdomain.crypto.svg',
       );
       expect(resWithName.attributes.length).eq(5);
       const correctAttributes = [
@@ -291,7 +291,7 @@ describe('MetaDataController', () => {
           'A CNS or UNS blockchain domain. Use it to resolve your cryptocurrency addresses and decentralized websites.',
         external_url: `https://unstoppabledomains.com/search?searchTerm=${uns.name}`,
         image:
-          'https://storage.googleapis.com/dot-crypto-metadata-api/images/unstoppabledomains.svg',
+          'https://metadata.unstoppabledomains.com/image-src/testdomain.crypto.svg',
         image_data: DefaultImageData({
           label: uns.label,
           tld: uns.tld,
