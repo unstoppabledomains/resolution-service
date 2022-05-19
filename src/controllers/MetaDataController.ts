@@ -32,8 +32,8 @@ import { OpenSeaPort, Network } from 'opensea-js';
 import { EthereumProvider } from '../workers/EthereumProvider';
 import { simpleSVGTemplate } from '../utils/socialPicture/svgTemplate';
 
-const DEFAULT_IMAGE_URL =
-  `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images/unstoppabledomains.svg` as const;
+const DEFAULT_IMAGE_URL = (name: string) =>
+  `https://metadata.unstoppabledomains.com/image-src/${name}` as const;
 const BASE_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images` as const;
 const INVALID_DOMAIN_IMAGE_URL =
@@ -683,6 +683,6 @@ export class MetaDataController {
       return animalImageUrl;
     }
 
-    return DEFAULT_IMAGE_URL;
+    return DEFAULT_IMAGE_URL(name);
   }
 }
