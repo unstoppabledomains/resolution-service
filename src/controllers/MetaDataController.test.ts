@@ -241,7 +241,7 @@ describe('MetaDataController', () => {
         external_url:
           'https://unstoppabledomains.com/search?searchTerm=unknown.crypto',
         image:
-          'https://metadata.unstoppabledomains.com/image-src/testdomain.crypto.svg',
+          'https://metadata.unstoppabledomains.com/image-src/unknown.crypto.svg',
         image_data: DefaultImageData({
           label: 'unknown',
           tld: 'crypto',
