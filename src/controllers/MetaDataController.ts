@@ -121,6 +121,10 @@ class OpenSeaMetadata extends Erc721Metadata {
 
   @IsOptional()
   @IsString()
+  image_url?: string;
+
+  @IsOptional()
+  @IsString()
   image_data?: string | null;
 
   @IsObject()
@@ -230,6 +234,7 @@ export class MetaDataController {
       image:
         (withOverlay ? socialPicture : image) ||
         this.generateDomainImageUrl(domain.name),
+      image_url: this.generateDomainImageUrl(domain.name),
       attributes: domainAttributes,
     };
 
@@ -673,7 +678,7 @@ export class MetaDataController {
     return DefaultImageData({ label, tld, fontSize });
   }
 
-  private generateDomainImageUrl(name: string): string | null {
+  private generateDomainImageUrl(name: string): string {
     if (this.isDomainWithCustomImage(name)) {
       return `${BASE_IMAGE_URL}/${CustomImageDomains[name]}`;
     }
