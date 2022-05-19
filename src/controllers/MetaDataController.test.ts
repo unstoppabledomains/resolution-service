@@ -290,8 +290,7 @@ describe('MetaDataController', () => {
         description:
           'A CNS or UNS blockchain domain. Use it to resolve your cryptocurrency addresses and decentralized websites.',
         external_url: `https://unstoppabledomains.com/search?searchTerm=${uns.name}`,
-        image:
-          'https://metadata.unstoppabledomains.com/image-src/de40e801f57a58c7913a92be553195d7.wallet.svg',
+        image: `https://metadata.unstoppabledomains.com/image-src/${uns.name}.svg`,
         image_data: DefaultImageData({
           label: uns.label,
           tld: uns.tld,
