@@ -33,7 +33,7 @@ import { EthereumProvider } from '../workers/EthereumProvider';
 import { simpleSVGTemplate } from '../utils/socialPicture/svgTemplate';
 
 const DEFAULT_IMAGE_URL = (name: string) =>
-  `https://metadata.unstoppabledomains.com/image-src/${name}` as const;
+  `https://metadata.unstoppabledomains.com/image-src/${name}.svg` as const;
 const BASE_IMAGE_URL =
   `${env.APPLICATION.ERC721_METADATA.GOOGLE_CLOUD_STORAGE_BASE_URL}/images` as const;
 const INVALID_DOMAIN_IMAGE_URL =
