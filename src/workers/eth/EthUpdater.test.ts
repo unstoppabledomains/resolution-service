@@ -387,6 +387,25 @@ describe('EthUpdater', () => {
         Transfer: 2,
       });
     });
+
+    it('processes a set reverse event', async () => {
+      const recipient = await EthereumHelper.createAccount();
+      const recipientAddress = await recipient.getAddress();
+
+      await unsRegistry.functions
+        .serReverse(recipientAddress, uns.tokenId)
+        .then((receipt) => receipt.wait());
+      await EthereumHelper.mineBlocksForConfirmation();
+
+      await service.run();
+
+      expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
+        Approval: 1,
+        NewURI: 2,
+        Resolve: 1,
+        Transfer: 2,
+      });
+    });
   });
 
   describe('add new domain', () => {

@@ -18,7 +18,7 @@ describe('eth', () => {
 
   function compareNetworkConfig(
     config: CryptoConfig,
-    networkId: '1' | '4' | '1337',
+    networkId: '1' | '5' | '1337',
   ) {
     const networkConfig = NetworkConfig.networks[networkId].contracts;
 
@@ -46,7 +46,7 @@ describe('eth', () => {
   });
 
   it('should return eth config for testnet', () => {
-    const networkId = '4';
+    const networkId = '5';
     const config = getEthConfig(networkId, EthereumProvider);
     compareNetworkConfig(config, networkId);
   });

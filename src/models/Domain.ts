@@ -19,6 +19,7 @@ import { queryNewURIEvent } from '../utils/ethersUtils';
 import CnsRegistryEvent from './CnsRegistryEvent';
 import { logger } from '../logger';
 import DomainsReverseResolution from './DomainsReverseResolution';
+import { add } from 'lodash';
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
@@ -173,6 +174,41 @@ export default class Domain extends Model {
       });
     }
     return resolution;
+  }
+
+  public getReverseResolution(
+    blockchain: Blockchain,
+    networkId: number,
+  ): DomainsReverseResolution | undefined {
+    const reverse = this.reverseResolutions?.filter(
+      (res) => res.blockchain === blockchain && res.networkId === networkId,
+    )[0];
+    return reverse;
+  }
+
+  public setReverseResolution(reverse: DomainsReverseResolution): void {
+    const others = this.reverseResolutions?.filter(
+      (res) =>
+        !(
+          res.blockchain == reverse.blockchain &&
+          res.networkId == reverse.networkId
+        ),
+    );
+    if (others) {
+      this.reverseResolutions = [reverse, ...others];
+    } else {
+      this.reverseResolutions = [reverse];
+    }
+  }
+
+  public removeReverseResolution(
+    blockchain: Blockchain,
+    networkId: number,
+  ): void {
+    const others = this.reverseResolutions?.filter(
+      (res) => !(res.blockchain == blockchain && res.networkId == networkId),
+    );
+    this.reverseResolutions = others || [];
   }
 
   public setResolution(resolution: DomainsResolution): void {

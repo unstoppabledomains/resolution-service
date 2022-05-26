@@ -3,7 +3,7 @@ import unsRegistryJson from 'uns/artifacts/UNSRegistry.json';
 import cnsRegistryJson from 'uns/artifacts/CNSRegistry.json';
 import mintingManagerJson from 'uns/artifacts/MintingManager.json';
 import signatureControllerJson from 'uns/artifacts/SignatureController.json';
-import whitelistedMinterJson from 'uns/artifacts/WhitelistedMinter.json';
+import whitelistedMinterJson from 'dot-crypto/truffle-artifacts/WhitelistedMinter.json';
 import uriPrefixControllerJson from 'uns/artifacts/URIPrefixController.json';
 import domainZoneControllerJson from 'uns/artifacts/DomainZoneController.json';
 import resolverJson from 'uns/artifacts/Resolver.json';

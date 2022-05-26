@@ -1,6 +1,11 @@
 import { WorkerLogger } from '../../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
-import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
+import {
+  CnsRegistryEvent,
+  Domain,
+  DomainsReverseResolution,
+  WorkerStatus,
+} from '../../models';
 import { Contract, Event, BigNumber } from 'ethers';
 import { EntityManager, getConnection, Repository } from 'typeorm';
 import { CryptoConfig, getEthConfig } from '../../contracts';
@@ -323,6 +328,52 @@ export class EthUpdater {
     await domainRepository.save(domain);
   }
 
+  private async processSetReverse(
+    event: Event,
+    domainRepository: Repository<Domain>,
+  ): Promise<void> {
+    const args = unwrap(event.args);
+    const { addr, tokenId } = args;
+    const node = CnsRegistryEvent.tokenIdToNode(tokenId);
+    const domain = await Domain.findByNode(node, domainRepository);
+    if (!domain) {
+      throw new EthUpdaterError(
+        `SetReverse event was not processed. Could not find domain for ${node}`,
+      );
+    }
+    let reverse = domain.getReverseResolution(this.blockchain, this.networkId);
+    if (reverse == undefined) {
+      reverse = new DomainsReverseResolution({
+        reverseAddress: addr,
+        blockchain: this.blockchain,
+        networkId: this.networkId,
+        domain: domain,
+      });
+    }
+    domain.setReverseResolution(reverse);
+    await domainRepository.save(domain);
+  }
+
+  private async processRemoveReverse(
+    event: Event,
+    domainRepository: Repository<Domain>,
+  ): Promise<void> {
+    const args = unwrap(event.args);
+    const { addr } = args;
+
+    const reverseResolution = await DomainsReverseResolution.findOne({
+      where: { reverseAddress: addr },
+    });
+    if (!reverseResolution) {
+      throw new EthUpdaterError(
+        `RemoveReverse event was not processed. Could not find reverse resolution for ${addr}`,
+      );
+    }
+    const domain = reverseResolution.domain;
+    domain.removeReverseResolution(this.blockchain, this.networkId);
+    await domainRepository.save(domain);
+  }
+
   private async saveEvent(event: Event, manager: EntityManager): Promise<void> {
     const values: Record<string, string> = {};
     Object.entries(event?.args || []).forEach(([key, value]) => {
@@ -386,6 +437,14 @@ export class EthUpdater {
           }
           case 'Sync': {
             await this.processSync(event, domainRepository);
+            break;
+          }
+          case 'SetReverse': {
+            await this.processSetReverse(event, domainRepository);
+            break;
+          }
+          case 'RemoveReverse': {
+            await this.processRemoveReverse(event, domainRepository);
             break;
           }
           case 'Approval':

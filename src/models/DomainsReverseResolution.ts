@@ -9,7 +9,6 @@ import { Attributes, Blockchain } from '../types/common';
 export default class DomainsReverseResolution extends Model {
   static AddressRegex = /^0x[a-fA-F0-9]{40}$/;
 
-  @IsOptional()
   @Matches(DomainsReverseResolution.AddressRegex)
   @Column('text')
   @Index()

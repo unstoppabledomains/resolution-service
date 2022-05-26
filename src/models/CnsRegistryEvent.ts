@@ -22,6 +22,8 @@ export const DomainOperationTypes = [
   'Sync',
   'Set',
   'ResetRecords',
+  'SetReverse',
+  'RemoveReverse',
 ] as const;
 
 export const EventTypes = [
