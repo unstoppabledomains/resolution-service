@@ -1,5 +1,5 @@
 import { env } from '../env';
-import { Domain, DomainsResolution } from '../models';
+import { Domain, DomainsResolution, DomainsReverseResolution } from '../models';
 import { Blockchain } from '../types/common';
 
 export function IsZilDomain(name: string): boolean {
@@ -31,4 +31,26 @@ export function getDomainResolution(domain: Domain): DomainsResolution {
     }
   }
   return resolution;
+}
+
+export async function getReverseResolution(
+  address: string,
+): Promise<DomainsReverseResolution | undefined> {
+  let reverse = await DomainsReverseResolution.findOne({
+    where: {
+      networkId: env.APPLICATION.ETHEREUM.NETWORK_ID,
+      blockchain: Blockchain.ETH,
+      reverseAddress: address,
+    },
+  });
+  if (!reverse) {
+    reverse = await DomainsReverseResolution.findOne({
+      where: {
+        networkId: env.APPLICATION.POLYGON.NETWORK_ID,
+        blockchain: Blockchain.MATIC,
+        reverseAddress: address,
+      },
+    });
+  }
+  return reverse;
 }
