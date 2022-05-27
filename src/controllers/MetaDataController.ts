@@ -316,7 +316,9 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
     @QueryParam('withOverlay') withOverlay = true,
   ): Promise<string> {
-    const token = this.normalizeDomainOrToken(domainOrToken);
+    const token = this.normalizeDomainOrToken(
+      domainOrToken.replace('.svg', ''),
+    );
     const domain =
       (await Domain.findByNode(token)) ||
       (await Domain.findOnChainNoSafe(token));
