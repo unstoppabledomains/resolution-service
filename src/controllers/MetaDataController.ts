@@ -323,7 +323,7 @@ export class MetaDataController {
       (await Domain.findByNode(token)) ||
       (await Domain.findOnChainNoSafe(token));
     const resolution = domain ? getDomainResolution(domain) : undefined;
-    const name = domain ? domain.name : domainOrToken;
+    const name = domain ? domain.name : domainOrToken.replace('.svg', '');
 
     if (!name.includes('.')) {
       return '';
