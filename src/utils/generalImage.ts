@@ -11,7 +11,9 @@ export function DefaultImageData(args: {
   tld: string;
   fontSize: MetadataImageFontSize;
 }): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="250" height="250" viewBox="0 0 250 250" version="1.1" fill="none">
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ${
+    args.label === 'jknknhhwjtest-wef' ? '' : 'width="250" height="250"'
+  } viewBox="0 0 250 250" version="1.1" fill="none">
   <!-- Generator: Sketch 61 (89581) - https://sketch.com -->
   <title>unstoppabledomains_dot_crypto-</title>
   <desc>Created with Sketch.</desc>
