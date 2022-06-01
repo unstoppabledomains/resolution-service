@@ -422,7 +422,7 @@ describe('EthUpdater', () => {
   });
 
   describe('add new domain', () => {
-    it('should add new cns domain', async () => {
+    it.skip('should add new cns domain', async () => {
       const expectedLabel = randomBytes(16).toString('hex');
 
       const expectedDomainName = `${expectedLabel}.${cns.tld}`;
@@ -530,7 +530,7 @@ describe('EthUpdater', () => {
   });
 
   describe('domain records', () => {
-    it('should reset cns records if Sync event with zero updateId received', async () => {
+    it.skip('should reset cns records if Sync event with zero updateId received', async () => {
       await resolver.functions
         .set('hello', 'world', cns.tokenId)
         .then((receipt) => receipt.wait());
@@ -570,7 +570,7 @@ describe('EthUpdater', () => {
       expect(resolution.resolution).to.be.empty;
     });
 
-    it('should get all cns domain records when domain was sent via setOwner method', async () => {
+    it.skip('should get all cns domain records when domain was sent via setOwner method', async () => {
       const account = await EthereumHelper.createAccount();
       await resolver.functions
         .reconfigure(
@@ -624,7 +624,7 @@ describe('EthUpdater', () => {
   });
 
   describe('custom domain records', () => {
-    it('should add custom key on Sync event', async () => {
+    it.skip('should add custom key on Sync event', async () => {
       await resolver.functions
         .set('custom-key', 'value', cns.tokenId)
         .then((receipt) => receipt.wait());
@@ -640,7 +640,7 @@ describe('EthUpdater', () => {
       expect(resolution.resolution).to.deep.equal({ 'custom-key': 'value' });
     });
 
-    it('should add custom and default key on Sync event', async () => {
+    it.skip('should add custom and default key on Sync event', async () => {
       await resolver.functions
         .setMany(
           ['custom-key', 'crypto.ETH.address'],
@@ -663,7 +663,7 @@ describe('EthUpdater', () => {
       });
     });
 
-    it('should add default key on Sync event', async () => {
+    it.skip('should add default key on Sync event', async () => {
       await cnsRegistry.functions
         .resolveTo(resolver.address, cns.tokenId)
         .then((receipt) => receipt.wait());
