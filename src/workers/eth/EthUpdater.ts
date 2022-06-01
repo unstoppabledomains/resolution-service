@@ -334,6 +334,7 @@ export class EthUpdater {
   ): Promise<void> {
     const args = unwrap(event.args);
     const { addr, tokenId } = args;
+    const reverseAddress = addr.toLowerCase();
     const node = CnsRegistryEvent.tokenIdToNode(tokenId);
     const domain = await Domain.findByNode(node, domainRepository);
     if (!domain) {
@@ -342,13 +343,15 @@ export class EthUpdater {
       );
     }
     let reverse = domain.getReverseResolution(this.blockchain, this.networkId);
-    if (reverse == undefined) {
+    if (!reverse) {
       reverse = new DomainsReverseResolution({
-        reverseAddress: addr,
+        reverseAddress,
         blockchain: this.blockchain,
         networkId: this.networkId,
         domain: domain,
       });
+    } else {
+      reverse.reverseAddress = reverseAddress;
     }
     domain.setReverseResolution(reverse);
     await domainRepository.save(domain);

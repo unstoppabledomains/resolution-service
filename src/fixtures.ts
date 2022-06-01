@@ -12,7 +12,8 @@ export default async (): Promise<void> => {
               ('x', '${eip137Namehash('x')}'),
               ('888', '${eip137Namehash('888')}'),
               ('nft', '${eip137Namehash('nft')}'),
-              ('dao', '${eip137Namehash('dao')}')
+              ('dao', '${eip137Namehash('dao')}'),
+              ('blockchain', '${eip137Namehash('blockchain')}')
        ON CONFLICT (name) DO NOTHING
     `,
   );

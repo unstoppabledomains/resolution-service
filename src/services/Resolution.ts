@@ -42,6 +42,7 @@ export async function getReverseResolution(
       blockchain: Blockchain.ETH,
       reverseAddress: address,
     },
+    relations: ['domain', 'domain.resolutions'],
   });
   if (!reverse) {
     reverse = await DomainsReverseResolution.findOne({
@@ -50,6 +51,7 @@ export async function getReverseResolution(
         blockchain: Blockchain.MATIC,
         reverseAddress: address,
       },
+      relations: ['domain', 'domain.resolutions'],
     });
   }
   return reverse;
