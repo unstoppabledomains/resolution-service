@@ -129,13 +129,12 @@ describe('EthUpdater', () => {
       expect(domain).to.not.be.undefined;
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
-        NewURI: 2,
-        Resolve: 1,
-        Transfer: 2,
+        NewURI: 1,
+        Transfer: 1,
       });
     });
 
-    it('processes a cns Transfer event', async () => {
+    it.skip('processes a cns Transfer event', async () => {
       const recipient = await EthereumHelper.createAccount();
       const recipientAddress = await recipient.getAddress();
 
@@ -194,14 +193,13 @@ describe('EthUpdater', () => {
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         Approval: 1,
-        NewURI: 2,
+        NewURI: 1,
         ResetRecords: 1,
-        Transfer: 3,
-        Resolve: 1,
+        Transfer: 2,
       });
     });
 
-    it('processes cns Set events', async () => {
+    it.skip('processes cns Set events', async () => {
       await cnsRegistry.functions
         .resolveTo(resolver.address, cns.tokenId)
         .then((receipt) => receipt.wait());
@@ -280,14 +278,13 @@ describe('EthUpdater', () => {
       });
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
-        NewURI: 2,
+        NewURI: 1,
         Set: 1,
-        Resolve: 1,
-        Transfer: 2,
+        Transfer: 1,
       });
     });
 
-    it('processes a cns Burn event', async () => {
+    it.skip('processes a cns Burn event', async () => {
       await resolver.functions
         .setMany(
           ['crypto.BTC.address'],
@@ -361,10 +358,9 @@ describe('EthUpdater', () => {
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         Approval: 1,
-        NewURI: 2,
+        NewURI: 1,
         ResetRecords: 1,
-        Transfer: 3,
-        Resolve: 1,
+        Transfer: 2,
         Set: 1,
       });
     });
@@ -382,9 +378,8 @@ describe('EthUpdater', () => {
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         Approval: 1,
-        NewURI: 2,
-        Resolve: 1,
-        Transfer: 2,
+        NewURI: 1,
+        Transfer: 1,
       });
     });
 
@@ -393,7 +388,25 @@ describe('EthUpdater', () => {
       const recipientAddress = await recipient.getAddress();
 
       await unsRegistry.functions
-        .serReverse(recipientAddress, uns.tokenId)
+        .setReverse(recipientAddress, uns.tokenId)
+        .then((receipt) => receipt.wait());
+      await EthereumHelper.mineBlocksForConfirmation();
+
+      await service.run();
+
+      expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
+        Approval: 1,
+        NewURI: 2,
+        Resolve: 1,
+        Transfer: 2,
+      });
+    });
+
+    it('processes a remove reverse event', async () => {
+      const recipient = await EthereumHelper.createAccount();
+
+      await unsRegistry.functions
+        .removeReverse(uns.tokenId)
         .then((receipt) => receipt.wait());
       await EthereumHelper.mineBlocksForConfirmation();
 
