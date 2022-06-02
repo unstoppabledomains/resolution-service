@@ -359,22 +359,20 @@ export class EthUpdater {
 
   private async processRemoveReverse(
     event: Event,
-    domainRepository: Repository<Domain>,
+    reverseRepository: Repository<DomainsReverseResolution>,
   ): Promise<void> {
     const args = unwrap(event.args);
     const { addr } = args;
 
     const reverseResolution = await DomainsReverseResolution.findOne({
-      where: { reverseAddress: addr },
+      where: { reverseAddress: addr.toLowerCase() },
     });
     if (!reverseResolution) {
       throw new EthUpdaterError(
         `RemoveReverse event was not processed. Could not find reverse resolution for ${addr}`,
       );
     }
-    const domain = reverseResolution.domain;
-    domain.removeReverseResolution(this.blockchain, this.networkId);
-    await domainRepository.save(domain);
+    await reverseRepository.remove(reverseResolution);
   }
 
   private async saveEvent(event: Event, manager: EntityManager): Promise<void> {
@@ -408,7 +406,7 @@ export class EthUpdater {
     let lastProcessedEvent: Event | undefined = undefined;
     for (const event of events) {
       try {
-        this.logger.debug(
+        this.logger.info(
           `Processing event: type - '${event.event}'; args - ${JSON.stringify(
             event.args,
           )}`,
@@ -447,7 +445,10 @@ export class EthUpdater {
             break;
           }
           case 'RemoveReverse': {
-            await this.processRemoveReverse(event, domainRepository);
+            await this.processRemoveReverse(
+              event,
+              manager.getRepository(DomainsReverseResolution),
+            );
             break;
           }
           case 'Approval':

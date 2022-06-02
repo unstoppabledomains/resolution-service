@@ -43,7 +43,6 @@ describe('EthUpdater', () => {
   let cnsRegistry: Contract;
   let resolver: Contract;
   let mintingManager: Contract;
-  let whitelistedMinter: Contract;
   let owner: string;
   let uns: NSConfig;
   let cns: NSConfig;
@@ -62,9 +61,6 @@ describe('EthUpdater', () => {
       EthereumHelper.owner(),
     );
     mintingManager = ETHContracts.MintingManager.getContract().connect(
-      EthereumHelper.minter(),
-    );
-    whitelistedMinter = ETHContracts.WhitelistedMinter.getContract().connect(
       EthereumHelper.minter(),
     );
   });
@@ -90,8 +86,8 @@ describe('EthUpdater', () => {
       .mintSLD(owner, uns.tldHash, uns.label)
       .then((receipt) => receipt.wait());
 
-    await whitelistedMinter.functions
-      .mintSLDToDefaultResolver(owner, cns.label, [], [])
+    await mintingManager.functions
+      .mintSLD(owner, cns.tldHash, cns.label)
       .then((receipt) => receipt.wait());
 
     service = new EthUpdater(Blockchain.ETH, env.APPLICATION.ETHEREUM);
@@ -129,12 +125,13 @@ describe('EthUpdater', () => {
       expect(domain).to.not.be.undefined;
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
-        NewURI: 1,
-        Transfer: 1,
+        NewURI: 2,
+        Transfer: 2,
+        Resolve: 1,
       });
     });
 
-    it.skip('processes a cns Transfer event', async () => {
+    it('processes a cns Transfer event', async () => {
       const recipient = await EthereumHelper.createAccount();
       const recipientAddress = await recipient.getAddress();
 
@@ -193,13 +190,14 @@ describe('EthUpdater', () => {
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         Approval: 1,
-        NewURI: 1,
+        NewURI: 2,
         ResetRecords: 1,
-        Transfer: 2,
+        Transfer: 3,
+        Resolve: 1,
       });
     });
 
-    it.skip('processes cns Set events', async () => {
+    it('processes cns Set events', async () => {
       await cnsRegistry.functions
         .resolveTo(resolver.address, cns.tokenId)
         .then((receipt) => receipt.wait());
@@ -278,13 +276,14 @@ describe('EthUpdater', () => {
       });
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
-        NewURI: 1,
+        NewURI: 2,
         Set: 1,
-        Transfer: 1,
+        Transfer: 2,
+        Resolve: 1,
       });
     });
 
-    it.skip('processes a cns Burn event', async () => {
+    it('processes a cns Burn event', async () => {
       await resolver.functions
         .setMany(
           ['crypto.BTC.address'],
@@ -358,10 +357,11 @@ describe('EthUpdater', () => {
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         Approval: 1,
-        NewURI: 1,
+        NewURI: 2,
         ResetRecords: 1,
-        Transfer: 2,
+        Transfer: 3,
         Set: 1,
+        Resolve: 1,
       });
     });
 
@@ -378,24 +378,22 @@ describe('EthUpdater', () => {
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         Approval: 1,
-        NewURI: 1,
-        Transfer: 1,
+        NewURI: 2,
+        Transfer: 2,
+        Resolve: 1,
       });
     });
 
     it('processes a set reverse event', async () => {
-      const recipient = await EthereumHelper.createAccount();
-      const recipientAddress = await recipient.getAddress();
-
       await unsRegistry.functions
-        .setReverse(recipientAddress, uns.tokenId)
+        .setReverse(uns.tokenId)
         .then((receipt) => receipt.wait());
       await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
-        Approval: 1,
+        SetReverse: 1,
         NewURI: 2,
         Resolve: 1,
         Transfer: 2,
@@ -403,17 +401,22 @@ describe('EthUpdater', () => {
     });
 
     it('processes a remove reverse event', async () => {
-      const recipient = await EthereumHelper.createAccount();
+      await unsRegistry.functions
+        .setReverse(uns.tokenId)
+        .then((receipt) => receipt.wait());
+      await EthereumHelper.mineBlocksForConfirmation();
+      await service.run();
 
       await unsRegistry.functions
-        .removeReverse(uns.tokenId)
+        .removeReverse()
         .then((receipt) => receipt.wait());
       await EthereumHelper.mineBlocksForConfirmation();
 
       await service.run();
 
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
-        Approval: 1,
+        SetReverse: 1,
+        RemoveReverse: 1,
         NewURI: 2,
         Resolve: 1,
         Transfer: 2,
@@ -422,12 +425,12 @@ describe('EthUpdater', () => {
   });
 
   describe('add new domain', () => {
-    it.skip('should add new cns domain', async () => {
+    it('should add new cns domain', async () => {
       const expectedLabel = randomBytes(16).toString('hex');
 
       const expectedDomainName = `${expectedLabel}.${cns.tld}`;
-      await whitelistedMinter.functions
-        .mintSLDToDefaultResolver(owner, expectedLabel, [], [])
+      await mintingManager.functions
+        .mintSLD(owner, cns.tldHash, expectedLabel)
         .then((receipt) => receipt.wait());
       await EthereumHelper.mineBlocksForConfirmation();
 
@@ -463,8 +466,8 @@ describe('EthUpdater', () => {
     it('should not add cns domain with capital letters', async () => {
       const expectedLabel = `${randomBytes(16).toString('hex')}-AAA`;
       const expectedDomainName = `${expectedLabel}.${cns.tld}`;
-      await whitelistedMinter.functions
-        .mintSLDToDefaultResolver(owner, expectedLabel, [], [])
+      await mintingManager.functions
+        .mintSLD(owner, cns.tldHash, expectedLabel)
         .then((receipt) => receipt.wait());
       await EthereumHelper.mineBlocksForConfirmation();
 
@@ -494,11 +497,12 @@ describe('EthUpdater', () => {
       expect(domain).to.be.undefined;
     });
 
-    it('should not add cns domain with spaces', async () => {
-      const expectedLabel = `    ${randomBytes(16).toString('hex')}   `;
+    it.skip('should not add cns domain with spaces', async () => {
+      // for some reason minting manager can actually mint a domain like this
+      const expectedLabel = `   ${randomBytes(16).toString('hex')}   `;
       const expectedDomainName = `${expectedLabel}.${cns.tld}`;
-      await whitelistedMinter.functions
-        .mintSLDToDefaultResolver(owner, expectedDomainName, [], [])
+      await mintingManager.functions
+        .mintSLD(owner, cns.tldHash, expectedLabel)
         .then((receipt) => receipt.wait());
       await EthereumHelper.mineBlocksForConfirmation();
 
@@ -530,7 +534,7 @@ describe('EthUpdater', () => {
   });
 
   describe('domain records', () => {
-    it.skip('should reset cns records if Sync event with zero updateId received', async () => {
+    it('should reset cns records if Sync event with zero updateId received', async () => {
       await resolver.functions
         .set('hello', 'world', cns.tokenId)
         .then((receipt) => receipt.wait());
@@ -570,7 +574,7 @@ describe('EthUpdater', () => {
       expect(resolution.resolution).to.be.empty;
     });
 
-    it.skip('should get all cns domain records when domain was sent via setOwner method', async () => {
+    it('should get all cns domain records when domain was sent via setOwner method', async () => {
       const account = await EthereumHelper.createAccount();
       await resolver.functions
         .reconfigure(
@@ -621,10 +625,47 @@ describe('EthUpdater', () => {
         'crypto.ETH.address': '0x829BD824B016326A401d083B33D092293333A830',
       });
     });
+
+    it('should set reverse resolution', async () => {
+      await unsRegistry.functions
+        .setReverse(uns.tokenId)
+        .then((receipt) => receipt.wait());
+      await EthereumHelper.mineBlocksForConfirmation();
+
+      await service.run();
+
+      const domain = await Domain.findOrCreateByName(uns.name);
+      expect(domain.reverseResolutions.length).to.eq(1);
+      expect(domain.reverseResolutions[0]).to.containSubset({
+        reverseAddress: owner.toLowerCase(),
+        blockchain: Blockchain.ETH,
+        networkId: env.APPLICATION.ETHEREUM.NETWORK_ID,
+      });
+    });
+
+    it('processes a remove reverse event', async () => {
+      await unsRegistry.functions
+        .setReverse(uns.tokenId)
+        .then((receipt) => receipt.wait());
+      await EthereumHelper.mineBlocksForConfirmation();
+      await service.run();
+
+      let domain = await Domain.findOrCreateByName(uns.name);
+      expect(domain.reverseResolutions.length).to.eq(1);
+
+      await unsRegistry.functions
+        .removeReverse()
+        .then((receipt) => receipt.wait());
+      await EthereumHelper.mineBlocksForConfirmation();
+      await service.run();
+
+      domain = await Domain.findOrCreateByName(uns.name);
+      expect(domain.reverseResolutions.length).to.eq(0);
+    });
   });
 
   describe('custom domain records', () => {
-    it.skip('should add custom key on Sync event', async () => {
+    it('should add custom key on Sync event', async () => {
       await resolver.functions
         .set('custom-key', 'value', cns.tokenId)
         .then((receipt) => receipt.wait());
@@ -640,7 +681,7 @@ describe('EthUpdater', () => {
       expect(resolution.resolution).to.deep.equal({ 'custom-key': 'value' });
     });
 
-    it.skip('should add custom and default key on Sync event', async () => {
+    it('should add custom and default key on Sync event', async () => {
       await resolver.functions
         .setMany(
           ['custom-key', 'crypto.ETH.address'],
@@ -663,7 +704,7 @@ describe('EthUpdater', () => {
       });
     });
 
-    it.skip('should add default key on Sync event', async () => {
+    it('should add default key on Sync event', async () => {
       await cnsRegistry.functions
         .resolveTo(resolver.address, cns.tokenId)
         .then((receipt) => receipt.wait());

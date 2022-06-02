@@ -180,9 +180,9 @@ export default class Domain extends Model {
     blockchain: Blockchain,
     networkId: number,
   ): DomainsReverseResolution | undefined {
-    const reverse = this.reverseResolutions?.filter(
+    const reverse = this.reverseResolutions?.find(
       (res) => res.blockchain === blockchain && res.networkId === networkId,
-    )[0];
+    );
     return reverse;
   }
 
@@ -204,11 +204,14 @@ export default class Domain extends Model {
   public removeReverseResolution(
     blockchain: Blockchain,
     networkId: number,
-  ): void {
-    const others = this.reverseResolutions?.filter(
+  ): DomainsReverseResolution | undefined {
+    const removed = this.reverseResolutions?.find(
+      (res) => res.blockchain == blockchain && res.networkId == networkId,
+    );
+    this.reverseResolutions = this.reverseResolutions.filter(
       (res) => !(res.blockchain == blockchain && res.networkId == networkId),
     );
-    this.reverseResolutions = others || [];
+    return removed;
   }
 
   public setResolution(resolution: DomainsResolution): void {

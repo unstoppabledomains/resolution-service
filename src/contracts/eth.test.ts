@@ -9,7 +9,6 @@ describe('eth', () => {
       'UNSRegistry',
       'CNSRegistry',
       'SignatureController',
-      'WhitelistedMinter',
       'URIPrefixController',
       'DomainZoneController',
       'Resolver',

@@ -182,11 +182,12 @@ describe('Resolution service', () => {
     });
 
     it('should return undefined if no reverse resolution', async () => {
-      l2Domain.removeReverseResolution(
+      const removed = l2Domain.removeReverseResolution(
         Blockchain.MATIC,
         env.APPLICATION.POLYGON.NETWORK_ID,
       );
       await l2Domain.save();
+      await removed?.remove();
 
       const reverse = await getReverseResolution(l2ReverseAddr);
       expect(reverse).to.be.undefined;
