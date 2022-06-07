@@ -296,6 +296,7 @@ describe('MetaDataController', () => {
           tld: uns.tld,
           fontSize: 16,
         }),
+        image_url: `https://metadata.unstoppabledomains.com/image-src/${uns.name}.svg`,
         background_color: '4C47F7',
         attributes: [
           { trait_type: 'domain', value: uns.name },
