@@ -7,7 +7,7 @@ import ZilProvider from '../workers/zil/ZilProvider';
 import { env } from '../env';
 import * as ethersUtils from '../utils/ethersUtils';
 import { EthereumProvider, MaticProvider } from '../workers/EthereumProvider';
-import { Blockchain } from '../types/common';
+import { Blockchain, UnstoppableDomainTlds } from '../types/common';
 
 class BlockchainStatus {
   @IsBoolean()
@@ -111,5 +111,10 @@ export class StatusController {
   async readinessCheck(): Promise<{ status: string }> {
     await Domain.findOne();
     return { status: 'ok' };
+  }
+
+  @Get('/supported_tlds')
+  listSupportedTlds(): { tlds: Array<string> } {
+    return { tlds: Object.values(UnstoppableDomainTlds) };
   }
 }

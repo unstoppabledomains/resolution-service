@@ -52,8 +52,30 @@ export type Serializable = {
 };
 export type SerializableArray = (SerializableBase | Serializable)[];
 export type MetadataImageFontSize = 24 | 20 | 18 | 16;
+
 export enum Blockchain {
   ETH = 'ETH',
   ZIL = 'ZIL',
   MATIC = 'MATIC',
 }
+
+enum EvmUnstoppableDomainTlds {
+  Crypto = 'crypto',
+  Coin = 'coin',
+  Wallet = 'wallet',
+  Blockchain = 'blockchain',
+  Bitcoin = 'bitcoin',
+  X = 'x',
+  Number888 = '888',
+  Nft = 'nft',
+  Dao = 'dao',
+}
+
+enum ZilliqaUnstoppableDomainTlds {
+  Zil = 'zil',
+}
+
+export const UnstoppableDomainTlds = {
+  ...EvmUnstoppableDomainTlds,
+  ...ZilliqaUnstoppableDomainTlds,
+};
