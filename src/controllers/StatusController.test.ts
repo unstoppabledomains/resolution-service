@@ -279,6 +279,25 @@ describe('StatusController', () => {
     expect(livenessCheck.body).containSubset(expectedResponse);
     expect(readinessCheck.body).containSubset(expectedResponse);
   });
+
+  it('should return list of supported tlds for /supported_tlds endpoint', async () => {
+    const expectedResponse = {
+      tlds: [
+        'crypto',
+        'coin',
+        'wallet',
+        'blockchain',
+        'bitcoin',
+        'x',
+        '888',
+        'nft',
+        'dao',
+        'zil',
+      ],
+    };
+    const response = await supertest(api).get('/supported_tlds').send();
+    expect(response.body).containSubset(expectedResponse);
+  });
 });
 
 function createViewBlockInterceptor(networkBlockNumber: number) {
