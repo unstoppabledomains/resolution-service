@@ -1,5 +1,4 @@
-import { getRepository, MigrationInterface, QueryRunner } from 'typeorm';
-import { logger } from '../../logger';
+import { MigrationInterface, QueryRunner } from 'typeorm';
 import {
   CnsRegistryEvent,
   Domain,

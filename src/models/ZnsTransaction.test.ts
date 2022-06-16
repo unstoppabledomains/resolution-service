@@ -129,6 +129,6 @@ describe('ZnsTransaction', () => {
     }).save();
     const lastTransaction = await ZnsTransaction.latestTransaction();
     expect(lastTransaction).exist;
-    expect(lastTransaction!.id).to.equal(secondZnsTx.id);
+    expect(lastTransaction?.id).to.equal(secondZnsTx.id);
   });
 });

@@ -127,7 +127,7 @@ describe('Resolution service', () => {
 
   describe('getReverseResolution', () => {
     const l1ReverseAddr = '0x1234512345123451234512345123451234512345';
-    const l2ReverseAddr = '0x0000100001000010000100001000010000100001';
+    const l2ReverseAddr = '0x0000A0000A0000A0000A0000A0000A0000A0000A';
     let l1Domain: Domain;
     let l2Domain: Domain;
 
@@ -190,6 +190,11 @@ describe('Resolution service', () => {
       await removed?.remove();
 
       const reverse = await getReverseResolution(l2ReverseAddr);
+      expect(reverse).to.be.undefined;
+    });
+
+    it('should return undefined for invalid address', async () => {
+      const reverse = await getReverseResolution('invalid');
       expect(reverse).to.be.undefined;
     });
   });

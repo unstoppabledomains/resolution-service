@@ -19,11 +19,9 @@ import { queryNewURIEvent } from '../utils/ethersUtils';
 import CnsRegistryEvent from './CnsRegistryEvent';
 import { logger } from '../logger';
 import DomainsReverseResolution from './DomainsReverseResolution';
-import { add } from 'lodash';
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
-  static AddressRegex = /^0x[a-fA-F0-9]{40}$/;
   static NullAddress = '0x0000000000000000000000000000000000000000';
 
   @IsString()
@@ -176,6 +174,21 @@ export default class Domain extends Model {
     return resolution;
   }
 
+  public setResolution(resolution: DomainsResolution): void {
+    const otherResolutions = this.resolutions?.filter(
+      (res) =>
+        !(
+          res.blockchain == resolution.blockchain &&
+          res.networkId == resolution.networkId
+        ),
+    );
+    if (otherResolutions) {
+      this.resolutions = [resolution, ...otherResolutions];
+    } else {
+      this.resolutions = [resolution];
+    }
+  }
+
   public getReverseResolution(
     blockchain: Blockchain,
     networkId: number,
@@ -208,25 +221,10 @@ export default class Domain extends Model {
     const removed = this.reverseResolutions?.find(
       (res) => res.blockchain == blockchain && res.networkId == networkId,
     );
-    this.reverseResolutions = this.reverseResolutions.filter(
+    this.reverseResolutions = this.reverseResolutions?.filter(
       (res) => !(res.blockchain == blockchain && res.networkId == networkId),
     );
     return removed;
-  }
-
-  public setResolution(resolution: DomainsResolution): void {
-    const otherResolutions = this.resolutions?.filter(
-      (res) =>
-        !(
-          res.blockchain == resolution.blockchain &&
-          res.networkId == resolution.networkId
-        ),
-    );
-    if (otherResolutions) {
-      this.resolutions = [resolution, ...otherResolutions];
-    } else {
-      this.resolutions = [resolution];
-    }
   }
 
   static normalizeResolver(resolver: string | null | undefined): string | null {

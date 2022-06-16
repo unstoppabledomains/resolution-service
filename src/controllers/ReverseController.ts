@@ -15,14 +15,12 @@ import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
 export class ReverseController {
   @Get('/reverse/:address')
   @ResponseSchema(DomainResponse)
-  async getStatus(@Param('address') address: string): Promise<DomainResponse> {
-    address = address.toLowerCase();
+  async getReverse(@Param('address') address: string): Promise<DomainResponse> {
     const reverse = await getReverseResolution(address);
-
+    const response = new DomainResponse();
     if (reverse) {
       const domain = reverse.domain;
       const resolution = getDomainResolution(domain);
-      const response = new DomainResponse();
       response.meta = {
         domain: domain.name,
         blockchain: resolution.blockchain,
@@ -32,19 +30,8 @@ export class ReverseController {
         registry: resolution.registry,
       };
       response.records = resolution.resolution;
-      return response;
     }
 
-    return {
-      meta: {
-        domain: '',
-        owner: null,
-        resolver: null,
-        registry: null,
-        blockchain: null,
-        networkId: null,
-      },
-      records: {},
-    };
+    return response;
   }
 }
