@@ -632,7 +632,7 @@ export class MetaDataController {
     if (this.isDomainWithCustomImage(name)) {
       return '';
     }
-    const splittedName = name.split('.');
+    const splittedName = name.replace(/\.svg/g, '').split('.');
     const extension = splittedName.pop() || '';
     const label = splittedName.join('.');
 
