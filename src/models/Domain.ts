@@ -57,6 +57,7 @@ export default class Domain extends Model {
 
   @OneToMany(() => DomainsReverseResolution, (reverse) => reverse.domain, {
     cascade: ['insert', 'update', 'remove'],
+    orphanedRowAction: 'delete',
   })
   reverseResolutions: DomainsReverseResolution[];
 
@@ -200,15 +201,15 @@ export default class Domain extends Model {
   }
 
   public setReverseResolution(reverse: DomainsReverseResolution): void {
-    const others = this.reverseResolutions?.filter(
-      (res) =>
-        !(
-          res.blockchain == reverse.blockchain &&
-          res.networkId == reverse.networkId
-        ),
+    const removed = this.removeReverseResolution(
+      reverse.blockchain,
+      reverse.networkId,
     );
-    if (others) {
-      this.reverseResolutions = [reverse, ...others];
+    if (removed && !reverse.id) {
+      reverse.id = removed.id; // set the id of removed element to help typeorm figure out how to update entities
+    }
+    if (this.reverseResolutions) {
+      this.reverseResolutions.push(reverse);
     } else {
       this.reverseResolutions = [reverse];
     }

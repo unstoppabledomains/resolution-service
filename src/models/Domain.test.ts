@@ -347,7 +347,6 @@ describe('Domain', () => {
         reverseAddress: newAddress,
       });
       domain?.setReverseResolution(newReverse);
-      await reverse.remove();
       await domain?.save();
 
       const domainReverse = domain?.getReverseResolution(

@@ -10,20 +10,36 @@ import { lowercaseTransformer } from '../database/transformers';
 @Index(['domain', 'blockchain', 'networkId', 'reverseAddress'])
 export default class DomainsReverseResolution extends Model {
   @Matches(ETHAddressRegex) // ensure that the address is lowercase to be consistent
-  @Column('text', { transformer: lowercaseTransformer })
+  @Column('text', {
+    transformer: lowercaseTransformer,
+    comment:
+      'unique index, the ethereum address that is configured for reverse resolution',
+  })
   @Index()
-  reverseAddress: string; // unique index, the ethereum address that is configured for reverse resolution
+  reverseAddress: string;
 
   @IsEnum(Blockchain)
-  @Column('text')
-  blockchain: Blockchain; // the blockhcain where the reverse resolution came from
+  @Column('text', {
+    comment: 'the blockhcain where the reverse resolution came from',
+  })
+  blockchain: Blockchain;
 
-  @Column('int')
-  networkId: number; // the networkId where the reverse resolution came from
+  @Column('int', {
+    comment: 'the networkId where the reverse resolution came from',
+  })
+  networkId: number; //
 
-  @ManyToOne(() => Domain, (domain) => domain.reverseResolutions)
+  @Column({
+    name: 'domain_id',
+    comment: 'the reverse resolution domain for this address',
+  })
+  domainId: number;
+
+  @ManyToOne(() => Domain, (domain) => domain.reverseResolutions, {
+    orphanedRowAction: 'delete',
+  })
   @JoinColumn({ name: 'domain_id' })
-  domain: Domain; // the reverse resolution domain for this address
+  domain: Domain;
 
   constructor(attributes?: Attributes<DomainsReverseResolution>) {
     super();

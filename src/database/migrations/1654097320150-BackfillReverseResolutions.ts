@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { In, MigrationInterface, QueryRunner } from 'typeorm';
 import {
   CnsRegistryEvent,
   Domain,
@@ -18,15 +18,27 @@ export class BackfillReverseResolutions1654097320150
         createdAt: 'ASC',
       },
     });
+
+    const domainTokenIds = events
+      .filter(({ type }) => type === 'SetReverse')
+      .map(({ returnValues }) => returnValues.tokenId);
+
     const reverseResolutions: Record<
       string,
       DomainsReverseResolution | undefined
     > = {};
+
+    const domains = await Domain.find({ where: { node: In(domainTokenIds) } });
+    const domainsMap = domains.reduce((v, d) => {
+      v[d.node] = d;
+      return v;
+    }, {} as Record<string, Domain>);
+
     for (const event of events) {
       switch (event.type) {
         case 'SetReverse': {
           const { addr, tokenId } = event.returnValues;
-          const domain = await Domain.findOne({ node: tokenId });
+          const domain = domainsMap[tokenId];
           const reverse = new DomainsReverseResolution({
             reverseAddress: addr,
             networkId: event.networkId,

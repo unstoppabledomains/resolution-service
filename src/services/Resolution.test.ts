@@ -187,7 +187,6 @@ describe('Resolution service', () => {
         env.APPLICATION.POLYGON.NETWORK_ID,
       );
       await l2Domain.save();
-      await removed?.remove();
 
       const reverse = await getReverseResolution(l2ReverseAddr);
       expect(reverse).to.be.undefined;

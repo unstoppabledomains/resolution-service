@@ -555,6 +555,9 @@ export class EthUpdater {
     }
 
     await domain?.getResolution(this.blockchain, this.networkId)?.remove();
+    await domain
+      ?.getReverseResolution(this.blockchain, this.networkId)
+      ?.remove();
     await this.processEvents(convertedEvents, manager, false);
   }
 
@@ -600,7 +603,7 @@ export class EthUpdater {
     const latestMirroredHash = await this.getLatestMirroredBlockHash();
     const networkHash = (await this.provider.getBlock(latestMirrored))?.hash;
 
-    const empty = (await CnsRegistryEvent.count()) == 0;
+    const empty = (await CnsRegistryEvent.findOne()) === undefined;
     const blockHeightMatches = latestNetBlock >= latestMirrored;
     const blockHashMatches = latestMirroredHash === networkHash;
     if (empty || (blockHeightMatches && blockHashMatches)) {

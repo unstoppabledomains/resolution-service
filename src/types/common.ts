@@ -59,7 +59,7 @@ export enum Blockchain {
   MATIC = 'MATIC',
 }
 
-enum EvmUnstoppableDomainTlds {
+export enum EvmUnstoppableDomainTlds {
   Crypto = 'crypto',
   Coin = 'coin',
   Wallet = 'wallet',
@@ -71,7 +71,7 @@ enum EvmUnstoppableDomainTlds {
   Dao = 'dao',
 }
 
-enum ZilliqaUnstoppableDomainTlds {
+export enum ZilliqaUnstoppableDomainTlds {
   Zil = 'zil',
 }
 
