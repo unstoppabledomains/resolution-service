@@ -2,7 +2,7 @@ import { MetadataImageFontSize } from '../types/common';
 
 export const BackgroundColor = '4C47F7';
 export const FontFamily =
-  "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu, 'Helvetica Neue', Oxygen, Cantarell, sans-serif";
+  'system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Ubuntu, Helvetica Neue, Oxygen, Cantarell, sans-serif';
 
 const smallFontSizeTlds = ['blockchain', 'unstoppable'];
 

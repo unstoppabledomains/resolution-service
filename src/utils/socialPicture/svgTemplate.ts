@@ -7,7 +7,7 @@ interface SvgFields {
 }
 
 const FontFamily =
-  "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu, 'Helvetica Neue', Oxygen, Cantarell, sans-serif";
+  'system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Ubuntu, Helvetica Neue, Oxygen, Cantarell, sans-serif';
 
 export default function svgTemplate({
   background_color,
