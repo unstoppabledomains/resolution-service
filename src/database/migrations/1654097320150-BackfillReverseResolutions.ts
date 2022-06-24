@@ -28,7 +28,9 @@ export class BackfillReverseResolutions1654097320150
       DomainsReverseResolution | undefined
     > = {};
 
-    const domains = await Domain.find({ where: { node: In(domainTokenIds) } });
+    const domains = await queryRunner.manager.find(Domain, {
+      where: { node: In(domainTokenIds) },
+    });
     const domainsMap = domains.reduce((v, d) => {
       v[d.node] = d;
       return v;
