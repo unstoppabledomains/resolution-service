@@ -66,6 +66,6 @@ export class BackfillReverseResolutions1654097320150
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    queryRunner.query('delete * from domains_reverse_resolution');
+    queryRunner.query('delete from domains_reverse_resolution');
   }
 }
