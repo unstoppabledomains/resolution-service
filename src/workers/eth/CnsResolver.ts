@@ -3,7 +3,7 @@ import { Contract, Event, BigNumber, EventFilter, ethers } from 'ethers';
 import { Domain } from '../../models';
 import { Repository } from 'typeorm';
 import { CryptoConfig } from '../../contracts';
-import supportedKeysJson from 'dot-crypto/src/supported-keys/supported-keys.json';
+import supportedKeysJson from 'uns/resolver-keys.json';
 import {
   InvalidValuesError,
   ExecutionRevertedError,

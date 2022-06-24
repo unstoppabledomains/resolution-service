@@ -9,6 +9,8 @@ import WorkerStatus from '../models/WorkerStatus';
 import { Blockchain } from '../types/common';
 import { Event } from 'ethers';
 
+export const ETHAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+
 export async function getLatestNetworkBlock(
   provider: StaticJsonRpcProvider = EthereumProvider,
 ): Promise<number> {

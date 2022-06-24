@@ -10,21 +10,21 @@ import ValidateWith from '../services/ValidateWith';
 import * as _ from 'lodash';
 import { Domain, Model } from '.';
 import { Attributes, Blockchain } from '../types/common';
+import { ETHAddressRegex } from '../utils/ethersUtils';
 
 @Entity({ name: 'domains_resolution' })
 @Unique(['domain', 'blockchain', 'networkId'])
 @Index(['domain', 'blockchain', 'networkId', 'ownerAddress'])
 export default class DomainsResolution extends Model {
-  static AddressRegex = /^0x[a-fA-F0-9]{40}$/;
   static NullAddress = '0x0000000000000000000000000000000000000000';
 
   @IsOptional()
-  @Matches(DomainsResolution.AddressRegex)
+  @Matches(ETHAddressRegex)
   @Column('text', { nullable: true })
   ownerAddress: string | null = null;
 
   @IsOptional()
-  @Matches(DomainsResolution.AddressRegex)
+  @Matches(ETHAddressRegex)
   @NotEquals(DomainsResolution.NullAddress)
   @Column('text', { nullable: true })
   resolver: string | null = null;

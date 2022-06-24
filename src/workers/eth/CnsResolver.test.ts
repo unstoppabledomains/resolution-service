@@ -8,7 +8,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { eip137Namehash } from '../../utils/namehash';
 import { ETHContracts } from '../../contracts';
-import supportedKeysJson from 'dot-crypto/src/supported-keys/supported-keys.json';
+import supportedKeysJson from 'uns/resolver-keys.json';
 import * as ethersUtils from '../../utils/ethersUtils';
 import { DomainTestHelper } from '../../utils/testing/DomainTestHelper';
 import { Blockchain } from '../../types/common';
@@ -17,13 +17,14 @@ describe('CnsResolver', () => {
   let service: CnsResolver;
   let registry: Contract;
   let resolver: Contract;
-  let whitelistedMinter: Contract;
+  let mintingManager: Contract;
   let legacyResolver: Contract;
 
   let testDomainName: string;
   let testTokenId: BigNumber;
   let testDomainLabel: string;
   let testDomainNode: string;
+  const cnsNamehash: string = eip137Namehash('crypto');
   const sinonSandbox = sinon.createSandbox();
   const PredefinedRecordKeys = Object.keys(supportedKeysJson.keys);
 
@@ -77,7 +78,7 @@ describe('CnsResolver', () => {
     resolver = ETHContracts.Resolver.getContract().connect(
       EthereumHelper.owner(),
     );
-    whitelistedMinter = ETHContracts.WhitelistedMinter.getContract().connect(
+    mintingManager = ETHContracts.MintingManager.getContract().connect(
       EthereumHelper.minter(),
     );
   });
@@ -99,13 +100,8 @@ describe('CnsResolver', () => {
       Blockchain.ETH,
       await ethersUtils.getLatestNetworkBlock(),
     );
-    await whitelistedMinter.functions
-      .mintSLDToDefaultResolver(
-        EthereumHelper.owner().address,
-        testDomainLabel,
-        [],
-        [],
-      )
+    await mintingManager.functions
+      .mintSLD(EthereumHelper.owner().address, cnsNamehash, testDomainLabel)
       .then((receipt) => receipt.wait());
     await EthereumHelper.mineBlocksForConfirmation();
 

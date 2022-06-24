@@ -1,6 +1,11 @@
 import { WorkerLogger } from '../../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
-import { CnsRegistryEvent, Domain, WorkerStatus } from '../../models';
+import {
+  CnsRegistryEvent,
+  Domain,
+  DomainsReverseResolution,
+  WorkerStatus,
+} from '../../models';
 import { Contract, Event, BigNumber } from 'ethers';
 import { EntityManager, getConnection, Repository } from 'typeorm';
 import { CryptoConfig, getEthConfig } from '../../contracts';
@@ -323,6 +328,56 @@ export class EthUpdater {
     await domainRepository.save(domain);
   }
 
+  private async processSetReverse(
+    event: Event,
+    domainRepository: Repository<Domain>,
+  ): Promise<void> {
+    const args = unwrap(event.args);
+    const { addr, tokenId } = args;
+    const node = CnsRegistryEvent.tokenIdToNode(tokenId);
+    const domain = await Domain.findByNode(node, domainRepository);
+    if (!domain) {
+      throw new EthUpdaterError(
+        `SetReverse event was not processed. Could not find domain for ${node}`,
+      );
+    }
+    let reverse = domain.getReverseResolution(this.blockchain, this.networkId);
+    if (!reverse) {
+      reverse = new DomainsReverseResolution({
+        reverseAddress: addr,
+        blockchain: this.blockchain,
+        networkId: this.networkId,
+        domain: domain,
+      });
+    } else {
+      reverse.reverseAddress = addr;
+    }
+    domain.setReverseResolution(reverse);
+    await domainRepository.save(domain);
+  }
+
+  private async processRemoveReverse(
+    event: Event,
+    reverseRepository: Repository<DomainsReverseResolution>,
+  ): Promise<void> {
+    const args = unwrap(event.args);
+    const { addr } = args;
+
+    const reverseResolution = await DomainsReverseResolution.findOne({
+      where: {
+        reverseAddress: addr,
+        blockchain: this.blockchain,
+        networkId: this.networkId,
+      },
+    });
+    if (!reverseResolution) {
+      throw new EthUpdaterError(
+        `RemoveReverse event was not processed. Could not find reverse resolution for ${addr}`,
+      );
+    }
+    await reverseRepository.remove(reverseResolution);
+  }
+
   private async saveEvent(event: Event, manager: EntityManager): Promise<void> {
     const values: Record<string, string> = {};
     Object.entries(event?.args || []).forEach(([key, value]) => {
@@ -354,7 +409,7 @@ export class EthUpdater {
     let lastProcessedEvent: Event | undefined = undefined;
     for (const event of events) {
       try {
-        this.logger.debug(
+        this.logger.info(
           `Processing event: type - '${event.event}'; args - ${JSON.stringify(
             event.args,
           )}`,
@@ -386,6 +441,17 @@ export class EthUpdater {
           }
           case 'Sync': {
             await this.processSync(event, domainRepository);
+            break;
+          }
+          case 'SetReverse': {
+            await this.processSetReverse(event, domainRepository);
+            break;
+          }
+          case 'RemoveReverse': {
+            await this.processRemoveReverse(
+              event,
+              manager.getRepository(DomainsReverseResolution),
+            );
             break;
           }
           case 'Approval':
@@ -489,6 +555,9 @@ export class EthUpdater {
     }
 
     await domain?.getResolution(this.blockchain, this.networkId)?.remove();
+    await domain
+      ?.getReverseResolution(this.blockchain, this.networkId)
+      ?.remove();
     await this.processEvents(convertedEvents, manager, false);
   }
 
@@ -534,7 +603,7 @@ export class EthUpdater {
     const latestMirroredHash = await this.getLatestMirroredBlockHash();
     const networkHash = (await this.provider.getBlock(latestMirrored))?.hash;
 
-    const empty = (await CnsRegistryEvent.count()) == 0;
+    const empty = (await CnsRegistryEvent.findOne()) === undefined;
     const blockHeightMatches = latestNetBlock >= latestMirrored;
     const blockHashMatches = latestMirroredHash === networkHash;
     if (empty || (blockHeightMatches && blockHashMatches)) {

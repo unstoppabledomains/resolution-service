@@ -78,7 +78,7 @@
     "set-interval-async": "^2.0.3",
     "swagger-ui-express": "^4.1.6",
     "typeorm": "0.2.38",
-    "uns": "https://github.com/unstoppabledomains/uns.git#9f659eb26c3fefd65d91cae3804b7de21747c212",
+    "uns": "https://github.com/unstoppabledomains/uns.git#8c82492d2a8308348bfd6e26248c40c13366c9f6",
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
     "winston-3-bugsnag-transport": "^1.0.2"
@@ -110,8 +110,7 @@
     "eslint": "^7.25.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-import": "^2.22.1",
-    "ganache-cli": "^6.12.2",
-    "ganache-core": "^2.13.2",
+    "ganache": "7.0.0",
     "husky": "^6.0.0",
     "lint-staged": "^11.0.0",
     "mocha": "^8.3.2",

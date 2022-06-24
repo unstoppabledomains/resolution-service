@@ -25,7 +25,7 @@ import SupportedKeysJson from 'uns/resolver-keys.json';
 
 export class DomainMetadata {
   @IsString()
-  domain: string;
+  domain: string = '';
 
   @IsOptional()
   @IsString()
@@ -52,7 +52,7 @@ export class DomainMetadata {
 
 export class DomainResponse {
   @ValidateNested()
-  meta: DomainMetadata;
+  meta: DomainMetadata = new DomainMetadata();
 
   @IsObject()
   records: Record<string, string> = {};

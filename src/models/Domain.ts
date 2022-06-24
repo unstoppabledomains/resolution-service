@@ -18,10 +18,10 @@ import { Blockchain } from '../types/common';
 import { queryNewURIEvent } from '../utils/ethersUtils';
 import CnsRegistryEvent from './CnsRegistryEvent';
 import { logger } from '../logger';
+import DomainsReverseResolution from './DomainsReverseResolution';
 
 @Entity({ name: 'domains' })
 export default class Domain extends Model {
-  static AddressRegex = /^0x[a-fA-F0-9]{40}$/;
   static NullAddress = '0x0000000000000000000000000000000000000000';
 
   @IsString()
@@ -54,6 +54,12 @@ export default class Domain extends Model {
     },
   )
   resolutions: DomainsResolution[];
+
+  @OneToMany(() => DomainsReverseResolution, (reverse) => reverse.domain, {
+    cascade: ['insert', 'update', 'remove'],
+    orphanedRowAction: 'delete',
+  })
+  reverseResolutions: DomainsReverseResolution[];
 
   constructor(attributes?: Attributes<Domain>) {
     super();
@@ -96,7 +102,7 @@ export default class Domain extends Model {
     return node
       ? await repository.findOne({
           where: { node },
-          relations: ['resolutions', 'parent'],
+          relations: ['resolutions', 'reverseResolutions', 'parent'],
         })
       : undefined;
   }
@@ -108,7 +114,7 @@ export default class Domain extends Model {
     return (
       (await repository.findOne({
         where: { node },
-        relations: ['resolutions', 'parent'],
+        relations: ['resolutions', 'reverseResolutions', 'parent'],
       })) || new Domain({ node })
     );
   }
@@ -184,6 +190,44 @@ export default class Domain extends Model {
     }
   }
 
+  public getReverseResolution(
+    blockchain: Blockchain,
+    networkId: number,
+  ): DomainsReverseResolution | undefined {
+    const reverse = this.reverseResolutions?.find(
+      (res) => res.blockchain === blockchain && res.networkId === networkId,
+    );
+    return reverse;
+  }
+
+  public setReverseResolution(reverse: DomainsReverseResolution): void {
+    const removed = this.removeReverseResolution(
+      reverse.blockchain,
+      reverse.networkId,
+    );
+    if (removed && !reverse.id) {
+      reverse.id = removed.id; // set the id of removed element to help typeorm figure out how to update entities
+    }
+    if (this.reverseResolutions) {
+      this.reverseResolutions.push(reverse);
+    } else {
+      this.reverseResolutions = [reverse];
+    }
+  }
+
+  public removeReverseResolution(
+    blockchain: Blockchain,
+    networkId: number,
+  ): DomainsReverseResolution | undefined {
+    const removed = this.reverseResolutions?.find(
+      (res) => res.blockchain == blockchain && res.networkId == networkId,
+    );
+    this.reverseResolutions = this.reverseResolutions?.filter(
+      (res) => !(res.blockchain == blockchain && res.networkId == networkId),
+    );
+    return removed;
+  }
+
   static normalizeResolver(resolver: string | null | undefined): string | null {
     if (!resolver) {
       return null;
@@ -198,7 +242,7 @@ export default class Domain extends Model {
   ): Promise<Domain> {
     const domain = await repository.findOne({
       where: { name },
-      relations: ['resolutions', 'parent'],
+      relations: ['resolutions', 'reverseResolutions', 'parent'],
     });
     if (domain) {
       return domain;
