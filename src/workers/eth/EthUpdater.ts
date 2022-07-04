@@ -534,7 +534,7 @@ export class EthUpdater {
     const latestMirroredHash = await this.getLatestMirroredBlockHash();
     const networkHash = (await this.provider.getBlock(latestMirrored))?.hash;
 
-    const empty = (await CnsRegistryEvent.count()) == 0;
+    const empty = (await CnsRegistryEvent.findOne()) === undefined;
     const blockHeightMatches = latestNetBlock >= latestMirrored;
     const blockHashMatches = latestMirroredHash === networkHash;
     if (empty || (blockHeightMatches && blockHashMatches)) {
