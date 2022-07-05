@@ -77,7 +77,7 @@
     "routing-controllers-openapi": "^3.0.0",
     "set-interval-async": "^2.0.3",
     "swagger-ui-express": "^4.1.6",
-    "typeorm": "0.2.38",
+    "typeorm": "0.3.0",
     "uns": "https://github.com/unstoppabledomains/uns.git#9f659eb26c3fefd65d91cae3804b7de21747c212",
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
