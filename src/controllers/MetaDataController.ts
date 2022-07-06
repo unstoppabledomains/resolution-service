@@ -19,6 +19,7 @@ import { DefaultImageData } from '../utils/generalImage';
 import { MetadataImageFontSize } from '../types/common';
 import { pathThatSvg } from 'path-that-svg';
 import {
+  ArrayMaxSize,
   IsArray,
   IsNotEmpty,
   IsObject,
@@ -128,7 +129,7 @@ class Erc721Metadata {
 
 class DomainsRecords {
   @IsArray()
-  domains: Array<Record<string, string>>;
+  domainsRecords: DomainRecords[];
 }
 
 type DomainRecords = { domain: string; records: Record<string, string> };
@@ -195,6 +196,7 @@ class DomainsRecordsQuery {
   @IsArray()
   @IsString({ each: true })
   @IsNotEmpty({ each: true })
+  @ArrayMaxSize(50)
   domains: string[];
 
   @IsOptional()
