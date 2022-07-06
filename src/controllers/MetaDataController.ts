@@ -4,6 +4,8 @@ import {
   Header,
   Param,
   QueryParam,
+  QueryParams,
+  UseBefore,
 } from 'routing-controllers';
 import Moralis from 'moralis/node';
 import { ResponseSchema } from 'routing-controllers-openapi';
@@ -16,7 +18,13 @@ import AnimalDomainHelper, {
 import { DefaultImageData } from '../utils/generalImage';
 import { MetadataImageFontSize } from '../types/common';
 import { pathThatSvg } from 'path-that-svg';
-import { IsArray, IsObject, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { env } from '../env';
 import { logger } from '../logger';
 import {
@@ -31,6 +39,10 @@ import { DomainsResolution } from '../models';
 import { OpenSeaPort, Network } from 'opensea-js';
 import { EthereumProvider } from '../workers/EthereumProvider';
 import { simpleSVGTemplate } from '../utils/socialPicture/svgTemplate';
+import _ from 'lodash';
+import { ConvertArrayQueryParams } from '../middleware/ConvertArrayQueryParams';
+import ValidateWith from '../services/ValidateWith';
+import SupportedKeysJson from 'uns/resolver-keys.json';
 
 const DEFAULT_IMAGE_URL = (name: string) =>
   `https://metadata.unstoppabledomains.com/image-src/${name}.svg` as const;
@@ -114,6 +126,13 @@ class Erc721Metadata {
   external_url: string | null;
 }
 
+class DomainsRecords {
+  @IsArray()
+  domains: Array<Record<string, string>>;
+}
+
+type DomainRecords = { domain: string; records: Record<string, string> };
+
 class OpenSeaMetadata extends Erc721Metadata {
   @IsOptional()
   @IsString()
@@ -170,6 +189,23 @@ class ImageResponse {
 
   @IsString()
   image_data: string;
+}
+
+class DomainsRecordsQuery {
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  domains: string[];
+
+  @IsOptional()
+  @ValidateWith<DomainsRecordsQuery>('containsSupportedKey', {
+    message: 'Unsupported Unstoppable Domains key',
+  })
+  key: string;
+
+  containsSupportedKey(): boolean {
+    return Object.keys(SupportedKeysJson.keys).includes(this.key);
+  }
 }
 
 @Controller()
@@ -261,6 +297,32 @@ export class MetaDataController {
     }
 
     return metadata;
+  }
+
+  @Get('/records')
+  @ResponseSchema(DomainsRecords)
+  @UseBefore(ConvertArrayQueryParams('domainNames'))
+  async getDomainsRecords(
+    @QueryParams() query: DomainsRecordsQuery,
+  ): Promise<DomainRecords[]> {
+    const domains: DomainRecords[] = [];
+
+    for (const domainName of query.domains) {
+      const token = this.normalizeDomain(domainName);
+      const domain =
+        (await Domain.findByNode(token)) ||
+        (await Domain.findOnChainNoSafe(token));
+
+      if (domain) {
+        const { resolution } = getDomainResolution(domain);
+        const records = query.key ? _.pick(resolution, query.key) : resolution;
+        domains.push({ domain: domainName, records });
+      } else {
+        domains.push({ domain: domainName, records: {} });
+      }
+    }
+
+    return domains;
   }
 
   @Get('/image/:domainOrToken')
