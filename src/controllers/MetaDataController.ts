@@ -307,24 +307,23 @@ export class MetaDataController {
   async getDomainsRecords(
     @QueryParams() query: DomainsRecordsQuery,
   ): Promise<DomainRecords[]> {
-    const domains: DomainRecords[] = [];
+    const tokens = query.domains.map((d) => this.normalizeDomain(d));
+    const domains = await Domain.findAllByNodes(tokens);
+    const domainsRecords: DomainRecords[] = [];
 
     for (const domainName of query.domains) {
-      const token = this.normalizeDomain(domainName);
-      const domain =
-        (await Domain.findByNode(token)) ||
-        (await Domain.findOnChainNoSafe(token));
+      const domain = domains.find((d) => d.name === domainName);
 
       if (domain) {
         const { resolution } = getDomainResolution(domain);
         const records = query.key ? _.pick(resolution, query.key) : resolution;
-        domains.push({ domain: domainName, records });
+        domainsRecords.push({ domain: domainName, records });
       } else {
-        domains.push({ domain: domainName, records: {} });
+        domainsRecords.push({ domain: domainName, records: {} });
       }
     }
 
-    return domains;
+    return domainsRecords;
   }
 
   @Get('/image/:domainOrToken')
