@@ -1,4 +1,4 @@
-import { WorkerLogger } from '../../logger';
+import { logger, WorkerLogger } from '../../logger';
 import { setIntervalAsync } from 'set-interval-async/dynamic';
 import {
   CnsRegistryEvent,
@@ -702,7 +702,9 @@ export class EthUpdater {
 
 export function startWorker(blockchain: Blockchain, config: any): void {
   if (config.RESYNC_FROM !== undefined) {
-    new EthUpdater(blockchain, config).resync();
+    new EthUpdater(blockchain, config).resync().then(() => {
+      logger.info('Resync successful.');
+    });
   } else {
     setIntervalAsync(async () => {
       await new EthUpdater(blockchain, config).run();

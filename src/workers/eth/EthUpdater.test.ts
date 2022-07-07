@@ -278,6 +278,7 @@ describe('EthUpdater', () => {
       expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
         NewURI: 2,
         Set: 1,
+        NewKey: 1,
         Transfer: 2,
         Resolve: 1,
       });
@@ -361,6 +362,7 @@ describe('EthUpdater', () => {
         ResetRecords: 1,
         Transfer: 3,
         Set: 1,
+        NewKey: 1,
         Resolve: 1,
       });
     });
@@ -420,6 +422,28 @@ describe('EthUpdater', () => {
         NewURI: 2,
         Resolve: 1,
         Transfer: 2,
+      });
+    });
+
+    it('processes an unknown event', async () => {
+      await unsRegistry.functions.set('keyhash-gas', 'value', uns.tokenId); // causes a 'NewKey' event which is not in EventType enum
+
+      await EthereumHelper.mineBlocksForConfirmation();
+
+      await service.run();
+
+      const domain = await Domain.findOne({
+        where: { name: uns.name },
+        relations: ['resolutions'],
+      });
+      expect(domain).to.not.be.undefined;
+
+      expect(await CnsRegistryEvent.groupCount('type')).to.deep.equal({
+        NewURI: 2,
+        Set: 1,
+        NewKey: 1,
+        Transfer: 2,
+        Resolve: 1,
       });
     });
   });
@@ -732,6 +756,25 @@ describe('EthUpdater', () => {
         'crypto.ETH.address': '0x461781022A9C2De74f2171EB3c44F27320b13B8c',
         'custom-key': 'value',
       });
+    });
+  });
+
+  describe('resync', () => {
+    it('should reset events on resync', async () => {
+      await EthereumHelper.mineBlocksForConfirmation();
+
+      await service.run();
+
+      expect(await CnsRegistryEvent.count()).to.equal(5);
+
+      const resyncConfig = {
+        ...env.APPLICATION.ETHEREUM,
+        RESYNC_FROM: 0,
+      };
+      service = new EthUpdater(Blockchain.ETH, resyncConfig);
+      await service.resync();
+
+      expect(await CnsRegistryEvent.count()).to.equal(0);
     });
   });
 });

@@ -33,7 +33,6 @@ export const EventTypes = [
   'NewURIPrefix',
   'Upgraded',
   'AdminChanged',
-  'Unknown',
 ] as const;
 
 export type EventType = typeof EventTypes[any];
