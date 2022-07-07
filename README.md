@@ -186,9 +186,9 @@ enable specific sets of endpoints.
 | GET /image/:domainOrToken     | Retrieve image_data as a svg string                                                                                                                                                                                                                                                                                                           |
 | GET /image-src/:domainOrToken | Retrieve image_data as 'image/svg+xml'                                                                                                                                                                                                                                                                                                        |
 
-> Note: The `/domains` endpoints require an API key. The key must be provided as
-> `Bearer` authentication header for requests. New keys must be added manually
-> to the database (see [API keys](#api-keys) for more info).
+> Note: The `/domains` and `/records` endpoints require an API key. The key must
+> be provided as `Bearer` authentication header for requests. New keys must be
+> added manually to the database (see [API keys](#api-keys) for more info).
 
 ## Development notes
 
