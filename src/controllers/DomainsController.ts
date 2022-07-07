@@ -11,16 +11,20 @@ import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { CnsRegistryEvent, Domain } from '../models';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
 import { getDomainResolution } from '../services/Resolution';
-import { eip137Namehash } from '../utils/namehash';
+import { eip137Namehash, normalizeDomain } from '../utils/namehash';
 import {
   DomainResponse,
   DomainsListQuery,
   DomainsListResponse,
   UnsDomainQuery,
   DomainLatestTransferResponse,
+  DomainsRecordsQuery,
+  DomainsRecordsResponse,
+  DomainRecords,
 } from './dto/Domains';
 import { ConvertArrayQueryParams } from '../middleware/ConvertArrayQueryParams';
 import { In } from 'typeorm';
+import _ from 'lodash';
 
 @OpenAPI({
   security: [{ apiKeyAuth: [] }],
@@ -240,5 +244,50 @@ export class DomainsController {
       };
     });
     return response;
+  }
+
+  @Get('/records')
+  @OpenAPI({
+    responses: {
+      '200': {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                data: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/DomainRecords',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @UseBefore(ConvertArrayQueryParams('domains'))
+  async getDomainsRecords(
+    @QueryParams() query: DomainsRecordsQuery,
+  ): Promise<DomainsRecordsResponse> {
+    const tokens = query.domains.map((d) => normalizeDomain(d));
+    const domains = await Domain.findAllByNodes(tokens);
+    const domainsRecords: DomainRecords[] = [];
+
+    for (const domainName of query.domains) {
+      const domain = domains.find((d) => d.name === domainName);
+
+      if (domain) {
+        const { resolution } = getDomainResolution(domain);
+        const records = query.key ? _.pick(resolution, query.key) : resolution;
+        domainsRecords.push({ domain: domainName, records });
+      } else {
+        domainsRecords.push({ domain: domainName, records: {} });
+      }
+    }
+
+    return { data: domainsRecords };
   }
 }

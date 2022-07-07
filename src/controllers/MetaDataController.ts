@@ -4,12 +4,9 @@ import {
   Header,
   Param,
   QueryParam,
-  QueryParams,
-  UseBefore,
 } from 'routing-controllers';
 import Moralis from 'moralis/node';
 import { ResponseSchema } from 'routing-controllers-openapi';
-import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import fetch from 'node-fetch';
 import Domain from '../models/Domain';
 import AnimalDomainHelper, {
@@ -18,14 +15,7 @@ import AnimalDomainHelper, {
 import { DefaultImageData } from '../utils/generalImage';
 import { MetadataImageFontSize } from '../types/common';
 import { pathThatSvg } from 'path-that-svg';
-import {
-  ArrayMaxSize,
-  IsArray,
-  IsNotEmpty,
-  IsObject,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsArray, IsObject, IsOptional, IsString } from 'class-validator';
 import { env } from '../env';
 import { logger } from '../logger';
 import {
@@ -40,10 +30,7 @@ import { DomainsResolution } from '../models';
 import { OpenSeaPort, Network } from 'opensea-js';
 import { EthereumProvider } from '../workers/EthereumProvider';
 import { simpleSVGTemplate } from '../utils/socialPicture/svgTemplate';
-import _ from 'lodash';
-import { ConvertArrayQueryParams } from '../middleware/ConvertArrayQueryParams';
-import ValidateWith from '../services/ValidateWith';
-import SupportedKeysJson from 'uns/resolver-keys.json';
+import { normalizeDomain } from '../utils/namehash';
 
 const DEFAULT_IMAGE_URL = (name: string) =>
   `https://metadata.unstoppabledomains.com/image-src/${name}.svg` as const;
@@ -127,13 +114,6 @@ class Erc721Metadata {
   external_url: string | null;
 }
 
-class DomainsRecords {
-  @IsArray()
-  domainsRecords: DomainRecords[];
-}
-
-type DomainRecords = { domain: string; records: Record<string, string> };
-
 class OpenSeaMetadata extends Erc721Metadata {
   @IsOptional()
   @IsString()
@@ -190,24 +170,6 @@ class ImageResponse {
 
   @IsString()
   image_data: string;
-}
-
-class DomainsRecordsQuery {
-  @IsArray()
-  @IsString({ each: true })
-  @IsNotEmpty({ each: true })
-  @ArrayMaxSize(50)
-  domains: string[];
-
-  @IsOptional()
-  @ValidateWith<DomainsRecordsQuery>('containsSupportedKey', {
-    message: 'Unsupported Unstoppable Domains key',
-  })
-  key: string;
-
-  containsSupportedKey(): boolean {
-    return Object.keys(SupportedKeysJson.keys).includes(this.key);
-  }
 }
 
 @Controller()
@@ -299,31 +261,6 @@ export class MetaDataController {
     }
 
     return metadata;
-  }
-
-  @Get('/records')
-  @ResponseSchema(DomainsRecords)
-  @UseBefore(ConvertArrayQueryParams('domainNames'))
-  async getDomainsRecords(
-    @QueryParams() query: DomainsRecordsQuery,
-  ): Promise<DomainRecords[]> {
-    const tokens = query.domains.map((d) => this.normalizeDomain(d));
-    const domains = await Domain.findAllByNodes(tokens);
-    const domainsRecords: DomainRecords[] = [];
-
-    for (const domainName of query.domains) {
-      const domain = domains.find((d) => d.name === domainName);
-
-      if (domain) {
-        const { resolution } = getDomainResolution(domain);
-        const records = query.key ? _.pick(resolution, query.key) : resolution;
-        domainsRecords.push({ domain: domainName, records });
-      } else {
-        domainsRecords.push({ domain: domainName, records: {} });
-      }
-    }
-
-    return domainsRecords;
   }
 
   @Get('/image/:domainOrToken')
@@ -554,20 +491,11 @@ export class MetaDataController {
 
   private normalizeDomainOrToken(domainOrToken: string): string {
     if (domainOrToken.includes('.')) {
-      return this.normalizeDomain(domainOrToken);
+      return normalizeDomain(domainOrToken);
     } else if (domainOrToken.replace('0x', '').match(/^[a-fA-F0-9]+$/)) {
       return this.normalizeToken(domainOrToken);
     }
     return domainOrToken;
-  }
-
-  private normalizeDomain(domain: string): string {
-    domain = domain.trim().toLowerCase();
-
-    if (domain.endsWith('.zil')) {
-      return znsNamehash(domain);
-    }
-    return eip137Namehash(domain);
   }
 
   private normalizeToken(token: string): string {
