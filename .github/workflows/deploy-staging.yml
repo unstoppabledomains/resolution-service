@@ -34,7 +34,7 @@ env:
   MORALIS_API_URL: ${{ secrets.MORALIS_API_URL}}
   MORALIS_APP_ID: ${{ secrets.MORALIS_APP_ID}}
   OPENSEA_API_KEY: ${{ secrets.OPENSEA_API_KEY}}
-
+  CLOUD_STORAGE_BUCKET_ID: 'resolution-client-assets-staging'
 jobs:
   build_and_push_container_image:
     runs-on: ubuntu-latest
