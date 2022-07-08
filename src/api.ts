@@ -13,6 +13,7 @@ import Bugsnag from '@bugsnag/js';
 import BugsnagPluginExpress from '@bugsnag/plugin-express';
 import { env } from './env';
 import ErrorHandler from './errors/ErrorHandler';
+import { UploadTestController } from './controllers/UploadTestController';
 
 const enabledControllers = [];
 
@@ -22,6 +23,7 @@ if (
 ) {
   enabledControllers.push(DomainsController);
   enabledControllers.push(StatusController);
+  enabledControllers.push(UploadTestController);
 }
 
 if (
