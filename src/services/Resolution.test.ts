@@ -47,9 +47,30 @@ describe('Resolution service', () => {
         .returns(resolution);
 
       expect(getDomainResolution(domain)).to.deep.eq(resolution);
-      expect(stub).to.be.calledOnceWith(
+      expect(stub).to.be.calledWith(
         Blockchain.ZIL,
         env.APPLICATION.ZILLIQA.NETWORK_ID,
+      );
+    });
+
+    it('should return zil resolution for zil domain on uns', () => {
+      const domain = new Domain({
+        name: 'test.zil',
+        node: '0x628ece4569e336250b53b5053c9421fea0b8cfb20f49077b7ec559b4f27817e5',
+      });
+      const resolution = new DomainsResolution({
+        blockchain: Blockchain.MATIC,
+        networkId: env.APPLICATION.POLYGON.NETWORK_ID,
+        resolution: { test: 'zil' },
+      });
+      const stub = sinonSandbox
+        .stub(domain, 'getResolution')
+        .returns(resolution);
+
+      expect(getDomainResolution(domain)).to.deep.eq(resolution);
+      expect(stub).to.be.calledWith(
+        Blockchain.MATIC,
+        env.APPLICATION.POLYGON.NETWORK_ID,
       );
     });
 
