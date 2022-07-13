@@ -215,12 +215,7 @@ export class DomainsListResponse {
 export class UnsDomainQuery {
   @IsString()
   @IsNotEmpty()
-  @ValidateWith<UnsDomainQuery>('isNotZilDomain')
   domainName: string;
-
-  isNotZilDomain(): boolean {
-    return !this.domainName.endsWith('zil');
-  }
 }
 
 export class DomainLatestTransfer {

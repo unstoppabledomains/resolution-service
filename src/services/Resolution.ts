@@ -8,27 +8,29 @@ export function IsZilDomain(name: string): boolean {
   return tld === 'zil';
 }
 
+function isNullAddress(address: string | null): boolean {
+  return address === null || address === Domain.NullAddress;
+}
+
 export function getDomainResolution(domain: Domain): DomainsResolution {
   let resolution: DomainsResolution;
-  if (IsZilDomain(domain.name)) {
+  resolution = domain.getResolution(
+    Blockchain.MATIC,
+    env.APPLICATION.POLYGON.NETWORK_ID,
+  );
+
+  if (isNullAddress(resolution.ownerAddress)) {
+    resolution = domain.getResolution(
+      Blockchain.ETH,
+      env.APPLICATION.ETHEREUM.NETWORK_ID,
+    );
+  }
+
+  if (isNullAddress(resolution.ownerAddress) && IsZilDomain(domain.name)) {
     resolution = domain.getResolution(
       Blockchain.ZIL,
       env.APPLICATION.ZILLIQA.NETWORK_ID,
     );
-  } else {
-    resolution = domain.getResolution(
-      Blockchain.MATIC,
-      env.APPLICATION.POLYGON.NETWORK_ID,
-    );
-    if (
-      resolution.ownerAddress === null ||
-      resolution.ownerAddress === Domain.NullAddress
-    ) {
-      resolution = domain.getResolution(
-        Blockchain.ETH,
-        env.APPLICATION.ETHEREUM.NETWORK_ID,
-      );
-    }
   }
   return resolution;
 }
