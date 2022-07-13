@@ -28,7 +28,7 @@ export default class Domain extends Model {
   @ValidateWith<Domain>('nameMatchesNode', {
     message: "Node doesn't match the name",
   })
-  @Index({ unique: true })
+  @Index({ unique: false })
   @Column('text')
   name: string;
 
@@ -73,7 +73,10 @@ export default class Domain extends Model {
   }
 
   nameMatchesNode(): boolean {
-    return this.correctNode() === this.node;
+    return (
+      this.correctNode(Blockchain.ETH) === this.node ||
+      this.correctNode(Blockchain.ZIL) === this.node
+    );
   }
 
   get label(): string {
@@ -149,11 +152,11 @@ export default class Domain extends Model {
     return this.name ? this.name.split('.') : [];
   }
 
-  private correctNode(): string | undefined {
+  private correctNode(type: Blockchain): string | undefined {
     if (!this.name || this.name !== this.name.toLowerCase()) {
       return undefined;
     }
-    if (this.name.endsWith('zil')) {
+    if (type == Blockchain.ZIL) {
       return znsNamehash(this.name);
     }
     return eip137Namehash(this.name);
@@ -238,6 +241,7 @@ export default class Domain extends Model {
 
   static async findOrCreateByName(
     name: string,
+    blockchain: Blockchain,
     repository: Repository<Domain> = this.getRepository(),
   ): Promise<Domain> {
     const domain = await repository.findOne({
@@ -248,10 +252,10 @@ export default class Domain extends Model {
       return domain;
     }
 
-    let node = eip137Namehash(name);
-    if (name.endsWith('zil')) {
-      node = znsNamehash(this.name);
-    }
+    const node =
+      blockchain === Blockchain.ZIL
+        ? znsNamehash(this.name)
+        : eip137Namehash(name);
 
     const newDomain = new Domain();
     newDomain.attributes({
