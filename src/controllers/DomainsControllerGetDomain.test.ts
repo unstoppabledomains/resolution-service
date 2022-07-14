@@ -268,6 +268,64 @@ describe('DomainsController', () => {
       });
     });
 
+    it('should return zil domain on uns L1', async () => {
+      await DomainTestHelper.createTestDomain({
+        blockchain: Blockchain.ETH,
+        networkId: env.APPLICATION.ETHEREUM.NETWORK_ID,
+        name: 'sometestforzil.zil',
+        ownerAddress: '0xcea21f5a6afc11b3a4ef82e986d63b8b050b6910',
+        resolver: '0x34bbdee3404138430c76c2d1b2d4a2d223a896df',
+        registry: '0x9611c53be6d1b32058b2747bdececed7e1216793',
+        node: '0x067b0a0d1db14a412c12c3e48b5a54209744626a74fabdb534da79dbcca52c63',
+        resolution: {},
+      });
+      const res = await supertest(api)
+        .get('/domains/sometestforzil.zil')
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.status).eq(200);
+      expect(res.body).containSubset({
+        meta: {
+          domain: 'sometestforzil.zil',
+          owner: '0xcea21f5a6afc11b3a4ef82e986d63b8b050b6910',
+          resolver: '0x34bbdee3404138430c76c2d1b2d4a2d223a896df',
+          registry: '0x9611c53be6d1b32058b2747bdececed7e1216793',
+          blockchain: 'ETH',
+          networkId: 1337,
+        },
+        records: {},
+      });
+    });
+
+    it('should return zil domain on uns L2', async () => {
+      await DomainTestHelper.createTestDomain({
+        blockchain: Blockchain.MATIC,
+        networkId: env.APPLICATION.POLYGON.NETWORK_ID,
+        name: 'sometestforzil.zil',
+        ownerAddress: '0xcea21f5a6afc11b3a4ef82e986d63b8b050b6910',
+        resolver: '0x34bbdee3404138430c76c2d1b2d4a2d223a896df',
+        registry: '0x9611c53be6d1b32058b2747bdececed7e1216793',
+        node: '0x067b0a0d1db14a412c12c3e48b5a54209744626a74fabdb534da79dbcca52c63',
+        resolution: {},
+      });
+      const res = await supertest(api)
+        .get('/domains/sometestforzil.zil')
+        .auth(testApiKey.apiKey, { type: 'bearer' })
+        .send();
+      expect(res.status).eq(200);
+      expect(res.body).containSubset({
+        meta: {
+          domain: 'sometestforzil.zil',
+          owner: '0xcea21f5a6afc11b3a4ef82e986d63b8b050b6910',
+          resolver: '0x34bbdee3404138430c76c2d1b2d4a2d223a896df',
+          registry: '0x9611c53be6d1b32058b2747bdececed7e1216793',
+          blockchain: 'MATIC',
+          networkId: 1337,
+        },
+        records: {},
+      });
+    });
+
     it('should return correct domain resolution for minted .crypto domain', async () => {
       await DomainTestHelper.createTestDomain({
         name: 'brad.crypto',

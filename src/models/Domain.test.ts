@@ -111,7 +111,7 @@ describe('Domain', () => {
         name: 'test.crypto',
         node: '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
       };
-      await Domain.findOrCreateByName(expectedDomain.name);
+      await Domain.findOrCreateByName(expectedDomain.name, Blockchain.ETH);
       const foundDomain = await Domain.findOne({ name: expectedDomain.name });
 
       expect(foundDomain).to.containSubset(expectedDomain);
@@ -125,7 +125,10 @@ describe('Domain', () => {
       const domain = Domain.create(expectedDomain);
       await domain.save();
 
-      const foundDomain = await Domain.findOrCreateByName(expectedDomain.name);
+      const foundDomain = await Domain.findOrCreateByName(
+        expectedDomain.name,
+        Blockchain.ETH,
+      );
 
       expect(foundDomain).to.containSubset(expectedDomain);
     });
