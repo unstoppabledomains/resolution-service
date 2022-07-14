@@ -31,6 +31,8 @@ env:
   MORALIS_APP_ID: ${{ secrets.MORALIS_APP_ID}}
   OPENSEA_API_KEY: ${{ secrets.OPENSEA_API_KEY}}
   CLOUD_STORAGE_BUCKET_ID: 'resolution-client-assets'
+  POLYGON_RESYNC_FROM: ${{ secrets.RESOLUTION_POLYGON_RESYNC_FROM}}
+  ETHEREUM_RESYNC_FROM: ${{ secrets.RESOLUTION_ETHEREUM_RESYNC_FROM}}
 
 jobs:
   build_and_push_container_image:
