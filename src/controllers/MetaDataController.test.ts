@@ -282,7 +282,7 @@ describe('MetaDataController', () => {
         .get(`/metadata/${token}`)
         .send()
         .then((r) => r.body);
-      expect(responseWithNode).to.deep.eq({
+      expect(responseWithNode).containSubset({
         name: uns.name,
         properties: {
           records: {},

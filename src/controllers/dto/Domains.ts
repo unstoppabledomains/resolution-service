@@ -26,7 +26,7 @@ import SupportedKeysJson from 'uns/resolver-keys.json';
 
 export class DomainMetadata {
   @IsString()
-  domain: string;
+  domain: string = '';
 
   @IsOptional()
   @IsString()
@@ -53,7 +53,7 @@ export class DomainMetadata {
 
 export class DomainResponse {
   @ValidateNested()
-  meta: DomainMetadata;
+  meta: DomainMetadata = new DomainMetadata();
 
   @IsObject()
   records: Record<string, string> = {};
@@ -224,12 +224,7 @@ export class DomainsListResponse {
 export class UnsDomainQuery {
   @IsString()
   @IsNotEmpty()
-  @ValidateWith<UnsDomainQuery>('isNotZilDomain')
   domainName: string;
-
-  isNotZilDomain(): boolean {
-    return !this.domainName.endsWith('zil');
-  }
 }
 
 export class DomainLatestTransfer {

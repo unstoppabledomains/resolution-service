@@ -30,7 +30,7 @@ import { DomainsResolution } from '../models';
 import { OpenSeaPort, Network } from 'opensea-js';
 import { EthereumProvider } from '../workers/EthereumProvider';
 import { simpleSVGTemplate } from '../utils/socialPicture/svgTemplate';
-import { normalizeDomain } from '../utils/namehash';
+import { findDomainByNameOrToken } from '../utils/domain';
 
 const DEFAULT_IMAGE_URL = (name: string) =>
   `https://metadata.unstoppabledomains.com/image-src/${name}.svg` as const;
@@ -198,10 +198,7 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
     @QueryParam('withOverlay') withOverlay = true,
   ): Promise<OpenSeaMetadata> {
-    const token = this.normalizeDomainOrToken(domainOrToken);
-    const domain =
-      (await Domain.findByNode(token)) ||
-      (await Domain.findOnChainNoSafe(token));
+    const domain = await findDomainByNameOrToken(domainOrToken);
     if (!domain) {
       return this.defaultMetaResponse(domainOrToken);
     }
@@ -269,10 +266,7 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
     @QueryParam('withOverlay') withOverlay = true,
   ): Promise<ImageResponse> {
-    const token = this.normalizeDomainOrToken(domainOrToken);
-    const domain =
-      (await Domain.findByNode(token)) ||
-      (await Domain.findOnChainNoSafe(token));
+    const domain = await findDomainByNameOrToken(domainOrToken);
     const resolution = domain ? getDomainResolution(domain) : undefined;
     const name = domain ? domain.name : domainOrToken;
 
@@ -316,12 +310,9 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
     @QueryParam('withOverlay') withOverlay = true,
   ): Promise<string> {
-    const token = this.normalizeDomainOrToken(
+    const domain = await findDomainByNameOrToken(
       domainOrToken.replace('.svg', ''),
     );
-    const domain =
-      (await Domain.findByNode(token)) ||
-      (await Domain.findOnChainNoSafe(token));
     const resolution = domain ? getDomainResolution(domain) : undefined;
     const name = domain ? domain.name : domainOrToken.replace('.svg', '');
 
@@ -487,19 +478,6 @@ export class MetaDataController {
       image,
       image_data,
     };
-  }
-
-  private normalizeDomainOrToken(domainOrToken: string): string {
-    if (domainOrToken.includes('.')) {
-      return normalizeDomain(domainOrToken);
-    } else if (domainOrToken.replace('0x', '').match(/^[a-fA-F0-9]+$/)) {
-      return this.normalizeToken(domainOrToken);
-    }
-    return domainOrToken;
-  }
-
-  private normalizeToken(token: string): string {
-    return '0x' + BigInt(token).toString(16).padStart(64, '0');
   }
 
   private getDomainDescription(

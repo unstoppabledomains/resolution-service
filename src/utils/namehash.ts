@@ -42,13 +42,3 @@ function arrayToHex(arr: number[]) {
     .call(arr, (x) => ('00' + x.toString(16)).slice(-2))
     .join('')}`;
 }
-
-export function normalizeDomain(domain: string): string {
-  domain = domain.trim().toLowerCase();
-
-  if (domain.endsWith('.zil')) {
-    return znsNamehash(domain);
-  }
-
-  return eip137Namehash(domain);
-}

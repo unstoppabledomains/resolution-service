@@ -10,8 +10,8 @@ import {
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { CnsRegistryEvent, Domain } from '../models';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
-import { getDomainResolution } from '../services/Resolution';
-import { eip137Namehash, normalizeDomain } from '../utils/namehash';
+import { getDomainResolution, IsZilDomain } from '../services/Resolution';
+import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import {
   DomainResponse,
   DomainsListQuery,
@@ -25,6 +25,7 @@ import {
 import { ConvertArrayQueryParams } from '../middleware/ConvertArrayQueryParams';
 import { In } from 'typeorm';
 import _ from 'lodash';
+import { normalizeDomainName, normalizeDomainOrToken } from '../utils/domain';
 
 @OpenAPI({
   security: [{ apiKeyAuth: [] }],
@@ -272,12 +273,20 @@ export class DomainsController {
   async getDomainsRecords(
     @QueryParams() query: DomainsRecordsQuery,
   ): Promise<DomainsRecordsResponse> {
-    const tokens = query.domains.map((d) => normalizeDomain(d));
+    const domainNames = query.domains.map(normalizeDomainName);
+    const tokens = domainNames.map(normalizeDomainOrToken);
     const domains = await Domain.findAllByNodes(tokens);
+    const zilTokens = domainNames
+      .filter(
+        (name) => IsZilDomain(name) && !domains.some((d) => d.name === name),
+      )
+      .map(znsNamehash);
+    const zilDomains = await Domain.findAllByNodes(zilTokens);
+    const allDomains = domains.concat(zilDomains);
     const domainsRecords: DomainRecords[] = [];
 
-    for (const domainName of query.domains) {
-      const domain = domains.find((d) => d.name === domainName);
+    for (const domainName of domainNames) {
+      const domain = allDomains.find((d) => d.name === domainName);
 
       if (domain) {
         const { resolution } = getDomainResolution(domain);

@@ -1,9 +1,13 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { env } from '../env';
-import { Domain, DomainsResolution } from '../models';
+import { Domain, DomainsResolution, DomainsReverseResolution } from '../models';
 import { Blockchain } from '../types/common';
-import { getDomainResolution, IsZilDomain } from './Resolution';
+import {
+  getDomainResolution,
+  getReverseResolution,
+  IsZilDomain,
+} from './Resolution';
 
 describe('Resolution service', () => {
   describe('isZilDomain', () => {
@@ -43,9 +47,30 @@ describe('Resolution service', () => {
         .returns(resolution);
 
       expect(getDomainResolution(domain)).to.deep.eq(resolution);
-      expect(stub).to.be.calledOnceWith(
+      expect(stub).to.be.calledWith(
         Blockchain.ZIL,
         env.APPLICATION.ZILLIQA.NETWORK_ID,
+      );
+    });
+
+    it('should return zil resolution for zil domain on uns', () => {
+      const domain = new Domain({
+        name: 'test.zil',
+        node: '0x628ece4569e336250b53b5053c9421fea0b8cfb20f49077b7ec559b4f27817e5',
+      });
+      const resolution = new DomainsResolution({
+        blockchain: Blockchain.MATIC,
+        networkId: env.APPLICATION.POLYGON.NETWORK_ID,
+        resolution: { test: 'zil' },
+      });
+      const stub = sinonSandbox
+        .stub(domain, 'getResolution')
+        .returns(resolution);
+
+      expect(getDomainResolution(domain)).to.deep.eq(resolution);
+      expect(stub).to.be.calledWith(
+        Blockchain.MATIC,
+        env.APPLICATION.POLYGON.NETWORK_ID,
       );
     });
 
@@ -118,6 +143,79 @@ describe('Resolution service', () => {
         Blockchain.ETH,
         env.APPLICATION.ETHEREUM.NETWORK_ID,
       );
+    });
+  });
+
+  describe('getReverseResolution', () => {
+    const l1ReverseAddr = '0x1234512345123451234512345123451234512345';
+    const l2ReverseAddr = '0x0000A0000A0000A0000A0000A0000A0000A0000A';
+    let l1Domain: Domain;
+    let l2Domain: Domain;
+
+    beforeEach(async () => {
+      l1Domain = new Domain({
+        name: 'test.blockchain',
+        node: '0x538c042c534bb263cdb433fbb0cdeaef78054682c43bbbb663dc6430fddd5f71',
+      });
+      const l1Reverse = new DomainsReverseResolution({
+        blockchain: Blockchain.ETH,
+        networkId: env.APPLICATION.ETHEREUM.NETWORK_ID,
+        reverseAddress: l1ReverseAddr,
+      });
+      l1Domain.setReverseResolution(l1Reverse);
+      await l1Domain.save();
+
+      l2Domain = new Domain({
+        name: 'test2.blockchain',
+        node: '0xa6c1edadde6513c39db74fe3ee671b9bf5941eea3d316ee1fb5b779bae53a60d',
+      });
+      const l2Reverse = new DomainsReverseResolution({
+        blockchain: Blockchain.MATIC,
+        networkId: env.APPLICATION.POLYGON.NETWORK_ID,
+        reverseAddress: l2ReverseAddr,
+      });
+      l2Domain.setReverseResolution(l2Reverse);
+      await l2Domain.save();
+    });
+
+    it('should return reverse resolution for l1', async () => {
+      const reverse = await getReverseResolution(l1ReverseAddr);
+      expect(reverse?.domain?.name).to.equal(l1Domain.name);
+    });
+
+    it('should return reverse resolution for l2', async () => {
+      const reverse = await getReverseResolution(l2ReverseAddr);
+      expect(reverse?.domain?.name).to.equal(l2Domain.name);
+    });
+
+    it('should prioritize l1 reverse resolution', async () => {
+      const l2Reverse = l2Domain.getReverseResolution(
+        Blockchain.MATIC,
+        env.APPLICATION.POLYGON.NETWORK_ID,
+      );
+      if (l2Reverse) {
+        l2Reverse.reverseAddress = l1ReverseAddr;
+        await l2Domain.save();
+      }
+
+      const reverse = await getReverseResolution(l1ReverseAddr);
+      expect(reverse?.domain?.name).to.equal(l1Domain.name);
+    });
+
+    it('should return undefined if no reverse resolution', async () => {
+      const removed = l2Domain.removeReverseResolution(
+        Blockchain.MATIC,
+        env.APPLICATION.POLYGON.NETWORK_ID,
+      );
+      await l2Domain.save();
+
+      const reverse = await getReverseResolution(l2ReverseAddr);
+      expect(reverse).to.be.undefined;
+    });
+
+    it('should return undefined for invalid address', async () => {
+      const reverse = await getReverseResolution('invalid');
+      expect(reverse).to.be.undefined;
     });
   });
 });

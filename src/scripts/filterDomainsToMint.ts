@@ -15,7 +15,7 @@ const run = async () => {
   //  1) existing domains on l2
   //  2) tlds
   //  3) zil domains
-  const domainsToStore = domains.filter((domain: Domain, i: number) => {
+  const domainsToStore = domains.filter((domain: Domain, _i: number) => {
     return (
       !domain.exists && domain.name.includes('.') && domain.blockchain !== 'ZIL'
     );
