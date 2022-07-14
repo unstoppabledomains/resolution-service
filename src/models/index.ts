@@ -6,3 +6,4 @@ export { default as EthereumEvent } from './CnsRegistryEvent';
 export { default as WorkerStatus } from './WorkerStatus';
 export { default as ApiKey } from './ApiKey';
 export { default as DomainsResolution } from './DomainsResolution';
+export { default as DomainsReverseResolution } from './DomainsReverseResolution';

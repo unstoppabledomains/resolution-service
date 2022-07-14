@@ -9,6 +9,8 @@ import {
 import Domain from './Domain';
 import nock from 'nock';
 import { nockConfigure } from '../mochaHooks';
+import { DomainTestHelper } from '../utils/testing/DomainTestHelper';
+import DomainsReverseResolution from './DomainsReverseResolution';
 
 describe('Domain', () => {
   describe('constructor()', () => {
@@ -238,6 +240,148 @@ describe('Domain', () => {
         '0xb72f443a17edf4a55f766cf3c83469e6f96494b16823a41a4acb25800f303103',
       );
       expect(fromDb?.parent?.name).to.equal('crypto');
+    });
+  });
+
+  describe('reverse resolution', () => {
+    const reverseAddress = '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8';
+    let reverse: DomainsReverseResolution;
+
+    beforeEach(async () => {
+      const { domain } = await DomainTestHelper.createTestDomain({
+        name: 'brad.crypto',
+        node: '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+        ownerAddress: '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+        blockchain: Blockchain.ETH,
+        networkId: 1337,
+        registry: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+        resolution: {
+          'crypto.ETH.address': '0x8aaD44321A86b170879d7A244c1e8d360c99DdA8',
+        },
+        resolver: '0xd1e5b0ff1287aa9f9a268759062e4ab08b9dacbe',
+      });
+
+      const resolution = domain.getResolution(Blockchain.MATIC, 1337);
+      resolution.ownerAddress = '0x0000000000000000000000000000000000000000';
+      resolution.resolver = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
+      resolution.registry = '0xa9a6a3626993d487d2dbda3173cf58ca1a9d9e9f';
+      resolution.resolution = {};
+      domain.setResolution(resolution);
+
+      reverse = new DomainsReverseResolution({
+        blockchain: Blockchain.ETH,
+        networkId: env.APPLICATION.ETHEREUM.NETWORK_ID,
+        reverseAddress: reverseAddress.toLowerCase(),
+      });
+      domain.setReverseResolution(reverse);
+      await domain.save();
+    });
+
+    it('should return existing reverse resolution', async () => {
+      const domain = await Domain.findByNode(
+        '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+      );
+      const domainReverse = domain?.getReverseResolution(
+        Blockchain.ETH,
+        env.APPLICATION.ETHEREUM.NETWORK_ID,
+      );
+      expect(domainReverse).to.containSubset({
+        reverseAddress: reverse.reverseAddress,
+        blockchain: reverse.blockchain,
+        networkId: reverse.networkId,
+      });
+    });
+
+    it('should return undefined if reverse resolution does not exist', async () => {
+      const domain = await Domain.findByNode(
+        '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+      );
+      const domainReverse = domain?.getReverseResolution(
+        Blockchain.MATIC,
+        env.APPLICATION.POLYGON.NETWORK_ID,
+      );
+      expect(domainReverse).to.be.undefined;
+    });
+
+    it('should set new reverse resolution', async () => {
+      const domain = await Domain.findByNode(
+        '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+      );
+      const newReverse = new DomainsReverseResolution({
+        blockchain: Blockchain.MATIC,
+        networkId: env.APPLICATION.POLYGON.NETWORK_ID,
+        reverseAddress: reverseAddress.toLowerCase(),
+      });
+      domain?.setReverseResolution(newReverse);
+      await domain?.save();
+
+      const domainReverse = domain?.getReverseResolution(
+        Blockchain.MATIC,
+        env.APPLICATION.POLYGON.NETWORK_ID,
+      );
+      const oldReverse = domain?.getReverseResolution(
+        Blockchain.ETH,
+        env.APPLICATION.ETHEREUM.NETWORK_ID,
+      );
+
+      expect(domainReverse).to.containSubset({
+        reverseAddress: newReverse.reverseAddress,
+        blockchain: newReverse.blockchain,
+        networkId: newReverse.networkId,
+      });
+      expect(oldReverse).to.containSubset({
+        reverseAddress: reverse.reverseAddress,
+        blockchain: reverse.blockchain,
+        networkId: reverse.networkId,
+      });
+    });
+
+    it('should reset existing reverse resolution', async () => {
+      const newAddress = '0x0123401234012340123401234012340123401234';
+      const domain = await Domain.findByNode(
+        '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+      );
+      const newReverse = new DomainsReverseResolution({
+        blockchain: Blockchain.ETH,
+        networkId: env.APPLICATION.ETHEREUM.NETWORK_ID,
+        reverseAddress: newAddress,
+      });
+      domain?.setReverseResolution(newReverse);
+      await domain?.save();
+
+      const domainReverse = domain?.getReverseResolution(
+        Blockchain.ETH,
+        env.APPLICATION.ETHEREUM.NETWORK_ID,
+      );
+
+      expect(domainReverse).to.containSubset({
+        reverseAddress: newReverse.reverseAddress,
+        blockchain: newReverse.blockchain,
+        networkId: newReverse.networkId,
+      });
+    });
+
+    it('should remove reverse resolution', async () => {
+      const domain = await Domain.findByNode(
+        '0x756e4e998dbffd803c21d23b06cd855cdc7a4b57706c95964a37e24b47c10fc9',
+      );
+      const removed = domain?.removeReverseResolution(
+        Blockchain.ETH,
+        env.APPLICATION.ETHEREUM.NETWORK_ID,
+      );
+      await domain?.save();
+
+      const domainReverse = domain?.getReverseResolution(
+        Blockchain.ETH,
+        env.APPLICATION.ETHEREUM.NETWORK_ID,
+      );
+
+      expect(domainReverse).to.be.undefined;
+      expect(removed).to.containSubset({
+        reverseAddress: reverse.reverseAddress,
+        blockchain: reverse.blockchain,
+        networkId: reverse.networkId,
+      });
     });
   });
 });
