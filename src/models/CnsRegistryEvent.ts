@@ -35,7 +35,7 @@ export const EventTypes = [
   'AdminChanged',
 ] as const;
 
-type EventType = typeof EventTypes[any];
+export type EventType = typeof EventTypes[any];
 
 @Entity({ name: 'cns_registry_events' })
 @Index(['blockNumber', 'blockchain', 'networkId', 'logIndex'], { unique: true })
@@ -44,10 +44,9 @@ export default class CnsRegistryEvent extends Model {
   @Column('text')
   contractAddress: string;
 
-  @IsEnum(EventTypes)
   @Column({ type: 'text' })
   @Index()
-  type: EventType;
+  type: string;
 
   @IsString()
   @Column({ type: 'text' })
