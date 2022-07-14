@@ -19,6 +19,7 @@
     "test:ci": "NODE_ENV=test nyc --reporter=text yarn test -- --bail --quiet",
     "build": "tsc",
     "start:dev": "dotenv -e ./local.dev.env -- ts-node src/index.ts",
+    "start:dev:debug": "dotenv -e ./local.dev.env -- nodemon --exec 'node --inspect --require ts-node/register ./src/index.ts'",
     "fix": "yarn prettier:fix && yarn eslint:fix",
     "lint": "yarn build:check && yarn prettier:check && yarn eslint:check",
     "build:check": "tsc --noEmit",
