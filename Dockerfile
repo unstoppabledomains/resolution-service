@@ -1,4 +1,4 @@
-FROM node:14.16.1-alpine
+FROM node:14.19.0-alpine
 RUN apk add --no-cache git gcc make g++ zlib-dev xfce4-dev-tools postgresql-client cairo-dev pango-dev && mkdir /app
 
 WORKDIR /app
