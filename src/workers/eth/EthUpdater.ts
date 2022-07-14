@@ -600,13 +600,22 @@ export class EthUpdater {
   }> {
     const latestMirrored = await this.getLatestMirroredBlock();
     const latestNetBlock = await this.getLatestNetworkBlock();
+    if (latestMirrored === 0) {
+      return {
+        fromBlock: Math.min(
+          this.config.UNS_REGISTRY_EVENTS_STARTING_BLOCK,
+          this.config.CNS_REGISTRY_EVENTS_STARTING_BLOCK,
+        ),
+        toBlock: latestNetBlock,
+      };
+    }
+
     const latestMirroredHash = await this.getLatestMirroredBlockHash();
     const networkHash = (await this.provider.getBlock(latestMirrored))?.hash;
 
-    const empty = (await CnsRegistryEvent.findOne()) === undefined;
     const blockHeightMatches = latestNetBlock >= latestMirrored;
     const blockHashMatches = latestMirroredHash === networkHash;
-    if (empty || (blockHeightMatches && blockHashMatches)) {
+    if (blockHeightMatches && blockHashMatches) {
       return { fromBlock: latestMirrored, toBlock: latestNetBlock };
     }
 
