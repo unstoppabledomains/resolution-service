@@ -685,7 +685,7 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(uns.name);
+      const domain = await Domain.findOrCreateByName(uns.name, Blockchain.ETH);
       expect(domain.reverseResolutions.length).to.eq(1);
       expect(domain.reverseResolutions[0]).to.containSubset({
         reverseAddress: owner.toLowerCase(),
@@ -701,7 +701,7 @@ describe('EthUpdater', () => {
       await EthereumHelper.mineBlocksForConfirmation();
       await service.run();
 
-      let domain = await Domain.findOrCreateByName(uns.name);
+      let domain = await Domain.findOrCreateByName(uns.name, Blockchain.ETH);
       expect(domain.reverseResolutions.length).to.eq(1);
 
       await unsRegistry.functions
@@ -710,7 +710,7 @@ describe('EthUpdater', () => {
       await EthereumHelper.mineBlocksForConfirmation();
       await service.run();
 
-      domain = await Domain.findOrCreateByName(uns.name);
+      domain = await Domain.findOrCreateByName(uns.name, Blockchain.ETH);
       expect(domain.reverseResolutions.length).to.eq(0);
     });
   });
