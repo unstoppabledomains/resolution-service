@@ -578,6 +578,33 @@ describe('EthUpdater', () => {
       });
       expect(domain).to.be.undefined;
     });
+
+    it('should add new zil domain on uns', async () => {
+      const zil = getNSConfig('zil');
+      const expectedLabel = randomBytes(16).toString('hex');
+
+      const expectedDomainName = `${expectedLabel}.${zil.tld}`;
+
+      // add zil in case sandbox doesn't have it
+      const mintingManagerOwner =
+        ETHContracts.MintingManager.getContract().connect(
+          EthereumHelper.owner(),
+        );
+      await mintingManagerOwner.functions.addTld('zil');
+
+      await mintingManager.functions
+        .mintSLD(owner, zil.tldHash, expectedLabel)
+        .then((receipt) => receipt.wait());
+      await EthereumHelper.mineBlocksForConfirmation();
+
+      await service.run();
+
+      const domain = await Domain.findOneOrFail({
+        where: { name: expectedDomainName },
+        relations: ['resolutions'],
+      });
+      expect(domain.label).to.equal(expectedLabel);
+    });
   });
 
   describe('domain records', () => {
@@ -593,7 +620,7 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name);
+      const domain = await Domain.findOrCreateByName(cns.name, Blockchain.ETH);
       const resolution = domain?.getResolution(
         service.blockchain,
         service.networkId,
@@ -613,7 +640,7 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(uns.name);
+      const domain = await Domain.findOrCreateByName(uns.name, Blockchain.ETH);
       const resolution = domain?.getResolution(
         service.blockchain,
         service.networkId,
@@ -637,7 +664,7 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name);
+      const domain = await Domain.findOrCreateByName(cns.name, Blockchain.ETH);
       const resolution = domain?.getResolution(
         service.blockchain,
         service.networkId,
@@ -663,7 +690,7 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(uns.name);
+      const domain = await Domain.findOrCreateByName(uns.name, Blockchain.ETH);
       const resolution = domain?.getResolution(
         service.blockchain,
         service.networkId,
@@ -720,7 +747,7 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name);
+      const domain = await Domain.findOrCreateByName(cns.name, Blockchain.ETH);
       const resolution = domain?.getResolution(
         service.blockchain,
         service.networkId,
@@ -740,7 +767,7 @@ describe('EthUpdater', () => {
 
       await service.run();
 
-      const domain = await Domain.findOrCreateByName(cns.name);
+      const domain = await Domain.findOrCreateByName(cns.name, Blockchain.ETH);
       const resolution = domain?.getResolution(
         service.blockchain,
         service.networkId,

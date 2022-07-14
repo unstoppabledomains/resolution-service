@@ -198,10 +198,7 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
     @QueryParam('withOverlay') withOverlay = true,
   ): Promise<OpenSeaMetadata> {
-    const token = this.normalizeDomainOrToken(domainOrToken);
-    const domain =
-      (await Domain.findByNode(token)) ||
-      (await Domain.findOnChainNoSafe(token));
+    const domain = await this.findDomainByNameOrToken(domainOrToken);
     if (!domain) {
       return this.defaultMetaResponse(domainOrToken);
     }
@@ -269,10 +266,7 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
     @QueryParam('withOverlay') withOverlay = true,
   ): Promise<ImageResponse> {
-    const token = this.normalizeDomainOrToken(domainOrToken);
-    const domain =
-      (await Domain.findByNode(token)) ||
-      (await Domain.findOnChainNoSafe(token));
+    const domain = await this.findDomainByNameOrToken(domainOrToken);
     const resolution = domain ? getDomainResolution(domain) : undefined;
     const name = domain ? domain.name : domainOrToken;
 
@@ -316,12 +310,9 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
     @QueryParam('withOverlay') withOverlay = true,
   ): Promise<string> {
-    const token = this.normalizeDomainOrToken(
+    const domain = await this.findDomainByNameOrToken(
       domainOrToken.replace('.svg', ''),
     );
-    const domain =
-      (await Domain.findByNode(token)) ||
-      (await Domain.findOnChainNoSafe(token));
     const resolution = domain ? getDomainResolution(domain) : undefined;
     const name = domain ? domain.name : domainOrToken.replace('.svg', '');
 
@@ -380,22 +371,27 @@ export class MetaDataController {
     };
   }
 
-  private normalizeDomainOrToken(domainOrToken: string): string {
+  private async findDomainByNameOrToken(
+    domainOrToken: string,
+  ): Promise<Domain | undefined> {
+    let tokenName = domainOrToken;
+    const domainName = domainOrToken.trim().toLowerCase();
     if (domainOrToken.includes('.')) {
-      return this.normalizeDomain(domainOrToken);
+      tokenName = eip137Namehash(domainName);
     } else if (domainOrToken.replace('0x', '').match(/^[a-fA-F0-9]+$/)) {
-      return this.normalizeToken(domainOrToken);
+      tokenName = this.normalizeToken(domainOrToken);
     }
-    return domainOrToken;
-  }
 
-  private normalizeDomain(domain: string): string {
-    domain = domain.trim().toLowerCase();
+    let domain =
+      (await Domain.findByNode(tokenName)) ||
+      (await Domain.findOnChainNoSafe(tokenName));
 
-    if (domain.endsWith('.zil')) {
-      return znsNamehash(domain);
+    if (!domain && domainName.endsWith('.zil')) {
+      tokenName = znsNamehash(domainName);
+      domain = await Domain.findByNode(tokenName);
     }
-    return eip137Namehash(domain);
+
+    return domain;
   }
 
   private normalizeToken(token: string): string {
