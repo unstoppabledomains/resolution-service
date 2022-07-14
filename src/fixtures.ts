@@ -13,7 +13,7 @@ export default async (): Promise<void> => {
        VALUES ('zil', '${znsNamehash('zil')}'),
               ('zil', '${eip137Namehash('zil')}'),
               ${queryValues.join(',')}
-       ON CONFLICT (name) DO NOTHING
+       ON CONFLICT (node) DO NOTHING
     `,
   );
 };
