@@ -585,6 +585,30 @@ export class MetaDataController {
   }
 }
 
+async function fetchOpenSeaMetadata(contractAddress: string, tokenId: string) {
+  const openSea = initOpenSeaSdk();
+  const response = await openSea.api.getAsset({
+    tokenAddress: contractAddress,
+    tokenId: tokenId,
+  });
+  return {
+    image: response.imageUrl.endsWith('=s250')
+      ? response.imageUrl.split('=s250')[0]
+      : response.imageUrl,
+    background_color: response.backgroundColor,
+    owner_of: response.owner.address,
+  };
+}
+
+async function fetchMoralisMetadata(options: {
+  chain: SupportedL2Chain | 'eth';
+  address: string;
+  token_id: string;
+}) {
+  const moralis = await initMoralisSdk();
+  return await moralis.Web3API.token.getTokenIdMetadata(options);
+}
+
 export async function fetchTokenMetadata(
   domain: Domain,
   resolution: DomainsResolution,
@@ -622,24 +646,10 @@ export async function fetchTokenMetadata(
   if (options.address && options.token_id) {
     try {
       if (options.chain === 'eth') {
-        const openSea = initOpenSeaSdk();
-        const response = await openSea.api.getAsset({
-          tokenAddress: contractAddress,
-          tokenId: tokenId,
-        });
-        fetchedMetadata = {
-          image: response.imageUrl.endsWith('=s250')
-            ? response.imageUrl.split('=s250')[0]
-            : response.imageUrl,
-          background_color: response.backgroundColor,
-          owner_of: response.owner.address,
-        };
+        fetchedMetadata = await fetchOpenSeaMetadata(contractAddress, tokenId);
         image = fetchedMetadata.image;
       } else {
-        const moralis = await initMoralisSdk();
-        tokenIdMetadata = await moralis.Web3API.token.getTokenIdMetadata(
-          options,
-        );
+        tokenIdMetadata = await fetchMoralisMetadata(options);
       }
     } catch (error: any) {
       if (!error.message.includes('No metadata found')) {

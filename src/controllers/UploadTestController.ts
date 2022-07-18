@@ -17,6 +17,12 @@ const storageOptions = env.CLOUD_STORAGE.API_ENDPOINT_URL
   : {}; // for production
 const storage = new Storage(storageOptions);
 
+enum UploadStatus {
+  Found = 'FOUND',
+  Cached = 'FOUND_IN_CACHE',
+  NotFound = 'NOT_FOUND',
+}
+
 class UploadResponse {
   @IsNotEmpty()
   @IsString()
@@ -83,7 +89,7 @@ export class UploadTestController {
             return {
               domain: domainName,
               pfpImage: imageURL,
-              status: 'FOUND',
+              status: UploadStatus.Found,
             };
           }
         } else {
@@ -98,7 +104,7 @@ export class UploadTestController {
     return {
       domain: domainName,
       pfpImage: '',
-      status: 'NOT_FOUND',
+      status: UploadStatus.Found,
     };
   }
 }
