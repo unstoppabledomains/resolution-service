@@ -4,6 +4,7 @@ import {
   getMetadataArgsStorage,
 } from 'routing-controllers';
 import { DomainsController } from './controllers/DomainsController';
+import { ReverseController } from './controllers/ReverseController';
 import { StatusController } from './controllers/StatusController';
 import { MetaDataController } from './controllers/MetaDataController';
 import swaggerUI from 'swagger-ui-express';
@@ -22,6 +23,7 @@ if (
   env.APPLICATION.RUNNING_MODE.includes('SERVICE_API')
 ) {
   enabledControllers.push(DomainsController);
+  enabledControllers.push(ReverseController);
   enabledControllers.push(StatusController);
   enabledControllers.push(UploadTestController);
 }

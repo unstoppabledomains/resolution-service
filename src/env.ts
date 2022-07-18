@@ -51,6 +51,7 @@ export type EthUpdaterConfig = {
   FETCH_INTERVAL: number;
   MAX_REORG_SIZE: number;
   ACCEPTABLE_DELAY_IN_BLOCKS: number;
+  RESYNC_FROM: number | undefined;
 };
 
 type RunningMode =
@@ -113,6 +114,9 @@ export const env = {
         process.env.ETHEREUM_ACCEPTABLE_DELAY_IN_BLOCKS,
         100,
       ),
+      RESYNC_FROM: !isNaN(Number(process.env.ETHEREUM_RESYNC_FROM))
+        ? Number(process.env.ETHEREUM_RESYNC_FROM)
+        : undefined,
     } as EthUpdaterConfig,
     POLYGON: {
       CNS_REGISTRY_EVENTS_STARTING_BLOCK: parseNumberFromEnv(
@@ -153,6 +157,9 @@ export const env = {
         process.env.POLYGON_ACCEPTABLE_DELAY_IN_BLOCKS,
         100,
       ),
+      RESYNC_FROM: !isNaN(Number(process.env.POLYGON_RESYNC_FROM))
+        ? Number(process.env.POLYGON_RESYNC_FROM)
+        : undefined,
     } as EthUpdaterConfig,
     ZILLIQA: {
       NETWORK: ZnsNetwork,

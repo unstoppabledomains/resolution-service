@@ -171,31 +171,5 @@ describe('DomainsController', () => {
         ],
       });
     });
-
-    it('should return error for zil domain', async () => {
-      const res = await supertest(api)
-        .get(`/domains/test.zil/transfers/latest`)
-        .auth(testApiKey.apiKey, { type: 'bearer' })
-        .send();
-
-      expect(res.status).eq(400);
-      expect(res.body.code).to.eq('BadRequestError');
-      expect(res.body.message).to.eq(
-        `Invalid params, check 'errors' property for more info.`,
-      );
-      expect(res.body.errors).to.deep.eq([
-        {
-          children: [],
-          constraints: {
-            'validate domainName with isNotZilDomain': '',
-          },
-          property: 'domainName',
-          target: {
-            domainName: 'test.zil',
-          },
-          value: 'test.zil',
-        },
-      ]);
-    });
   });
 });
