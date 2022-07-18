@@ -135,9 +135,11 @@ export default class CnsRegistryEvent extends Model {
 
   async beforeValidate(): Promise<void> {
     const tokenId = this.tokenId();
-    this.node = tokenId
-      ? CnsRegistryEvent.tokenIdToNode(BigNumber.from(tokenId))
-      : null;
+    if (!this.node || this.node != tokenId) {
+      this.node = tokenId
+        ? CnsRegistryEvent.tokenIdToNode(BigNumber.from(tokenId))
+        : null;
+    }
   }
 
   async consistentBlockNumberForHash(): Promise<boolean> {

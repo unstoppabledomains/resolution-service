@@ -475,6 +475,22 @@ export class EthUpdater {
     }
   }
 
+  private async sortAndProcessEvents(events: Event[], manager: EntityManager) {
+    const nodeEventsMap: Record<string, Event[]> = {};
+    for (const event of events) {
+      const tokenId = event.args?.tokenId || event.args?.[0];
+      if (nodeEventsMap[tokenId] === undefined) {
+        nodeEventsMap[tokenId] = [];
+      }
+      nodeEventsMap[tokenId].push(event);
+    }
+    const promises = [];
+    for (const nodeEvents of Object.values(nodeEventsMap)) {
+      promises.push(this.processEvents(nodeEvents, manager, true));
+    }
+    return Promise.all(promises);
+  }
+
   private async findLastMatchingBlock(): Promise<{
     blockNumber: number;
     blockHash: string;
@@ -652,7 +668,7 @@ export class EthUpdater {
         );
 
         await getConnection().transaction(async (manager) => {
-          await this.processEvents(events, manager);
+          await this.sortAndProcessEvents(events, manager);
           this.currentSyncBlock = fetchBlock;
           this.currentSyncBlockHash = (
             await this.provider.getBlock(this.currentSyncBlock)
