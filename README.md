@@ -291,3 +291,38 @@ resolution service has integrations with [bugsnag](https://www.bugsnag.com/) and
 
 1. Add it to Github repository Secrets (https://github.com/unstoppabledomains/resolution-service/settings/secrets/actions)
 2. Add it to such files: env.ts, deploy-production.yml, deploy-staging.yml, tests.yml, create-yaml.sh
+
+### Testing image uploads locally
+
+Metadata service will cache NFT PFP images, uploading them to [Google Cloud Storage](https://cloud.google.com/cdn) (GCS) CDN. To test file uploads localy, unofficial [GCS emulator](https://github.com/fsouza/fake-gcs-server) is used.
+
+To use the emulator make sure docker [is installed](https://docs.docker.com/desktop/install/mac-install/). 
+
+Pull the image from Docker Hub
+```
+docker pull fsouza/fake-gcs-server
+```
+
+Create the following directory structure for the GSC bucket storage, where `resolution-client-assets` is the name of the bucket.
+```
+  storage
+  |--> resolution-client-assets
+```
+
+Run docker container with mounted bucket directory:
+```
+docker run -d --name fake-gcs-server -p 4443:4443 -v ${PWD}/storage:/data fsouza/fake-gcs-server -scheme http -public-host localhost:4443
+```
+
+Add the following variable to local dev config:
+```
+CLOUD_STORAGE_ENDPONT_URL=http://localhost:4443
+```
+
+Restart the resolution service.
+
+
+You can optionally change bucket name to any string by changing the `CLOUD_STORAGE_BUCKET_ID` variable in the config and renaming correspondend directory:
+```
+CLOUD_STORAGE_BUCKET_ID=resolution-client-assets
+```
