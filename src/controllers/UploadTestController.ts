@@ -104,7 +104,7 @@ export class UploadTestController {
     return {
       domain: domainName,
       pfpImage: '',
-      status: UploadStatus.Found,
+      status: UploadStatus.NotFound,
     };
   }
 }
