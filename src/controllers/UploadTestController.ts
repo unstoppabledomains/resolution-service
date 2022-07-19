@@ -54,9 +54,10 @@ export class UploadTestController {
       const socialPic = resolution?.resolution['social.picture.value'];
 
       if (resolution && socialPic) {
-        const { contractAddress, tokenId } = parsePictureRecord(socialPic);
+        const { chainId, nftStandard, contractAddress, tokenId } =
+          parsePictureRecord(socialPic);
         const nftPfpFolder = 'nft-pfp';
-        const fileName = `${nftPfpFolder}/${contractAddress}_${tokenId}`;
+        const fileName = `${nftPfpFolder}/${chainId}_${nftStandard}:${contractAddress}_${tokenId}`;
         const bucketName = env.CLOUD_STORAGE.CLIENT_ASSETS.BUCKET_ID;
         const hostname =
           env.CLOUD_STORAGE.API_ENDPOINT_URL ||
