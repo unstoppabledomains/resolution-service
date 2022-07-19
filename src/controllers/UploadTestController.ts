@@ -18,9 +18,10 @@ const storageOptions = env.CLOUD_STORAGE.API_ENDPOINT_URL
 const storage = new Storage(storageOptions);
 
 enum UploadStatus {
-  Found = 'FOUND',
-  Cached = 'FOUND_IN_CACHE',
-  NotFound = 'NOT_FOUND',
+  Found = 'FOUND', // domain found in the database, will cache PFP image for the next time
+  Cached = 'FOUND_IN_CACHE', // domain PFP image found in the cache
+  NotFound = 'NOT_FOUND', // domain doesn't exist or PFP image is not set
+  FetchError = 'ERROR_FETCHING_NFT', // can't fetch NFT image from token URI for whatever reason
 }
 
 class UploadResponse {
@@ -90,6 +91,12 @@ export class UploadTestController {
               domain: domainName,
               pfpImage: imageURL,
               status: UploadStatus.Found,
+            };
+          } else {
+            return {
+              domain: domainName,
+              pfpImage: '',
+              status: UploadStatus.FetchError,
             };
           }
         } else {
