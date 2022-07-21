@@ -47,6 +47,7 @@ env_variables:
   ${BUGSNAG_API_KEY_FIELD}
   ${NEW_RELIC_APP_NAME_FIELD}
   ${NEW_RELIC_LICENSE_KEY_FIELD}
+  CLOUD_STORAGE_BUCKET_ID: ${CLOUD_STORAGE_BUCKET_ID}
 
 beta_settings:
   cloud_sql_instances: ${GCP_SQL_INSTANCE}

@@ -240,4 +240,11 @@ export const env = {
   OPENSEA: {
     API_KEY: process.env.OPENSEA_API_KEY,
   },
+  CLOUD_STORAGE: {
+    CLIENT_ASSETS: {
+      BUCKET_ID:
+        process.env.CLOUD_STORAGE_BUCKET_ID || 'resolution-client-assets',
+    },
+    API_ENDPOINT_URL: process.env.CLOUD_STORAGE_ENDPONT_URL, // default is https://storage.googleapis.com/
+  },
 };
