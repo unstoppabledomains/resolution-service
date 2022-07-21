@@ -23,6 +23,7 @@ import {
   getNFTSocialPicture,
   createSocialPictureImage,
   parsePictureRecord,
+  getNftPfpImageFromCDN,
 } from '../utils/socialPicture';
 import punycode from 'punycode';
 import { getDomainResolution } from '../services/Resolution';
@@ -275,11 +276,12 @@ export class MetaDataController {
     }
 
     if (domain && resolution) {
-      const { socialPicture, image } = await fetchTokenMetadata(
-        domain,
-        resolution,
-        withOverlay,
-      );
+      const socialPictureValue = resolution.resolution['social.picture.value'];
+      const pfpImageFromCDN = await getNftPfpImageFromCDN(socialPictureValue);
+      const { socialPicture, image } = pfpImageFromCDN
+        ? { socialPicture: '', image: pfpImageFromCDN } // Temporary hack. Figure out why do we need socialPicture here
+        : await fetchTokenMetadata(domain, resolution, withOverlay);
+
       const [imageData, mimeType] = await getNFTSocialPicture(image).catch(
         () => ['', null],
       );
@@ -321,12 +323,12 @@ export class MetaDataController {
     }
 
     if (domain && resolution) {
-      const { socialPicture, image } = await fetchTokenMetadata(
-        domain,
-        resolution,
-        withOverlay,
-        true,
-      );
+      const socialPictureValue = resolution.resolution['social.picture.value'];
+      const pfpImageFromCDN = await getNftPfpImageFromCDN(socialPictureValue);
+      const { socialPicture, image } = pfpImageFromCDN
+        ? { socialPicture: null, image: pfpImageFromCDN } // Temporary hack. Figure out why do we need socialPicture here
+        : await fetchTokenMetadata(domain, resolution, withOverlay, true);
+
       const [imageData, mimeType] = await getNFTSocialPicture(image).catch(
         () => ['', null],
       );
@@ -581,36 +583,40 @@ export class MetaDataController {
   }
 }
 
-async function fetchOpenSeaMetadata(contractAddress: string, tokenId: string) {
-  const openSea = initOpenSeaSdk();
-  const response = await openSea.api.getAsset({
-    tokenAddress: contractAddress,
-    tokenId: tokenId,
-  });
-  return {
-    image: response.imageUrl.endsWith('=s250')
-      ? response.imageUrl.split('=s250')[0]
-      : response.imageUrl,
-    background_color: response.backgroundColor,
-    owner_of: response.owner.address,
-  };
-}
-
-async function fetchMoralisMetadata(options: {
-  chain: SupportedL2Chain | 'eth';
-  address: string;
-  token_id: string;
-}) {
-  const moralis = await initMoralisSdk();
-  return await moralis.Web3API.token.getTokenIdMetadata(options);
-}
-
+// maybe need to move to a helper file
 export async function fetchTokenMetadata(
   domain: Domain,
   resolution: DomainsResolution,
   withOverlay: boolean,
   raw = false,
 ): Promise<TokenMetadata> {
+  async function fetchOpenSeaMetadata(
+    contractAddress: string,
+    tokenId: string,
+  ) {
+    const openSea = initOpenSeaSdk();
+    const response = await openSea.api.getAsset({
+      tokenAddress: contractAddress,
+      tokenId: tokenId,
+    });
+    return {
+      image: response.imageUrl.endsWith('=s250')
+        ? response.imageUrl.split('=s250')[0]
+        : response.imageUrl,
+      background_color: response.backgroundColor,
+      owner_of: response.owner.address,
+    };
+  }
+
+  async function fetchMoralisMetadata(options: {
+    chain: SupportedL2Chain | 'eth';
+    address: string;
+    token_id: string;
+  }) {
+    const moralis = await initMoralisSdk();
+    return await moralis.Web3API.token.getTokenIdMetadata(options);
+  }
+
   let chainId = '';
   let contractAddress = '';
   let tokenId = '';
@@ -677,7 +683,7 @@ export async function fetchTokenMetadata(
     fetchedMetadata = await response.json();
     image = fetchedMetadata?.image;
   }
-  let socialPicture = '';
+  let socialPicture = ''; // Why do we need this? Image should be fetched outside this method.
   if (validNftPfp && !!image && withOverlay) {
     const [data, mimeType] = await getNFTSocialPicture(image).catch(() => [
       '',

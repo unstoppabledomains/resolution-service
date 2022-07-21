@@ -1,8 +1,16 @@
 import nodeFetch from 'node-fetch';
-import { Domain } from '../../models';
+import { Domain, DomainsResolution } from '../../models';
 import { createCanvas } from 'canvas';
 import createSVGfromTemplate from './svgTemplate';
 import btoa from 'btoa';
+import { env } from '../../env';
+import { Storage } from '@google-cloud/storage';
+import { fetchTokenMetadata } from '../../controllers/MetaDataController';
+
+const storageOptions = env.CLOUD_STORAGE.API_ENDPOINT_URL
+  ? { apiEndpoint: env.CLOUD_STORAGE.API_ENDPOINT_URL } // for development using local emulator
+  : {}; // for production
+const storage = new Storage(storageOptions);
 
 export const parsePictureRecord = (avatarRecord: string) => {
   const regex =
@@ -120,5 +128,66 @@ export const createSocialPictureImage = (
   } catch (e) {
     console.log(e);
     return '';
+  }
+};
+
+const getNFTFilenameInCDN = (socialPic: string) => {
+  const { chainId, nftStandard, contractAddress, tokenId } =
+    parsePictureRecord(socialPic);
+  const nftPfpFolder = 'nft-pfp';
+  return `${nftPfpFolder}/${chainId}_${nftStandard}:${contractAddress}_${tokenId}`;
+};
+
+export const cacheSocialPictureInCDN = async (
+  socialPic: string,
+  domain: Domain,
+  resolution: DomainsResolution,
+) => {
+  const fileName = getNFTFilenameInCDN(socialPic);
+  const bucketName = env.CLOUD_STORAGE.CLIENT_ASSETS.BUCKET_ID;
+  const bucket = storage.bucket(bucketName);
+
+  const [fileExists] = await bucket.file(fileName).exists();
+  if (!fileExists) {
+    // Fetching image from token URI. Why do we need to pass domain and resolution?
+    const { image } = await fetchTokenMetadata(domain, resolution, false, true);
+    const [imageData, mimeType] = await getNFTSocialPicture(image).catch(() => [
+      '',
+      null,
+    ]);
+
+    // upload image to bucket
+    if (imageData) {
+      const file = bucket.file(fileName);
+      // cache in the storage
+      const imageBuffer = Buffer.from(imageData, 'base64');
+      await file.save(imageBuffer, {
+        metadata: {
+          contentType: mimeType,
+        },
+      });
+    }
+  }
+};
+
+/**
+ * Returns a social picture URL cached in CDN or null if image is not found in CDN cache.
+ */
+export const getNftPfpImageFromCDN = async (socialPic: string) => {
+  const fileName = getNFTFilenameInCDN(socialPic);
+  const bucketName = env.CLOUD_STORAGE.CLIENT_ASSETS.BUCKET_ID;
+  const hostname =
+    env.CLOUD_STORAGE.API_ENDPOINT_URL || 'https://storage.googleapis.com';
+  const bucket = storage.bucket(bucketName);
+
+  const [fileExists] = await bucket.file(fileName).exists();
+  if (fileExists) {
+    // const file = bucket.file(fileName);
+    // const contents = await bucket.file(fileName).download();
+    // Should we download or not here? Probably not.
+    const imageURL = `${hostname}/${bucketName}/${fileName}`;
+    return imageURL;
+  } else {
+    return null; // should we return null or FileNotFound type?
   }
 };
