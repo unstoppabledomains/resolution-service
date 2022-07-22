@@ -11,6 +11,7 @@ import {
   IsNumber,
   ValidateNested,
   IsIn,
+  ArrayMaxSize,
 } from 'class-validator';
 import { Domain } from '../../models';
 import { Blockchain } from '../../types/common';
@@ -53,6 +54,14 @@ export class DomainMetadata {
 export class DomainResponse {
   @ValidateNested()
   meta: DomainMetadata = new DomainMetadata();
+
+  @IsObject()
+  records: Record<string, string> = {};
+}
+
+export class DomainRecords {
+  @IsString()
+  domain: string;
 
   @IsObject()
   records: Record<string, string> = {};
@@ -246,4 +255,27 @@ export class DomainLatestTransfer {
 export class DomainLatestTransferResponse {
   @ValidateNested()
   data: DomainLatestTransfer[];
+}
+
+export class DomainsRecordsQuery {
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  @ArrayMaxSize(50)
+  domains: string[];
+
+  @IsOptional()
+  @ValidateWith<DomainsRecordsQuery>('containsSupportedKey', {
+    message: 'Unsupported Unstoppable Domains key',
+  })
+  key: string;
+
+  containsSupportedKey(): boolean {
+    return Object.keys(SupportedKeysJson.keys).includes(this.key);
+  }
+}
+
+export class DomainsRecordsResponse {
+  @ValidateNested()
+  data: DomainRecords[];
 }

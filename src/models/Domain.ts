@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  In,
   Index,
   JoinColumn,
   ManyToOne,
@@ -96,6 +97,20 @@ export default class Domain extends Model {
   get isUnicodeName(): boolean {
     // eslint-disable-next-line no-control-regex
     return /[^\u0000-\u00ff]/.test(this.name);
+  }
+
+  static async findAllByNodes(
+    nodes: string[],
+    repository: Repository<Domain> = this.getRepository(),
+  ): Promise<Domain[]> {
+    if (!nodes.length) {
+      return [];
+    }
+
+    return repository.find({
+      where: { node: In(nodes) },
+      relations: ['resolutions', 'parent'],
+    });
   }
 
   static async findByNode(

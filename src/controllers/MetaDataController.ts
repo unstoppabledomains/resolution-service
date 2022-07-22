@@ -7,7 +7,6 @@ import {
 } from 'routing-controllers';
 import Moralis from 'moralis/node';
 import { ResponseSchema } from 'routing-controllers-openapi';
-import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import fetch from 'node-fetch';
 import Domain from '../models/Domain';
 import AnimalDomainHelper, {
@@ -31,6 +30,7 @@ import { DomainsResolution } from '../models';
 import { OpenSeaPort, Network } from 'opensea-js';
 import { EthereumProvider } from '../workers/EthereumProvider';
 import { simpleSVGTemplate } from '../utils/socialPicture/svgTemplate';
+import { findDomainByNameOrToken } from '../utils/domain';
 
 const DEFAULT_IMAGE_URL = (name: string) =>
   `https://metadata.unstoppabledomains.com/image-src/${name}.svg` as const;
@@ -198,7 +198,7 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
     @QueryParam('withOverlay') withOverlay = true,
   ): Promise<OpenSeaMetadata> {
-    const domain = await this.findDomainByNameOrToken(domainOrToken);
+    const domain = await findDomainByNameOrToken(domainOrToken);
     if (!domain) {
       return this.defaultMetaResponse(domainOrToken);
     }
@@ -266,7 +266,7 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
     @QueryParam('withOverlay') withOverlay = true,
   ): Promise<ImageResponse> {
-    const domain = await this.findDomainByNameOrToken(domainOrToken);
+    const domain = await findDomainByNameOrToken(domainOrToken);
     const resolution = domain ? getDomainResolution(domain) : undefined;
     const name = domain ? domain.name : domainOrToken;
 
@@ -310,7 +310,7 @@ export class MetaDataController {
     @Param('domainOrToken') domainOrToken: string,
     @QueryParam('withOverlay') withOverlay = true,
   ): Promise<string> {
-    const domain = await this.findDomainByNameOrToken(
+    const domain = await findDomainByNameOrToken(
       domainOrToken.replace('.svg', ''),
     );
     const resolution = domain ? getDomainResolution(domain) : undefined;
@@ -478,33 +478,6 @@ export class MetaDataController {
       image,
       image_data,
     };
-  }
-
-  private async findDomainByNameOrToken(
-    domainOrToken: string,
-  ): Promise<Domain | undefined> {
-    let tokenName = domainOrToken;
-    const domainName = domainOrToken.trim().toLowerCase();
-    if (domainOrToken.includes('.')) {
-      tokenName = eip137Namehash(domainName);
-    } else if (domainOrToken.replace('0x', '').match(/^[a-fA-F0-9]+$/)) {
-      tokenName = this.normalizeToken(domainOrToken);
-    }
-
-    let domain =
-      (await Domain.findByNode(tokenName)) ||
-      (await Domain.findOnChainNoSafe(tokenName));
-
-    if (!domain && domainName.endsWith('.zil')) {
-      tokenName = znsNamehash(domainName);
-      domain = await Domain.findByNode(tokenName);
-    }
-
-    return domain;
-  }
-
-  private normalizeToken(token: string): string {
-    return '0x' + BigInt(token).toString(16).padStart(64, '0');
   }
 
   private getDomainDescription(

@@ -10,17 +10,22 @@ import {
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { CnsRegistryEvent, Domain } from '../models';
 import { ApiKeyAuthMiddleware } from '../middleware/ApiKeyAuthMiddleware';
-import { getDomainResolution } from '../services/Resolution';
-import { eip137Namehash } from '../utils/namehash';
+import { getDomainResolution, IsZilDomain } from '../services/Resolution';
+import { eip137Namehash, znsNamehash } from '../utils/namehash';
 import {
   DomainResponse,
   DomainsListQuery,
   DomainsListResponse,
   UnsDomainQuery,
   DomainLatestTransferResponse,
+  DomainsRecordsQuery,
+  DomainsRecordsResponse,
+  DomainRecords,
 } from './dto/Domains';
 import { ConvertArrayQueryParams } from '../middleware/ConvertArrayQueryParams';
 import { In } from 'typeorm';
+import _ from 'lodash';
+import { normalizeDomainName, normalizeDomainOrToken } from '../utils/domain';
 
 @OpenAPI({
   security: [{ apiKeyAuth: [] }],
@@ -240,5 +245,58 @@ export class DomainsController {
       };
     });
     return response;
+  }
+
+  @Get('/records')
+  @OpenAPI({
+    responses: {
+      '200': {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                data: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/DomainRecords',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @UseBefore(ConvertArrayQueryParams('domains'))
+  async getDomainsRecords(
+    @QueryParams() query: DomainsRecordsQuery,
+  ): Promise<DomainsRecordsResponse> {
+    const domainNames = query.domains.map(normalizeDomainName);
+    const tokens = domainNames.map(normalizeDomainOrToken);
+    const domains = await Domain.findAllByNodes(tokens);
+    const zilTokens = domainNames
+      .filter(
+        (name) => IsZilDomain(name) && !domains.some((d) => d.name === name),
+      )
+      .map(znsNamehash);
+    const zilDomains = await Domain.findAllByNodes(zilTokens);
+    const allDomains = domains.concat(zilDomains);
+    const domainsRecords: DomainRecords[] = [];
+
+    for (const domainName of domainNames) {
+      const domain = allDomains.find((d) => d.name === domainName);
+
+      if (domain) {
+        const { resolution } = getDomainResolution(domain);
+        const records = query.key ? _.pick(resolution, query.key) : resolution;
+        domainsRecords.push({ domain: domainName, records });
+      } else {
+        domainsRecords.push({ domain: domainName, records: {} });
+      }
+    }
+
+    return { data: domainsRecords };
   }
 }
