@@ -27,11 +27,7 @@ export function getDomainResolution(domain: Domain): DomainsResolution {
     );
   }
 
-  if (
-    !resolution.hasId() &&
-    isNullAddress(resolution.ownerAddress) &&
-    IsZilDomain(domain.name)
-  ) {
+  if (isNullAddress(resolution.ownerAddress) && IsZilDomain(domain.name)) {
     resolution = domain.getResolution(
       Blockchain.ZIL,
       env.APPLICATION.ZILLIQA.NETWORK_ID,
